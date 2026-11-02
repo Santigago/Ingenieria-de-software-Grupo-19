@@ -1,4 +1,4 @@
-# Ingeniería de Software - Grupo 19
+# Ingenieria-de-software-Grupo-19
 
 Repositorio oficial del **Grupo 19** para el desarrollo del proyecto de software aplicado a **KidZania Santiago** en el marco del curso de Ingeniería de Software (IDS).
 
