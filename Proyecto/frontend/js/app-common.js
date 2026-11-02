@@ -1,21 +1,32 @@
 const API_URL = '';
 const token = localStorage.getItem('token');
+const rolId = localStorage.getItem('rol');
 const rolNombre = localStorage.getItem('rol_nombre') || '';
 const usuarioNombre = localStorage.getItem('usuario') || 'Usuario';
 
-if (!token && !location.pathname.endsWith('/v_login.html')) {
+const esAdmin = rolId === '1' || rolNombre === 'admin';
+const esPaginaLogin = location.pathname.endsWith('/v_login.html') || location.pathname.endsWith('/v_pos_login.html');
+const esPaginaPos = location.pathname.endsWith('/v_pos.html');
+
+// Validación de sesión activa
+if (!token && !esPaginaLogin) {
     window.location.href = 'v_login.html';
+}
+
+// Control estricto de roles: un cajero/operador nunca puede acceder a vistas de administración
+if (token && !esAdmin && !esPaginaLogin && !esPaginaPos) {
+    window.location.href = 'v_pos.html';
 }
 
 const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 const jsonHeaders = token ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } : { 'Content-Type': 'application/json' };
 
-function cerrarSesion() {
+function cerrarSesion(redireccion = 'v_login.html') {
     localStorage.removeItem('token');
     localStorage.removeItem('rol');
     localStorage.removeItem('rol_nombre');
     localStorage.removeItem('usuario');
-    window.location.href = 'v_login.html';
+    window.location.href = redireccion;
 }
 
 function formatoFecha(valor) {
@@ -63,10 +74,10 @@ function navHtml(titulo) {
     return `
     <aside class="w-72 min-h-screen bg-gray-950 border-r border-gray-800 p-5 fixed left-0 top-0 hidden lg:block">
         <h1 class="text-2xl font-bold text-amber-500">KidZania</h1>
-        <p class="text-xs text-gray-400 mt-1">Sistema de Gestión · Grupo 19</p>
+        <p class="text-xs text-gray-400 mt-1">Panel de Administración · Grupo 19</p>
         <div class="mt-5 p-3 bg-gray-900 rounded border border-gray-800 text-sm text-gray-300">
             <div class="font-semibold text-white">${usuarioNombre}</div>
-            <div class="uppercase text-xs text-amber-400 mt-1">${rolNombre || 'rol no informado'}</div>
+            <div class="uppercase text-xs text-amber-400 mt-1">${rolNombre || 'Administrador'}</div>
         </div>
         <nav class="mt-6 space-y-1 text-sm">
             ${link('v_dashboard.html','Dashboard', titulo)}
@@ -80,12 +91,18 @@ function navHtml(titulo) {
             ${link('v_salidas.html','Salidas de stock', titulo)}
             ${link('v_movimientos.html','Historial movimientos', titulo)}
             ${link('v_salon.html','Salón / Mesas', titulo)}
+            ${link('v_pos.html','Vista Cajero (POS)', titulo)}
         </nav>
-        <button onclick="cerrarSesion()" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white rounded px-3 py-2">Cerrar sesión</button>
+        <div class="mt-8 pt-4 border-t border-gray-800 space-y-2">
+            <a href="v_pos_login.html" class="block text-center text-xs text-amber-400 hover:text-amber-300 bg-gray-900 border border-gray-700 px-3 py-2 rounded">
+                🖥️ Abrir Terminal POS
+            </a>
+            <button onclick="cerrarSesion('v_login.html')" class="w-full bg-red-600 hover:bg-red-700 text-white rounded px-3 py-2 text-sm">Cerrar sesión</button>
+        </div>
     </aside>
     <header class="lg:hidden bg-gray-950 border-b border-gray-800 p-4 flex justify-between items-center sticky top-0 z-10">
-        <span class="font-bold text-amber-500">KidZania</span>
-        <button onclick="cerrarSesion()" class="text-sm bg-red-600 text-white rounded px-3 py-1">Salir</button>
+        <span class="font-bold text-amber-500">KidZania Admin</span>
+        <button onclick="cerrarSesion('v_login.html')" class="text-sm bg-red-600 text-white rounded px-3 py-1">Salir</button>
     </header>`;
 }
 

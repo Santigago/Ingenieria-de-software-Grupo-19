@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KidZania - Terminal Táctil POS (Cajeros)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .card-touch {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-touch:active {
+            transform: scale(0.97);
+        }
+        .numpad-btn {
+            transition: all 0.1s ease;
+        }
+        .numpad-btn:active {
+            transform: scale(0.92);
+            background-color: rgba(225, 29, 72, 0.25) !important;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .shake { animation: shake 0.35s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col lg:flex-row select-none">
+
+    <!-- Panel Izquierdo: Información del Punto de Venta -->
+    <aside class="w-full lg:w-1/3 xl:w-80 bg-gradient-to-b from-slate-900 via-slate-900 to-zinc-950 border-b lg:border-b-0 lg:border-r border-slate-800 p-6 lg:p-8 flex flex-col justify-between">
+        <div>
+            <!-- Badge / Logo -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center shadow-lg shadow-rose-950/50">
+                    <span class="text-2xl font-black text-white">KZ</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold text-white tracking-tight leading-none">KidZania <span class="text-rose-500">POS</span></h1>
+                    <span class="text-[11px] font-semibold tracking-wider text-amber-400 uppercase">Terminal Táctil</span>
+                </div>
+            </div>
+
+            <!-- Título & Descripción -->
+            <div class="mt-4">
+                <h2 class="text-2xl lg:text-3xl font-extrabold text-white leading-tight">Puntos de venta y experiencias</h2>
+                <p class="text-slate-400 text-sm mt-3 leading-relaxed">
+                    Toca tu nombre e ingresa tu PIN de acceso de 4 dígitos para abrir tu caja operativa.
+                </p>
+            </div>
+
+            <!-- Información Operativa -->
+            <div class="mt-8 space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400">Terminal Activa</span>
+                    <span class="font-mono font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">POS #01 · Parque</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400">Hora del Sistema</span>
+                    <span id="liveClock" class="font-mono text-slate-200 font-semibold">--:--:--</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-400">Puestos Habilitados</span>
+                    <span class="text-slate-300 font-medium">Boletería · Tiendas · Talleres</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones y Seguridad -->
+        <div class="mt-8 pt-6 border-t border-slate-800/80 space-y-3">
+            <p class="text-[11px] text-slate-500 leading-tight">
+                🔒 Por seguridad, tras 5 intentos fallidos de PIN la cuenta se bloqueará preventivamente.
+            </p>
+            <a href="v_login.html" 
+               class="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold border border-slate-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+                <span>Acceso Administrativo Completo</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Panel Derecho: Selector Táctil de Cajeros -->
+    <main class="flex-1 p-6 lg:p-10 flex flex-col justify-between overflow-y-auto bg-slate-950">
+        <div>
+            <!-- Encabezado de Selección -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-slate-800/80">
+                <div>
+                    <h3 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <span>¿Quién opera este turno?</span>
+                    </h3>
+                    <p class="text-sm text-slate-400 mt-1">Toca tu perfil registrado para identificarte con tu PIN.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="cajerosCount" class="text-xs bg-slate-900 border border-slate-800 text-slate-400 px-3 py-1.5 rounded-full">
+                        Cargando colaboradores...
+                    </span>
+                    <button onclick="cargarCajeros()" title="Recargar lista" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grid de Colaboradores (Touch Ready) -->
+            <div id="cajerosGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                <!-- Se llena dinámicamente con JavaScript -->
+            </div>
+        </div>
+
+        <div class="mt-8 pt-4 border-t border-slate-900 text-center text-xs text-slate-600">
+            KidZania Santiago · Módulo POS de Turnos y Cobro · Grupo 19
+        </div>
+    </main>
+
+    <!-- Modal Táctil: Ingreso de PIN (Numpad) -->
+    <div id="pinModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div id="pinCard" class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col items-center">
+            
+            <!-- Avatar y Nombre del Cajero Seleccionado -->
+            <div id="modalAvatar" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-rose-950/40 mb-3">
+                --
+            </div>
+            <h4 id="modalNombre" class="text-lg font-bold text-white text-center">Colaborador</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Ingresa tu código PIN de 4 dígitos</p>
+
+            <!-- Visualizador de Dígitos PIN (Dots) -->
+            <div class="flex items-center justify-center gap-4 my-6">
+                <div id="dot1" class="w-4 h-4 rounded-full border-2 border-slate-600 bg-transparent transition duration-150"></div>
+                <div id="dot2" class="w-4 h-4 rounded-full border-2 border-slate-600 bg-transparent transition duration-150"></div>
+                <div id="dot3" class="w-4 h-4 rounded-full border-2 border-slate-600 bg-transparent transition duration-150"></div>
+                <div id="dot4" class="w-4 h-4 rounded-full border-2 border-slate-600 bg-transparent transition duration-150"></div>
+            </div>
+
+            <!-- Alerta de Error PIN -->
+            <div id="pinAlert" class="hidden w-full text-center text-xs py-2 px-3 rounded-lg bg-rose-950/80 border border-rose-600/60 text-rose-200 mb-4"></div>
+
+            <!-- Teclado Numérico Táctil (Numpad 3x4) -->
+            <div class="grid grid-cols-3 gap-3 w-full max-w-[260px]">
+                <button type="button" onclick="pressKey('1')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">1</button>
+                <button type="button" onclick="pressKey('2')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">2</button>
+                <button type="button" onclick="pressKey('3')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">3</button>
+
+                <button type="button" onclick="pressKey('4')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">4</button>
+                <button type="button" onclick="pressKey('5')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">5</button>
+                <button type="button" onclick="pressKey('6')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">6</button>
+
+                <button type="button" onclick="pressKey('7')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">7</button>
+                <button type="button" onclick="pressKey('8')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">8</button>
+                <button type="button" onclick="pressKey('9')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">9</button>
+
+                <button type="button" onclick="clearPin()" class="numpad-btn h-14 rounded-2xl bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-rose-400 text-sm font-semibold border border-slate-700/60 flex items-center justify-center">C</button>
+                <button type="button" onclick="pressKey('0')" class="numpad-btn h-14 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white text-2xl font-bold border border-slate-700/80 flex items-center justify-center shadow">0</button>
+                <button type="button" onclick="backspacePin()" class="numpad-btn h-14 rounded-2xl bg-slate-850 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l7-7 11 0a2 2 0 012 2v10a2 2 0 01-2 2H10l-7-7z"/></svg>
+                </button>
+            </div>
+
+            <!-- Botón Cancelar -->
+            <button type="button" onclick="closePinModal()" class="mt-6 text-sm text-slate-400 hover:text-white py-2 px-6 rounded-xl hover:bg-slate-800 transition">
+                Cancelar y elegir otro perfil
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let cajeros = [];
+        let cajeroSeleccionado = null;
+        let currentPin = '';
+
+        // Reloj en tiempo real
+        function updateClock() {
+            const clockEl = document.getElementById('liveClock');
+            if (clockEl) {
+                const now = new Date();
+                clockEl.textContent = now.toLocaleTimeString('es-CL', { hour12: false });
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Obtener iniciales para el avatar
+        function getInitials(nombres, apellidos) {
+            const n = (nombres || '').trim().charAt(0).toUpperCase();
+            const a = (apellidos || '').trim().charAt(0).toUpperCase();
+            return (n + a) || 'KZ';
+        }
+
+        // Cargar lista de colaboradores desde el backend
+        async function cargarCajeros() {
+            const grid = document.getElementById('cajerosGrid');
+            const countEl = document.getElementById('cajerosCount');
+            grid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500">Cargando colaboradores registrados...</div>';
+
+            try {
+                const res = await fetch('/api/auth/pos-cajeros');
+                const data = await res.json();
+                cajeros = data.data || [];
+
+                countEl.textContent = `${cajeros.length} registrados`;
+
+                if (cajeros.length === 0) {
+                    grid.innerHTML = `
+                        <div class="col-span-full py-12 text-center bg-slate-900 border border-slate-800 rounded-2xl p-8">
+                            <p class="text-slate-400">No hay cajeros registrados aún en el sistema.</p>
+                            <a href="v_login.html" class="inline-block mt-4 text-xs font-semibold text-rose-400 underline">Ingresar como Administrador para crear usuarios</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = cajeros.map(c => {
+                    const initials = getInitials(c.usuario_nombres, c.usuario_apellido_paterno);
+                    const estaActivo = c.usuario_estado_cuenta === 'activo';
+                    const nombreCompleto = `${c.usuario_nombres} ${c.usuario_apellido_paterno}`;
+
+                    return `
+                        <div onclick="selectCajero(${c.usuario_id})" 
+                             class="card-touch group relative p-4 rounded-2xl border transition duration-150 cursor-pointer flex items-center gap-4 ${
+                                estaActivo 
+                                    ? 'bg-slate-900/90 hover:bg-slate-850 border-slate-800 hover:border-slate-700 shadow-lg shadow-black/20' 
+                                    : 'bg-slate-950/60 border-slate-900 opacity-60 cursor-not-allowed'
+                             }">
+                            <!-- Avatar con iniciales -->
+                            <div class="w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center font-bold text-lg transition duration-200 ${
+                                estaActivo
+                                    ? 'bg-gradient-to-tr from-slate-800 to-slate-700 text-rose-400 group-hover:from-rose-600 group-hover:to-amber-500 group-hover:text-white shadow-md'
+                                    : 'bg-slate-900 text-slate-500 border border-slate-800'
+                            }">
+                                ${initials}
+                            </div>
+
+                            <!-- Info del Colaborador -->
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-white text-base truncate group-hover:text-amber-400 transition">
+                                    ${nombreCompleto}
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-1">
+                                    ${
+                                        estaActivo 
+                                            ? '<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span><span class="text-xs text-slate-400 font-medium">Toca para PIN</span>' 
+                                            : '<span class="inline-block w-2 h-2 rounded-full bg-rose-500"></span><span class="text-xs text-rose-400 font-semibold">Cuenta bloqueada</span>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Icono Flecha / Candado -->
+                            <div class="text-slate-600 group-hover:text-slate-300 transition">
+                                ${estaActivo ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>' : '<svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Error al cargar cajeros:', error);
+                grid.innerHTML = '<div class="col-span-full py-12 text-center text-rose-400">Error al conectar con la base de datos de KidZania.</div>';
+            }
+        }
+
+        // Seleccionar Cajero
+        function selectCajero(id) {
+            const cajero = cajeros.find(c => c.usuario_id === id);
+            if (!cajero) return;
+
+            if (cajero.usuario_estado_cuenta !== 'activo') {
+                alert(`La cuenta de ${cajero.usuario_nombres} ${cajero.usuario_apellido_paterno} se encuentra inactiva o bloqueada. Contacte al Administrador.`);
+                return;
+            }
+
+            cajeroSeleccionado = cajero;
+            currentPin = '';
+            updatePinDots();
+
+            document.getElementById('modalNombre').textContent = `${cajero.usuario_nombres} ${cajero.usuario_apellido_paterno}`;
+            document.getElementById('modalAvatar').textContent = getInitials(cajero.usuario_nombres, cajero.usuario_apellido_paterno);
+            document.getElementById('pinAlert').classList.add('hidden');
+            document.getElementById('pinModal').classList.remove('hidden');
+        }
+
+        function closePinModal() {
+            cajeroSeleccionado = null;
+            currentPin = '';
+            document.getElementById('pinModal').classList.add('hidden');
+        }
+
+        // Manejo de Dígitos PIN
+        function pressKey(digit) {
+            if (currentPin.length >= 4) return;
+            currentPin += digit;
+            updatePinDots();
+
+            if (currentPin.length === 4) {
+                // Validación automática al completar 4 dígitos
+                setTimeout(submitPin, 150);
+            }
+        }
+
+        function clearPin() {
+            currentPin = '';
+            updatePinDots();
+        }
+
+        function backspacePin() {
+            if (currentPin.length > 0) {
+                currentPin = currentPin.slice(0, -1);
+                updatePinDots();
+            }
+        }
+
+        function updatePinDots() {
+            for (let i = 1; i <= 4; i++) {
+                const dot = document.getElementById('dot' + i);
+                if (i <= currentPin.length) {
+                    dot.className = 'w-4 h-4 rounded-full border-2 border-rose-500 bg-rose-500 shadow-md shadow-rose-500/50 transition duration-150 scale-110';
+                } else {
+                    dot.className = 'w-4 h-4 rounded-full border-2 border-slate-600 bg-transparent transition duration-150 scale-100';
+                }
+            }
+        }
+
+        // Envío del PIN para autenticación
+        async function submitPin() {
+            if (!cajeroSeleccionado || currentPin.length !== 4) return;
+
+            const pinAlert = document.getElementById('pinAlert');
+            const pinCard = document.getElementById('pinCard');
+
+            try {
+                const res = await fetch('/api/auth/pos-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario_id: cajeroSeleccionado.usuario_id,
+                        pin: currentPin
+                    })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    pinAlert.textContent = data.message || 'PIN incorrecto. Intente nuevamente.';
+                    pinAlert.classList.remove('hidden');
+                    pinCard.classList.add('shake');
+                    setTimeout(() => pinCard.classList.remove('shake'), 400);
+                    currentPin = '';
+                    updatePinDots();
+                    return;
+                }
+
+                // Éxito: Guardar sesión y redirigir inmediatamente a la vista exclusiva del cajero
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('rol', String(data.rol));
+                localStorage.setItem('rol_nombre', data.rol_nombre || '');
+                localStorage.setItem('usuario', `${data.usuario.nombres} ${data.usuario.apellido_paterno}`);
+
+                pinAlert.className = 'w-full text-center text-xs py-2 px-3 rounded-lg bg-emerald-950/80 border border-emerald-600/60 text-emerald-200 mb-4';
+                pinAlert.textContent = '¡PIN Verificado! Accediendo a terminal...';
+                pinAlert.classList.remove('hidden');
+
+                setTimeout(() => {
+                    window.location.href = 'v_pos.html';
+                }, 400);
+
+            } catch (error) {
+                console.error('Error al verificar PIN:', error);
+                pinAlert.textContent = 'Error de conexión con el servidor.';
+                pinAlert.classList.remove('hidden');
+                currentPin = '';
+                updatePinDots();
+            }
+        }
+
+        // Listener para teclado físico
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('pinModal').classList.contains('hidden')) return;
+
+            if (e.key >= '0' && e.key <= '9') {
+                pressKey(e.key);
+            } else if (e.key === 'Backspace') {
+                backspacePin();
+            } else if (e.key === 'Escape') {
+                closePinModal();
+            } else if (e.key === 'Enter' && currentPin.length === 4) {
+                submitPin();
+            }
+        });
+
+        // Carga inicial
+        cargarCajeros();
+    </script>
+</body>
+</html>

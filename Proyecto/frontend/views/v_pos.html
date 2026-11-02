@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KidZania - Terminal de Punto de Venta (POS)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between select-none">
+
+    <!-- Barra Superior Tipo Kiosco POS -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 sticky top-0 z-20">
+        <!-- Logo y Terminal -->
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center font-bold text-white shadow-md shadow-rose-950/40">
+                KZ
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-extrabold text-white text-lg tracking-tight">KidZania <span class="text-rose-500">POS</span></span>
+                    <span class="text-[10px] font-mono uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded font-semibold">Caja Abierta</span>
+                </div>
+                <p class="text-xs text-slate-400">Terminal #01 · Parque Araucano, Santiago</p>
+            </div>
+        </div>
+
+        <!-- Reloj Central -->
+        <div class="hidden md:flex flex-col items-center">
+            <span id="posClock" class="font-mono text-xl font-bold text-white tracking-widest">--:--:--</span>
+            <span id="posDate" class="text-xs text-slate-400">--</span>
+        </div>
+
+        <!-- Cajero Activo y Controles -->
+        <div class="flex items-center gap-3">
+            <div id="adminBadgeContainer" class="hidden">
+                <a href="v_dashboard.html" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    <span>Dashboard Admin</span>
+                </a>
+            </div>
+
+            <!-- Perfil del Cajero -->
+            <div class="flex items-center gap-3 bg-slate-950/80 border border-slate-800 px-3.5 py-2 rounded-xl">
+                <div id="userAvatar" class="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center text-xs font-bold text-white">
+                    --
+                </div>
+                <div class="text-left">
+                    <div id="userName" class="text-sm font-bold text-white leading-tight">Cajero</div>
+                    <div id="userRole" class="text-[11px] text-slate-400">Punto de Venta</div>
+                </div>
+            </div>
+
+            <!-- Botón Cerrar Turno / Salir -->
+            <button onclick="confirmarCierre()" 
+                    class="bg-rose-600/90 hover:bg-rose-600 active:scale-95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-rose-500/50 transition duration-150 flex items-center gap-1.5 shadow-lg shadow-rose-950/40">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                <span>Cerrar Turno</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal Kiosco Minimalista -->
+    <main class="flex-1 flex items-center justify-center p-6">
+        <div class="w-full max-w-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl text-center relative overflow-hidden backdrop-blur-xl">
+            
+            <!-- Acento decorativo sutil superior -->
+            <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-rose-600 via-amber-500 to-rose-600"></div>
+
+            <!-- Icono Central de Terminal -->
+            <div class="w-20 h-20 rounded-3xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-center mx-auto mb-6 shadow-inner text-amber-400">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </div>
+
+            <!-- Título y Sesión -->
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-700/50 text-emerald-300 mb-3">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                Sesión de Cajero Activa
+            </span>
+
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Terminal de Punto de Venta
+            </h2>
+            <p class="text-slate-400 text-sm mt-2 max-w-md mx-auto">
+                Bienvenido(a), <span id="welcomeName" class="text-amber-400 font-semibold">Colaborador</span>. La sesión en este punto de venta se encuentra abierta y autenticada.
+            </p>
+
+            <!-- Card de Funcionalidades Pendientes (Documento 0) -->
+            <div class="mt-8 bg-slate-950/80 border border-slate-800 rounded-2xl p-6 text-left">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0 text-amber-400 mt-0.5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Funcionalidades en Preparación</h3>
+                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                            Las funciones operativas de caja (cobro, emisión de comprobantes, apertura/cierre de turno y ventas) serán integradas a partir de la especificación de casos de uso del <strong>Documento 0</strong>.
+                        </p>
+                        
+                        <div class="mt-4 flex flex-wrap gap-2 text-[11px]">
+                            <span class="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">🔒 Sin acceso al Dashboard</span>
+                            <span class="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">📋 Alcance POS delimitado</span>
+                            <span class="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">🏷️ KidZania Santiago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nota de privacidad y política de turnos -->
+            <p class="text-xs text-slate-500 mt-6">
+                Recuerda cerrar tu turno al retirarte del puesto para proteger las transacciones de tu cuenta.
+            </p>
+        </div>
+    </main>
+
+    <!-- Footer Kiosco -->
+    <footer class="bg-slate-950 border-t border-slate-900 px-6 py-3 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
+        <div>KidZania Santiago · Sistema de Gestión Operativa · Grupo 19</div>
+        <div class="font-mono text-slate-600 mt-1 sm:mt-0">Terminal v1.0.0 (Kiosco)</div>
+    </footer>
+
+    <script src="../js/app-common.js"></script>
+    <script>
+        // Iniciales
+        function getInitials(name) {
+            const parts = (name || '').trim().split(' ');
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+            return (parts[0] ? parts[0].slice(0, 2) : 'KZ').toUpperCase();
+        }
+
+        // Cargar datos de la sesión activa
+        const user = localStorage.getItem('usuario') || 'Cajero Operador';
+        const role = localStorage.getItem('rol_nombre') || 'Punto de Venta';
+        const rolId = localStorage.getItem('rol');
+
+        document.getElementById('userName').textContent = user;
+        document.getElementById('welcomeName').textContent = user;
+        document.getElementById('userRole').textContent = role === 'admin' ? 'Administrador' : 'Punto de Venta';
+        document.getElementById('userAvatar').textContent = getInitials(user);
+
+        // Si es admin, mostrar enlace de retorno al dashboard
+        if (rolId === '1' || role === 'admin') {
+            document.getElementById('adminBadgeContainer').classList.remove('hidden');
+        }
+
+        // Reloj y Fecha Kiosco
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('posClock').textContent = now.toLocaleTimeString('es-CL', { hour12: false });
+            document.getElementById('posDate').textContent = now.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Confirmar y cerrar turno
+        function confirmarCierre() {
+            if (confirm(`¿Deseas cerrar la caja y salir del turno activo de ${user}?`)) {
+                cerrarSesion('v_pos_login.html');
+            }
+        }
+    </script>
+</body>
+</html>

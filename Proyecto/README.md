@@ -57,7 +57,18 @@ npm start
 ```
 Abrir en el navegador: [http://localhost:8080/v_login.html](http://localhost:8080/v_login.html)
 
-### 4. Credenciales de Administrador Inicial
+### 4. Accesos y Credenciales Iniciales
+
+#### A. Acceso Administrativo (Dashboard)
+- **Ruta:** [http://localhost:8080/v_login.html](http://localhost:8080/v_login.html)
 - **Correo:** `carlos@kidzania.cl`
 - **Contraseña:** `1234`
-- **Rol:** `admin`
+- **Rol:** `admin` (acceso completo a configuración, métricas y dashboard de gestión)
+
+#### B. Terminal Táctil POS (Cajeros / Colaboradores)
+- **Ruta:** [http://localhost:8080/v_pos_login.html](http://localhost:8080/v_pos_login.html)
+- **Mecanismo:** Selector táctil de colaboradores registrados en pantalla + ingreso de PIN de 4 dígitos mediante numpad en pantalla o teclado físico.
+- **PIN por defecto colaboradores:** `1234`
+- **Destino tras autenticación:** Terminal Kiosco POS ([`v_pos.html`](./frontend/views/v_pos.html)).
+- **Seguridad y Control de Roles:** Los cajeros/operadores tienen acceso restringido únicamente a la vista de caja y no pueden ingresar al dashboard administrativo. Las funciones operativas de caja se poblarán una vez definidos los casos de uso en el **Documento 0**.
+

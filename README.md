@@ -68,8 +68,10 @@ Para ejecutar la aplicación localmente:
    npm install
    npm start
    ```
-   Abrir en el navegador: [http://localhost:8080/v_login.html](http://localhost:8080/v_login.html)
-   - **Administrador:** `carlos@kidzania.cl` / `1234`
+   Abrir en el navegador:
+   - **Administración (Dashboard):** [http://localhost:8080/v_login.html](http://localhost:8080/v_login.html) (`carlos@kidzania.cl` / `1234`)
+   - **Terminal Táctil POS (Cajeros):** [http://localhost:8080/v_pos_login.html](http://localhost:8080/v_pos_login.html) (Selección táctil + PIN `1234`)
+
 
 ---
 
