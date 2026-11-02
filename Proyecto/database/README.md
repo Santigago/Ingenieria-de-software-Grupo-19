@@ -1,30 +1,34 @@
-# Scripts de Base de Datos - Demo Funcional (PostgreSQL)
+# Scripts de Base de Datos - KidZania Santiago (PostgreSQL)
 
-Scripts SQL necesarios para inicializar la base de datos de la demo funcional temporal importada del proyecto anterior.
+Scripts SQL estructurados para inicializar la base de datos relacional del sistema en PostgreSQL.
 
 ---
 
-## 📋 Orden de Ejecución en PostgreSQL
+## 📋 Pasos para Crear la Base de Datos
 
-Para inicializar la base de datos localmente:
-
+### 1. Crear la base de datos
+Desde la terminal con el usuario `postgres`:
 ```bash
-# 1. Crear base de datos
-createdb -U postgres brewflow_db
+createdb -U postgres kidzania_db
+```
+*(O desde `psql`: `CREATE DATABASE kidzania_db;`)*
 
-# 2. Ejecutar scripts en orden
-psql -U postgres -d brewflow_db -f "BrewFlow - Tipos de ENUM.sql"
-psql -U postgres -d brewflow_db -f "BrewFlow - Creacion de Tablas.sql"
-psql -U postgres -d brewflow_db -f "BrewFlow - Insercion de Datos.sql"
-psql -U postgres -d brewflow_db -f "BrewFlow - Ajuste de identidad.sql"
+### 2. Ejecutar los scripts en orden
+```bash
+psql -U postgres -d kidzania_db -f 01_tipos_enum.sql
+psql -U postgres -d kidzania_db -f 02_creacion_tablas.sql
+psql -U postgres -d kidzania_db -f 03_insercion_datos.sql
+psql -U postgres -d kidzania_db -f 04_ajuste_identidad.sql
 ```
 
 ---
 
-## 🗃️ Archivos Incluidos
+## 🗃️ Detalle de Scripts
 
-- `BrewFlow - Tipos de ENUM.sql`: Tipos enumerados de estados y roles.
-- `BrewFlow - Creacion de Tablas.sql`: Esquema DDL con llaves foráneas y checks.
-- `BrewFlow - Insercion de Datos.sql`: Datos semilla iniciales (usuarios, productos, lotes).
-- `BrewFlow - Ajuste de identidad.sql`: Configuración de secuencias numéricas.
-- `BrewFlow - Limpieza de Tablas.sql`: Script de truncado para reinicio rápido de pruebas.
+| Archivo | Descripción |
+| :--- | :--- |
+| `01_tipos_enum.sql` | Tipos enumerados de PostgreSQL (estados de cuenta, roles, unidades, estados operativos). |
+| `02_creacion_tablas.sql` | Definición DDL de tablas relacionales con llaves primarias, foráneas y restricciones CHECK. |
+| `03_insercion_datos.sql` | Carga inicial de datos de prueba (usuarios institucionales `@kidzania.cl`, roles, proveedores, insumos). |
+| `04_ajuste_identidad.sql` | Ajuste de secuencias numéricas automáticas (`IDENTITY`). |
+| `05_limpieza_tablas.sql` | Script auxiliar para truncar tablas y reiniciar pruebas desde cero. |

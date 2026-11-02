@@ -17,7 +17,7 @@ CREATE TABLE public.usuario (
     usuario_estado_cuenta public.usuario_estado_enum NOT NULL DEFAULT 'activo',
     usuario_contrasena varchar(255) NOT NULL,
     rol_id integer NOT NULL REFERENCES public.rol(rol_id),
-    CONSTRAINT usuario_correo_dominio_chk CHECK (lower(usuario_correo) LIKE '%@brewflow.cl')
+    CONSTRAINT usuario_correo_dominio_chk CHECK (lower(usuario_correo) LIKE '%@kidzania.cl')
 );
 
 -- =============================================================

@@ -9,7 +9,7 @@ const verificarToken = (req, res, next) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'brewflow_dev_secret');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'grupo19_jwt_secret_dev_key');
         req.user = decoded;
         next();
     } catch (error) {

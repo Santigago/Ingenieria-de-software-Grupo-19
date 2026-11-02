@@ -12,8 +12,8 @@ const login = async (req, res) => {
     try {
         const correo = usuario_correo.trim().toLowerCase();
 
-        if (!correo.endsWith('@brewflow.cl')) {
-            return res.status(400).json({ message: 'Acceso denegado: utilice un correo perteneciente al dominio oficial @brewflow.cl' });
+        if (!correo.endsWith('@kidzania.cl')) {
+            return res.status(400).json({ message: 'Acceso denegado: utilice un correo perteneciente al dominio oficial @kidzania.cl' });
         }
 
         const { rows } = await db.query(`
@@ -56,8 +56,8 @@ const login = async (req, res) => {
                 rol_id: user.rol_id,
                 rol_nombre: user.rol_nombre
             },
-            process.env.JWT_SECRET || 'brewflow_dev_secret',
-            { expiresIn: process.env.JWT_EXPIRES_IN || '2h' }
+            process.env.JWT_SECRET || 'grupo19_jwt_secret_dev_key',
+            { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
         );
 
         return res.json({

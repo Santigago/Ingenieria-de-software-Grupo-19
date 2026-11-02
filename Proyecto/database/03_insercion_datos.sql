@@ -23,11 +23,11 @@ INSERT INTO public.usuario (
     usuario_contrasena,
     rol_id
 ) VALUES
-    (1, '12345678-9', 'Gonzalez', 'Lopez', 'Carlos', 'carlos@brewflow.cl', 'activo', '1234', 1),
-    (2, '98765432-1', 'Perez', 'Soto', 'Ana', 'ana@brewflow.cl', 'activo', '1234', 2),
-    (3, '11111111-1', 'Ramirez', 'Diaz', 'Pedro', 'pedro@brewflow.cl', 'activo', '1234', 4),
-    (4, '22222222-2', 'Morales', 'Rojas', 'Carla', 'carla@brewflow.cl', 'activo', '1234', 3),
-    (5, '33333333-3', 'Fernandez', 'Silva', 'Luis', 'luis@brewflow.cl', 'activo', '1234', 5);
+    (1, '12345678-9', 'Gonzalez', 'Lopez', 'Carlos', 'carlos@kidzania.cl', 'activo', '1234', 1),
+    (2, '98765432-1', 'Perez', 'Soto', 'Ana', 'ana@kidzania.cl', 'activo', '1234', 2),
+    (3, '11111111-1', 'Ramirez', 'Diaz', 'Pedro', 'pedro@kidzania.cl', 'activo', '1234', 4),
+    (4, '22222222-2', 'Morales', 'Rojas', 'Carla', 'carla@kidzania.cl', 'activo', '1234', 3),
+    (5, '33333333-3', 'Fernandez', 'Silva', 'Luis', 'luis@kidzania.cl', 'activo', '1234', 5);
 
 INSERT INTO public.unidad_medida_personalizada (
     unidad_medida_id,

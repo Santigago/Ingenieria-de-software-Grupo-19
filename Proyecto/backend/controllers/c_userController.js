@@ -8,8 +8,8 @@ const crearUsuario = async (req, res) => {
         return res.status(400).json({ message: 'Debe completar RUN, nombres, apellido paterno, correo, contraseña y rol' });
     }
 
-    if (!String(correo).toLowerCase().endsWith('@brewflow.cl')) {
-        return res.status(400).json({ message: 'El correo debe pertenecer al dominio oficial @brewflow.cl' });
+    if (!String(correo).toLowerCase().endsWith('@kidzania.cl')) {
+        return res.status(400).json({ message: 'El correo debe pertenecer al dominio oficial @kidzania.cl' });
     }
 
     if (!['activo', 'inactivo'].includes(estado)) {

@@ -1,9 +1,7 @@
-const API_URL = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-    ? ''
-    : 'https://brewflow-api-666030731246.us-central1.run.app';
-const token = localStorage.getItem('brewflow_token');
-const rolNombre = localStorage.getItem('brewflow_rol_nombre') || '';
-const usuarioNombre = localStorage.getItem('brewflow_usuario') || 'Usuario';
+const API_URL = '';
+const token = localStorage.getItem('token');
+const rolNombre = localStorage.getItem('rol_nombre') || '';
+const usuarioNombre = localStorage.getItem('usuario') || 'Usuario';
 
 if (!token && !location.pathname.endsWith('/v_login.html')) {
     window.location.href = 'v_login.html';
@@ -13,10 +11,10 @@ const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 const jsonHeaders = token ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } : { 'Content-Type': 'application/json' };
 
 function cerrarSesion() {
-    localStorage.removeItem('brewflow_token');
-    localStorage.removeItem('brewflow_rol');
-    localStorage.removeItem('brewflow_rol_nombre');
-    localStorage.removeItem('brewflow_usuario');
+    localStorage.removeItem('token');
+    localStorage.removeItem('rol');
+    localStorage.removeItem('rol_nombre');
+    localStorage.removeItem('usuario');
     window.location.href = 'v_login.html';
 }
 
@@ -64,8 +62,8 @@ async function api(url, options = {}) {
 function navHtml(titulo) {
     return `
     <aside class="w-72 min-h-screen bg-gray-950 border-r border-gray-800 p-5 fixed left-0 top-0 hidden lg:block">
-        <h1 class="text-2xl font-bold text-amber-500">BrewFlow</h1>
-        <p class="text-xs text-gray-400 mt-1">Incremento 1 · UR 1.1 a UR 4.3</p>
+        <h1 class="text-2xl font-bold text-amber-500">KidZania</h1>
+        <p class="text-xs text-gray-400 mt-1">Sistema de Gestión · Grupo 19</p>
         <div class="mt-5 p-3 bg-gray-900 rounded border border-gray-800 text-sm text-gray-300">
             <div class="font-semibold text-white">${usuarioNombre}</div>
             <div class="uppercase text-xs text-amber-400 mt-1">${rolNombre || 'rol no informado'}</div>
@@ -76,7 +74,7 @@ function navHtml(titulo) {
             ${link('v_unidades.html','Unidades de medida', titulo)}
             ${link('v_proveedores.html','Proveedores', titulo)}
             ${link('v_ubicaciones.html','Ubicaciones bodega', titulo)}
-            ${link('v_productos.html','Productos perecibles', titulo)}
+            ${link('v_productos.html','Productos', titulo)}
             ${link('v_lotes.html','Lotes', titulo)}
             ${link('v_ingresos.html','Ingresos de stock', titulo)}
             ${link('v_salidas.html','Salidas de stock', titulo)}
@@ -86,7 +84,7 @@ function navHtml(titulo) {
         <button onclick="cerrarSesion()" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white rounded px-3 py-2">Cerrar sesión</button>
     </aside>
     <header class="lg:hidden bg-gray-950 border-b border-gray-800 p-4 flex justify-between items-center sticky top-0 z-10">
-        <span class="font-bold text-amber-500">BrewFlow</span>
+        <span class="font-bold text-amber-500">KidZania</span>
         <button onclick="cerrarSesion()" class="text-sm bg-red-600 text-white rounded px-3 py-1">Salir</button>
     </header>`;
 }

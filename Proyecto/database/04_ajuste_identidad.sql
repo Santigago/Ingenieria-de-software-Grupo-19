@@ -22,6 +22,6 @@ COMMIT;
 
 -- =============================================================
 -- Credenciales de prueba
---   Correo:     carlos@brewflow.cl
+--   Correo:     carlos@kidzania.cl
 --   Contraseña: 1234
 -- =============================================================
