@@ -14,7 +14,7 @@
     </div>
     <section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6"><h3 class="font-semibold text-lg mb-4">Registrar ubicación física</h3><form id="form" class="grid gap-4 md:grid-cols-5"><input name="codigo" required placeholder="Código: Z-A" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="nombre" required placeholder="Nombre" class="bg-gray-700 rounded p-2 border border-gray-600"><select name="tipo" required class="bg-gray-700 rounded p-2 border border-gray-600"><option value="zona">Zona</option><option value="estante">Estante</option><option value="nivel">Nivel</option><option value="posicion">Posición</option></select><select name="padre_id" id="padre" class="bg-gray-700 rounded p-2 border border-gray-600"><option value="">Sin padre</option></select><button class="bg-amber-500 text-gray-950 font-semibold rounded p-2">Registrar</button></form></section><section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-900"><tr><th class="p-3 text-left">Código</th><th class="p-3 text-left">Nombre</th><th class="p-3 text-left">Tipo</th><th class="p-3 text-left">Padre</th><th class="p-3 text-left">Estado</th></tr></thead><tbody id="tabla"></tbody></table></div></section>
   </main>
-  <script src="app-common.js"></script>
+  <script src="../js/app-common.js"></script>
   <script>
     montarLayout('Ubicaciones bodega', 'UR 2.3: estructura jerárquica de zonas, estantes y niveles.');
     const formSection = document.getElementById('formSection');

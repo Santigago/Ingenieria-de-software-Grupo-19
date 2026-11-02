@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../config/db');
 
 const obtenerLotes = async (req, res) => {
     const productoId = req.query.producto_id;

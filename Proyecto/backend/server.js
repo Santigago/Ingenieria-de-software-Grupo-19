@@ -7,11 +7,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Servir frontend estático
+// Directorios de frontend
 const frontendDir = path.join(__dirname, '../frontend');
+const viewsDir = path.join(frontendDir, 'views');
+const jsDir = path.join(frontendDir, 'js');
+
+// Servir vistas estáticas (accesibles en /views/... y en la raíz /...)
+app.use(express.static(viewsDir));
+app.use('/views', express.static(viewsDir));
+
+// Servir scripts estáticos (accesibles en /js/... y en la raíz)
+app.use('/js', express.static(jsDir));
+app.use(express.static(jsDir));
 app.use(express.static(frontendDir));
-app.use('/views', express.static(path.join(frontendDir, 'views')));
-app.use('/js', express.static(path.join(frontendDir, 'js')));
 
 // Redirigir la raíz al login
 app.get('/', (req, res) => {

@@ -43,7 +43,6 @@ docker run -d --name kidzania-postgres \
   -e POSTGRES_DB=kidzania_db \
   -p 5432:5432 postgres:16
 ```
-```
 
 ### 2. Configurar Variables de Entorno
 Copia el archivo `.env.example` como `.env` y ajusta según tu entorno:

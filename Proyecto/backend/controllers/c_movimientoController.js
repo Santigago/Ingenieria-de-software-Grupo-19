@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../config/db');
 const { registrarLote } = require('./c_loteController');
 
 const registrarIngreso = async (req, res) => {
