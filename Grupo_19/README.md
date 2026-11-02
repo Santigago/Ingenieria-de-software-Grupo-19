@@ -1,0 +1,52 @@
+# Módulo de Código - Grupo 19
+
+Este directorio contiene todo el código fuente del proyecto desarrollado por el **Grupo 19** para la asignatura de Ingeniería de Software (IDS).
+
+---
+
+## 🏗️ Arquitectura de Código
+
+La estructura modular separa limpiamente la lógica de backend, frontend y scripts de base de datos:
+
+```text
+Grupo_19/
+├── backend/
+│   ├── config/              # Conexión a base de datos y variables de entorno
+│   ├── controllers/         # Controladores y lógica de negocio
+│   ├── middleware/          # Autenticación, JWT y control de roles (RBAC)
+│   └── routes/              # Definición de rutas y endpoints de la API REST
+│
+├── frontend/
+│   ├── assets/              # Recursos multimedia (imágenes, iconos, logos)
+│   ├── css/                 # Hojas de estilo y diseño
+│   ├── js/                  # Lógica del lado del cliente y consumo de APIs
+│   └── views/               # Plantillas y vistas HTML de la aplicación
+│
+├── database/                # Scripts SQL y migraciones
+│   └── README.md            # Guía de ejecución de scripts
+│
+├── .env.example             # Plantilla de variables de entorno
+├── .gitignore               # Exclusión de dependencias locales y archivos sensibles
+├── Dockerfile               # Configuración para despliegue en contenedor
+└── package.json             # Manifiesto de dependencias Node.js
+```
+
+---
+
+## 🚀 Puesta en Marcha Local
+
+### 1. Variables de Entorno
+Copia el archivo `.env.example` como `.env` y configura tus credenciales locales:
+```bash
+cp .env.example .env
+```
+
+### 2. Instalación de Dependencias
+```bash
+npm install
+```
+
+### 3. Ejecución en Modo Desarrollo
+```bash
+npm start
+```
