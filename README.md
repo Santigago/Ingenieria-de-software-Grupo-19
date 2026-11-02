@@ -52,21 +52,34 @@ Módulo ejecutable del software:
 
 Para ejecutar la aplicación localmente:
 
-1. **Ingresar a la carpeta del proyecto:**
+1. **Iniciar PostgreSQL con Docker:**
    ```bash
-   cd Proyecto
+   docker run -d --name kidzania-postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=kidzania_db -p 5432:5432 postgres:16
    ```
 
-2. **Configurar variables de entorno:**
+2. **Ingresar a la carpeta del proyecto y configurar `.env`:**
    ```bash
+   cd Proyecto
    cp .env.example .env
    ```
 
-3. **Instalar dependencias y ejecutar:**
+3. **Cargar los esquemas en la base de datos:**
+   ```bash
+   cd database
+   PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 01_tipos_enum.sql
+   PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 02_creacion_tablas.sql
+   PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 03_insercion_datos.sql
+   PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 04_ajuste_identidad.sql
+   cd ..
+   ```
+
+4. **Instalar dependencias y ejecutar:**
    ```bash
    npm install
    npm start
    ```
+   Abrir en el navegador: [http://localhost:8080/v_login.html](http://localhost:8080/v_login.html)
+   - **Administrador:** `carlos@kidzania.cl` / `1234`
 
 ---
 

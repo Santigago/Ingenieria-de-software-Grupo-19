@@ -7,7 +7,7 @@ SET client_min_messages = warning;
 SET search_path = public;
 
 -- =============================================================
--- 1. Limpieza de objetos existentes
+-- Limpieza de objetos existentes
 -- =============================================================
 
 DROP TABLE IF EXISTS public.arqueo_caja CASCADE;
@@ -36,3 +36,5 @@ DROP TYPE IF EXISTS public.pedido_estado_enum CASCADE;
 DROP TYPE IF EXISTS public.rol_nombre_enum CASCADE;
 DROP TYPE IF EXISTS public.unidad_medida_enum CASCADE;
 DROP TYPE IF EXISTS public.usuario_estado_enum CASCADE;
+
+COMMIT;

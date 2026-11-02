@@ -35,18 +35,39 @@ Proyecto/
 
 ## 🚀 Puesta en Marcha Local
 
-### 1. Variables de Entorno
-Copia el archivo `.env.example` como `.env` y configura tus credenciales locales:
+### 1. Iniciar Base de Datos con Docker
+```bash
+docker run -d --name kidzania-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=kidzania_db \
+  -p 5432:5432 postgres:16
+```
+
+Ejecutar los scripts SQL:
+```bash
+cd database
+PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 01_tipos_enum.sql
+PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 02_creacion_tablas.sql
+PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 03_insercion_datos.sql
+PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 04_ajuste_identidad.sql
+cd ..
+```
+
+### 2. Configurar Variables de Entorno
+Copia el archivo `.env.example` como `.env` y ajusta según tu entorno:
 ```bash
 cp .env.example .env
 ```
 
-### 2. Instalación de Dependencias
+### 3. Instalación de Dependencias y Ejecución
 ```bash
 npm install
-```
-
-### 3. Ejecución en Modo Desarrollo
-```bash
 npm start
 ```
+Abrir en el navegador: [http://localhost:8080/v_login.html](http://localhost:8080/v_login.html)
+
+### 4. Credenciales de Administrador Inicial
+- **Correo:** `carlos@kidzania.cl`
+- **Contraseña:** `1234`
+- **Rol:** `admin`

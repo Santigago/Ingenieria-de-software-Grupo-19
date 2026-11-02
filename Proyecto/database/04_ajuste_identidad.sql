@@ -1,5 +1,5 @@
 -- =============================================================
--- 8. Ajuste de secuencias identity después de insertar datos explícitos
+-- Ajuste de secuencias IDENTITY después de insertar datos iniciales
 -- =============================================================
 
 SELECT setval(pg_get_serial_sequence('public.rol', 'rol_id'), COALESCE((SELECT MAX(rol_id) FROM public.rol), 1), true);
@@ -18,10 +18,6 @@ SELECT setval(pg_get_serial_sequence('public.pedido', 'pedido_id'), COALESCE((SE
 SELECT setval(pg_get_serial_sequence('public.registro_pago', 'registro_pago_id'), COALESCE((SELECT MAX(registro_pago_id) FROM public.registro_pago), 1), true);
 SELECT setval(pg_get_serial_sequence('public.arqueo_caja', 'arqueo_caja_id'), COALESCE((SELECT MAX(arqueo_caja_id) FROM public.arqueo_caja), 1), true);
 
-COMMIT;
-
--- =============================================================
--- Credenciales de prueba
+-- Credenciales del Administrador:
 --   Correo:     carlos@kidzania.cl
 --   Contraseña: 1234
--- =============================================================
