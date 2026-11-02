@@ -10,13 +10,14 @@ El repositorio mantiene una estricta separación de responsabilidades en su raí
 
 ```text
 .
-├── Documentos/               # Toda la documentación, diagramas e incrementos académicos
-│   ├── Documento_0/          # Definición, alcance, DCU, BPMN y gestión
-│   ├── Incremento_1/         # Modelos E-R, físico, diagramas de arquitectura y evidencias
-│   ├── Incremento_2/         # Documentación de funcionalidades avanzadas
-│   └── Recursos/             # Plantillas, rúbricas y pautas de trabajo
+├── Documentos/               # Todos los archivos y entregables del proyecto de software
+│   ├── Documento_0/      
+│   ├── Incremento_1/      
+│   ├── Incremento_2/
+│   ├── ...
+│   └── Recursos/             
 │
-├── Grupo_19/                 # Todos los archivos de código del proyecto de software
+├── Proyecto/                 # Todos los archivos de código del proyecto de software
 │   ├── backend/              # Lógica de servidor (Node.js, Express, controladores, rutas)
 │   ├── frontend/             # Interfaz web (vistas HTML, estilos CSS, scripts JS, assets)
 │   ├── database/             # Scripts SQL y esquemas relacionales
@@ -33,7 +34,7 @@ El repositorio mantiene una estricta separación de responsabilidades en su raí
 ## 📂 Directorios Principales
 
 ### 1. [`Documentos/`](./Documentos/)
-Contiene los hitos documentales y diagramas del proyecto:
+Documentos y diagramas del proyecto:
 - **Documento 0**: Diagramas de casos de uso (DCU), modelos BPMN de procesos operativos, carta de aceptación y análisis de gestión.
 - **Incremento 1**: Modelo conceptual/lógico (MERE), esquema físico de base de datos, arquitectura de componentes, árbol de navegación y videos demostrativos.
 - **Incremento 2**: Refinamiento de modelos, casos de prueba y entregables finales.

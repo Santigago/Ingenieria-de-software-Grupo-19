@@ -1,12 +1,12 @@
 # Módulo de Código - Grupo 19
 
-Este directorio contiene todo el código fuente del proyecto desarrollado por el **Grupo 19** para la asignatura de Ingeniería de Software (IDS).
+Este directorio contiene todo el código fuente del proyecto.
 
 ---
 
 ## 🏗️ Arquitectura de Código
 
-La estructura modular separa limpiamente la lógica de backend, frontend y scripts de base de datos:
+Estructura separada limpiamente en frontend, backend, y base de datos:
 
 ```text
 Grupo_19/
