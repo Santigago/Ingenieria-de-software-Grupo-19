@@ -40,7 +40,7 @@ Documentos y diagramas del proyecto:
 - **Incremento 2**: Refinamiento de modelos, casos de prueba y entregables finales.
 - **Recursos**: Plantillas y directrices metodológicas.
 
-### 2. [`Grupo_19/`](./Grupo_19/)
+### 2. [`Proyecto/`](./Proyecto/)
 Módulo ejecutable del software:
 - **`backend/`**: API REST construida sobre Express, con autenticación, middlewares de seguridad y controladores modulares.
 - **`frontend/`**: Vistas web y cliente estático estructurado por módulos.
@@ -54,7 +54,7 @@ Para ejecutar la aplicación localmente:
 
 1. **Ingresar a la carpeta del proyecto:**
    ```bash
-   cd Grupo_19
+   cd Proyecto
    ```
 
 2. **Configurar variables de entorno:**

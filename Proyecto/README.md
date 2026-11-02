@@ -9,7 +9,7 @@ Este directorio contiene todo el código fuente del proyecto.
 Estructura separada limpiamente en frontend, backend, y base de datos:
 
 ```text
-Grupo_19/
+Proyecto/
 ├── backend/
 │   ├── config/              # Conexión a base de datos y variables de entorno
 │   ├── controllers/         # Controladores y lógica de negocio
