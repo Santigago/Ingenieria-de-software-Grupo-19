@@ -1,13 +1,12 @@
-# Scripts de Base de Datos - KidZania Santiago (PostgreSQL)
+# Base de Datos - Grupo 19 (PostgreSQL)
 
-Scripts SQL estructurados para inicializar la base de datos relacional del sistema en PostgreSQL.
+Directorio reservado para los esquemas SQL definitivos (DDL, DML y migraciones) del proyecto para KidZania Santiago, una vez definidos en el Documento 0 e Incremento 1.
 
 ---
 
-## 📋 Pasos para Iniciar la Base de Datos con Docker
+## 🐳 Base de Datos Local con Docker
 
-### 1. Iniciar el contenedor de PostgreSQL
-Ejecuta el siguiente comando para levantar PostgreSQL en Docker con la base de datos `kidzania_db`:
+Para pruebas locales de la aplicación, PostgreSQL se ejecuta en Docker:
 
 ```bash
 docker run -d --name kidzania-postgres \
@@ -18,31 +17,10 @@ docker run -d --name kidzania-postgres \
 ```
 
 > [!TIP]
-> Si el contenedor ya existe y está detenido, puedes iniciarlo con: `docker start kidzania-postgres`
-
-### 2. Ejecutar los scripts en orden
-Desde el directorio `Proyecto/database/`:
-
-```bash
-cd Proyecto/database
-
-PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 01_tipos_enum.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 02_creacion_tablas.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 03_insercion_datos.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 04_ajuste_identidad.sql
-```
-
----
-
-## 🗃️ Detalle de Scripts
-
-| Archivo | Descripción |
-| :--- | :--- |
-| `01_tipos_enum.sql` | Tipos enumerados de PostgreSQL (estados de cuenta, roles, unidades, estados operativos). |
-| `02_creacion_tablas.sql` | Definición DDL de tablas relacionales con llaves primarias, foráneas y restricciones CHECK. |
-| `03_insercion_datos.sql` | Carga inicial de datos: define roles y crea la cuenta **administrador inicial**. |
-| `04_ajuste_identidad.sql` | Ajuste de secuencias numéricas automáticas (`IDENTITY`). |
-| `05_limpieza_tablas.sql` | Script auxiliar para truncar tablas y reiniciar pruebas desde cero. |
+> Si el contenedor ya fue creado y está detenido, puedes reactivarlo con:
+> ```bash
+> docker start kidzania-postgres
+> ```
 
 ---
 

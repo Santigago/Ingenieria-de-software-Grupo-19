@@ -43,15 +43,6 @@ docker run -d --name kidzania-postgres \
   -e POSTGRES_DB=kidzania_db \
   -p 5432:5432 postgres:16
 ```
-
-Ejecutar los scripts SQL:
-```bash
-cd database
-PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 01_tipos_enum.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 02_creacion_tablas.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 03_insercion_datos.sql
-PGPASSWORD=postgres psql -h localhost -U postgres -d kidzania_db -f 04_ajuste_identidad.sql
-cd ..
 ```
 
 ### 2. Configurar Variables de Entorno
