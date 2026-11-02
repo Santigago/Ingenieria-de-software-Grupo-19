@@ -68,7 +68,7 @@ Abrir en el navegador: [http://localhost:8080/v_login.html](http://localhost:808
 #### B. Terminal Táctil POS (Cajeros / Colaboradores)
 - **Ruta:** [http://localhost:8080/v_pos_login.html](http://localhost:8080/v_pos_login.html)
 - **Mecanismo:** Selector táctil de colaboradores registrados en pantalla + ingreso de PIN de 4 dígitos mediante numpad en pantalla o teclado físico.
-- **PIN por defecto colaboradores:** `1234`
+- **Cajero de Muestra:** `Sofía Rojas` (PIN: `1234`)
 - **Destino tras autenticación:** Terminal Kiosco POS ([`v_pos.html`](./frontend/views/v_pos.html)).
 - **Seguridad y Control de Roles:** Los cajeros/operadores tienen acceso restringido únicamente a la vista de caja y no pueden ingresar al dashboard administrativo. Las funciones operativas de caja se poblarán una vez definidos los casos de uso en el **Documento 0**.
 
