@@ -35,6 +35,8 @@ app.use('/api/auth', require('./routes/c_auth'));
 app.use('/api/dashboard', require('./routes/c_dashboard'));
 app.use('/api/admin/usuarios', require('./routes/c_usuarios'));
 app.use('/api/mesas', require('./routes/c_mesas'));
+app.use('/api/puestos', require('./routes/c_puestos'));
+app.use('/api/cajas', require('./routes/c_cajas'));
 app.use('/api/productos', require('./routes/c_productos'));
 app.use('/api/lotes', require('./routes/c_lotes'));
 app.use('/api/proveedores', require('./routes/c_proveedores'));

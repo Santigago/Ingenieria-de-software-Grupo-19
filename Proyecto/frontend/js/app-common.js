@@ -33,7 +33,7 @@ const CONFIG_ROLES = {
             'v_salon.html',
             'v_pos.html'
         ],
-        modulos_escritura: ['usuarios', 'unidades', 'proveedores', 'ubicaciones', 'productos', 'lotes', 'movimientos', 'mermas', 'mesas']
+        modulos_escritura: ['usuarios', 'unidades', 'proveedores', 'ubicaciones', 'productos', 'lotes', 'movimientos', 'mermas', 'mesas', 'puestos', 'cajas']
     },
     operador_inventario: {
         etiqueta: 'Operador de Inventario',
@@ -61,7 +61,8 @@ const CONFIG_ROLES = {
             'v_productos.html',
             'v_lotes.html',
             'v_mermas.html',
-            'v_movimientos.html'
+            'v_movimientos.html',
+            'v_salon.html'
         ],
         modulos_escritura: []
     },
@@ -79,7 +80,7 @@ const CONFIG_ROLES = {
         pagina_inicio: 'v_pos.html',
         solo_lectura: false,
         vistas: ['v_pos.html'],
-        modulos_escritura: ['pos', 'mesas']
+        modulos_escritura: ['pos', 'mesas', 'cajas']
     },
     cocina: {
         etiqueta: 'Cocina POS',
@@ -224,7 +225,7 @@ const ITEMS_MENU = [
     { href: 'v_salidas.html', texto: 'Salidas de stock' },
     { href: 'v_mermas.html', texto: 'Mermas y desperdicios' },
     { href: 'v_movimientos.html', texto: 'Historial movimientos' },
-    { href: 'v_salon.html', texto: 'Salón / Mesas' },
+    { href: 'v_salon.html', texto: 'Puestos de venta y Salón' },
     { href: 'v_pos.html', texto: 'Vista Cajero (POS)' }
 ];
 

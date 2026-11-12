@@ -41,6 +41,8 @@ const MATRIZ_PERMISOS = {
             movimientos: ['ver', 'crear', 'autorizar_excepcion'],
             mermas: ['ver', 'crear'],
             mesas: ['ver', 'editar'],
+            puestos: ['ver', 'crear', 'editar', 'inactivar'],
+            cajas: ['ver', 'abrir', 'cerrar'],
             pos: ['ver', 'operar']
         }
     },
@@ -69,6 +71,8 @@ const MATRIZ_PERMISOS = {
             movimientos: ['ver', 'crear'],
             mermas: ['ver', 'crear'],
             mesas: [],
+            puestos: ['ver'],
+            cajas: [],
             pos: []
         }
     },
@@ -82,7 +86,8 @@ const MATRIZ_PERMISOS = {
             'v_productos.html',
             'v_lotes.html',
             'v_mermas.html',
-            'v_movimientos.html'
+            'v_movimientos.html',
+            'v_salon.html'
         ],
         modulos: {
             dashboard: [],
@@ -94,7 +99,9 @@ const MATRIZ_PERMISOS = {
             lotes: ['ver'],
             movimientos: ['ver'],
             mermas: ['ver'],
-            mesas: [],
+            mesas: ['ver'],
+            puestos: ['ver'],
+            cajas: ['ver'],
             pos: []
         }
     },
@@ -115,6 +122,8 @@ const MATRIZ_PERMISOS = {
             lotes: [],
             movimientos: [],
             mesas: [],
+            puestos: [],
+            cajas: [],
             pos: []
         }
     },
@@ -129,10 +138,12 @@ const MATRIZ_PERMISOS = {
             unidades: [],
             proveedores: [],
             ubicaciones: [],
-            productos: [],
+            productos: ['ver'],
             lotes: [],
-            movimientos: [],
+            movimientos: ['crear'],
             mesas: ['ver', 'editar'],
+            puestos: ['ver'],
+            cajas: ['ver', 'abrir', 'cerrar'],
             pos: ['ver', 'operar']
         }
     },
@@ -152,6 +163,8 @@ const MATRIZ_PERMISOS = {
             movimientos: ['ver', 'crear'],
             mermas: ['ver', 'crear'],
             mesas: ['ver'],
+            puestos: ['ver'],
+            cajas: ['ver'],
             pos: ['ver', 'operar']
         }
     },
@@ -161,7 +174,10 @@ const MATRIZ_PERMISOS = {
         pagina_inicio: 'v_pos.html',
         vistas_permitidas: ['v_pos.html'],
         modulos: {
+            productos: ['ver'],
             mesas: ['ver'],
+            puestos: ['ver'],
+            cajas: ['ver', 'abrir', 'cerrar'],
             pos: ['ver', 'operar']
         }
     },
@@ -171,7 +187,10 @@ const MATRIZ_PERMISOS = {
         pagina_inicio: 'v_pos.html',
         vistas_permitidas: ['v_pos.html'],
         modulos: {
+            productos: ['ver'],
             mesas: ['ver', 'editar'],
+            puestos: ['ver'],
+            cajas: ['ver', 'abrir', 'cerrar'],
             pos: ['ver', 'operar']
         }
     }

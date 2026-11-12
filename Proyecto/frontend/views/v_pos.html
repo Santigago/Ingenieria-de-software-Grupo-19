@@ -14,7 +14,7 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between select-none">
 
     <!-- Barra Superior Tipo Kiosco POS -->
-    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 sticky top-0 z-20">
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 sticky top-0 z-20">
         <!-- Logo y Terminal -->
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center font-bold text-white shadow-md shadow-rose-950/40">
@@ -23,9 +23,11 @@
             <div>
                 <div class="flex items-center gap-2">
                     <span class="font-extrabold text-white text-lg tracking-tight">KidZania <span class="text-rose-500">POS</span></span>
-                    <span class="text-[10px] font-mono uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded font-semibold">Caja Abierta</span>
+                    <span id="badgeEstadoCajaHeader" class="text-[10px] font-mono uppercase bg-amber-950/80 text-amber-300 border border-amber-800/80 px-2 py-0.5 rounded font-semibold">
+                        Verificando Caja...
+                    </span>
                 </div>
-                <p class="text-xs text-slate-400">Terminal #01 · Parque Araucano, Santiago</p>
+                <p id="subtituloPuestoHeader" class="text-xs text-slate-400">Seleccione un puesto de venta para abrir caja (CU 25)</p>
             </div>
         </div>
 
@@ -36,11 +38,13 @@
         </div>
 
         <!-- Cajero Activo y Controles -->
-        <div class="flex items-center gap-3">
-            <div id="adminBadgeContainer" class="hidden">
-                <a href="v_dashboard.html" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                    <span>Dashboard Admin</span>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <div id="adminBadgeContainer" class="hidden flex items-center gap-2">
+                <a href="v_salon.html" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold px-3 py-2 rounded-xl border border-slate-700 transition">
+                    Gestionar Puestos (CU 32)
+                </a>
+                <a href="v_dashboard.html" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-3 py-2 rounded-xl border border-slate-700 transition">
+                    Dashboard Admin
                 </a>
             </div>
 
@@ -55,107 +59,535 @@
                 </div>
             </div>
 
-            <!-- Acceso rápido a Login de Oficina -->
-            <button onclick="irALoginOficina()"
-                    class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-700 transition duration-150 flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
-                <span>Login Oficina</span>
+            <!-- Botón Cerrar Caja con Arqueo (CU 26) -->
+            <button id="btnAbrirModalArqueo" onclick="abrirModalCierreCaja()"
+                    class="hidden bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-bold px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-lg">
+                <span>Cerrar Caja / Arqueo (CU 26)</span>
             </button>
 
-            <!-- Botón Cerrar Turno / Salir -->
-            <button onclick="confirmarCierre()" 
-                    class="bg-rose-600/90 hover:bg-rose-600 active:scale-95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-rose-500/50 transition duration-150 flex items-center gap-1.5 shadow-lg shadow-rose-950/40">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                <span>Cerrar Turno</span>
+            <!-- Acceso rápido a Login de Oficina -->
+            <button onclick="irALoginOficina()"
+                    class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-700 transition">
+                Login Oficina
+            </button>
+
+            <!-- Botón Salir -->
+            <button onclick="salirDeSesionPos()"
+                    class="bg-rose-600/90 hover:bg-rose-600 active:scale-95 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-rose-500/50 transition">
+                Salir POS
             </button>
         </div>
     </header>
 
-    <!-- Contenedor Principal Kiosco Minimalista -->
-    <main class="flex-1 flex items-center justify-center p-6">
-        <div class="w-full max-w-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800 rounded-3xl p-8 sm:p-12 shadow-2xl text-center relative overflow-hidden backdrop-blur-xl">
-            
-            <!-- Acento decorativo sutil superior -->
-            <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-rose-600 via-amber-500 to-rose-600"></div>
+    <!-- Contenedor Principal -->
+    <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
+        <div id="mensajePos" class="hidden mb-4"></div>
 
-            <!-- Icono Central de Terminal -->
-            <div class="w-20 h-20 rounded-3xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-center mx-auto mb-6 shadow-inner text-amber-400">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-            </div>
-
-            <!-- Título y Sesión -->
-            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-700/50 text-emerald-300 mb-3">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Sesión de Cajero Activa
-            </span>
-
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                Terminal de Punto de Venta
-            </h2>
-            <p class="text-slate-400 text-sm mt-2 max-w-md mx-auto">
-                Bienvenido(a), <span id="welcomeName" class="text-amber-400 font-semibold">Colaborador</span>. La sesión en este punto de venta se encuentra abierta y autenticada.
-            </p>
-
-            <!-- Card de Funcionalidades Pendientes (Documento 0) -->
-            <div class="mt-8 bg-slate-950/80 border border-slate-800 rounded-2xl p-6 text-left">
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center flex-shrink-0 text-amber-400 mt-0.5">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    </div>
+        <!-- =============================================================== -->
+        <!-- VISTA 1: APERTURA DE CAJA EN PUESTO DE VENTA (CU 25 / CU 78)     -->
+        <!-- =============================================================== -->
+        <section id="vistaAperturaCaja" class="hidden space-y-6">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-800 pb-5">
                     <div>
-                        <h3 class="text-base font-bold text-white">Funcionalidades en Preparación</h3>
-                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">
-                            Las funciones operativas de caja (cobro, emisión de comprobantes, apertura/cierre de turno y ventas) serán integradas a partir de la especificación de casos de uso del <strong>Documento 0</strong>.
+                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-950/70 border border-amber-700/50 text-amber-300 mb-2">
+                            CU 25 (CU Original 78) · Paso Obligatorio Previo a la Venta (UR 8.7)
+                        </span>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Apertura de Caja en Puesto de Venta</h2>
+                        <p class="text-slate-400 text-sm mt-1">
+                            Seleccione el puesto de venta donde trabajará hoy y declare el <strong>fondo inicial en efectivo</strong> para habilitar el registro de ventas.
                         </p>
-                        
-                        <div class="mt-4 flex flex-wrap gap-2 text-[11px]">
-                            <span class="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">🔒 Sin acceso al Dashboard</span>
-                            <span class="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">📋 Alcance POS delimitado</span>
-                            <span class="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1 rounded-lg">🏷️ KidZania Santiago</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="filtroTipoPuestoPos" onchange="renderizarPuestosApertura()"
+                                class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+                            <option value="todos">Todos los puestos (7)</option>
+                            <option value="comida">Puestos de Comida (4)</option>
+                            <option value="merch">Puestos de Merchandising (3)</option>
+                        </select>
+                        <button onclick="cargarEstadoCaja()"
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-700">
+                            Actualizar Puestos
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                    <!-- Selección de Puesto de Venta (Paso 2 y 3 de CU 78) -->
+                    <div class="lg:col-span-2">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">
+                            1. Seleccione un Puesto de Venta Disponible
+                        </h3>
+                        <div id="gridPuestosApertura" class="grid gap-3.5 sm:grid-cols-2">
+                            <div class="col-span-full text-slate-400 text-sm p-6 text-center bg-slate-950 rounded-xl border border-slate-800">
+                                Cargando puestos de venta...
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Declaración de Fondo Inicial y Confirmación (Paso 5, 6 y 7 de CU 78) -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                        <form id="formAbrirCaja" onsubmit="confirmarAperturaCaja(event)" class="space-y-4">
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-amber-400">
+                                2. Declarar Fondo Inicial (CU 25)
+                            </h3>
+
+                            <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+                                <div class="text-xs text-slate-400">Puesto seleccionado:</div>
+                                <div id="lblPuestoSeleccionado" class="text-base font-bold text-white mt-0.5">
+                                    Ninguno seleccionado
+                                </div>
+                                <div id="lblTipoPuestoSeleccionado" class="text-xs text-amber-400 mt-0.5">
+                                    Haga clic en un puesto disponible de la lista
+                                </div>
+                                <input type="hidden" id="inputPuestoIdApertura" required>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                                    Fondo Inicial en Efectivo ($ CLP) *
+                                </label>
+                                <input id="inputFondoInicialApertura" type="number" min="0" step="1" value="50000" required
+                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-lg font-mono font-bold text-emerald-400 focus:border-amber-500 focus:outline-none">
+                                <div class="grid grid-cols-4 gap-1.5 mt-2">
+                                    <button type="button" onclick="fijarFondoRapido(0)" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg py-1 text-xs font-mono text-slate-300">$0</button>
+                                    <button type="button" onclick="fijarFondoRapido(20000)" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg py-1 text-xs font-mono text-slate-300">$20.000</button>
+                                    <button type="button" onclick="fijarFondoRapido(50000)" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg py-1 text-xs font-mono text-slate-300">$50.000</button>
+                                    <button type="button" onclick="fijarFondoRapido(100000)" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg py-1 text-xs font-mono text-slate-300">$100.000</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-300 mb-1">
+                                    Observación de Apertura (opcional)
+                                </label>
+                                <input id="inputObsApertura" type="text" placeholder="Ej: Fondo verificado en sencillo y billetes"
+                                       class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-amber-950/30 border border-amber-800/50 text-[11px] text-amber-200 leading-relaxed">
+                                🔒 <strong>Regla UR 8.7:</strong> No se permite registrar ventas sin una caja abierta, ni abrir más de una caja por cajero o por puesto simultáneamente.
+                            </div>
+
+                            <button type="submit"
+                                    class="w-full bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-extrabold py-3 px-4 rounded-xl text-sm shadow-lg transition">
+                                Confirmar Apertura e Iniciar Turno
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- Nota de privacidad y política de turnos -->
-            <p class="text-xs text-slate-500 mt-6">
-                Recuerda cerrar tu turno al retirarte del puesto para proteger las transacciones de tu cuenta.
-            </p>
-        </div>
+        <!-- =============================================================== -->
+        <!-- VISTA 2: PANTALLA DE VENTA DEL PUESTO CON CAJA ABIERTA          -->
+        <!-- =============================================================== -->
+        <section id="vistaCajaAbierta" class="hidden space-y-6">
+            <!-- Resumen en vivo del turno de caja abierta -->
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                    <div class="text-xs text-slate-400">Puesto y Caja Activa</div>
+                    <div id="kpiCajaPuestoNombre" class="text-lg font-extrabold text-white mt-1 truncate">-</div>
+                    <div id="kpiCajaIdTipo" class="text-xs text-amber-400 font-mono mt-0.5">Caja #-</div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                    <div class="text-xs text-slate-400">Fondo Inicial Declarado</div>
+                    <div id="kpiCajaFondoInicial" class="text-2xl font-mono font-bold text-slate-200 mt-1">$0</div>
+                    <div id="kpiCajaHoraApertura" class="text-[11px] text-slate-400 mt-0.5">Apertura: --:--</div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                    <div class="text-xs text-slate-400">Ventas del Turno</div>
+                    <div id="kpiCajaTotalVentas" class="text-2xl font-mono font-bold text-amber-400 mt-1">$0</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5"><span id="kpiCajaCantidadVentas">0</span> transacciones confirmadas</div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+                    <div class="text-xs text-slate-400">Efectivo Esperado en Caja</div>
+                    <div id="kpiCajaEfectivoEsperado" class="text-2xl font-mono font-bold text-emerald-400 mt-1">$0</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">Fondo + Ventas en efectivo ($<span id="kpiCajaVentasEfectivo">0</span>)</div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                    <div class="text-xs text-slate-400">Tarjetas / Transferencia</div>
+                    <div id="kpiCajaVentasNoEfectivo" class="text-xl font-mono font-bold text-blue-300 mt-1">$0</div>
+                    <button onclick="abrirModalCierreCaja()"
+                            class="mt-2 w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition">
+                        Cerrar Caja con Arqueo (CU 26)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel Operativo: Catálogo del Puesto + Carrito Multi-Ítem y Cobro (CU 21 y CU 23) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Catálogo compartido por el tipo de negocio del puesto (UR 8.9) -->
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+                            <div>
+                                <h3 class="text-base font-bold text-white">
+                                    Catálogo del Puesto (<span id="lblCatalogoTipoNegocio" class="uppercase text-amber-400">COMIDA</span>)
+                                </h3>
+                                <p class="text-xs text-slate-400">
+                                    Haga clic sobre cualquier producto con stock para añadirlo o incrementar cantidad en el carrito (CU 21).
+                                </p>
+                            </div>
+                            <input id="inputBuscarProdPos" type="text" placeholder="Buscar producto o código..."
+                                   oninput="renderizarCatalogoPuesto()"
+                                   class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-100 w-56">
+                        </div>
+
+                        <div id="gridCatalogoPuesto" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 max-h-[420px] overflow-y-auto pr-1">
+                        </div>
+                    </div>
+
+                    <!-- Últimas ventas registradas en este turno de caja -->
+                    <div class="mt-6 pt-4 border-t border-slate-800">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                Transacciones Registradas en esta Caja Abierta
+                            </h4>
+                            <span class="text-[11px] text-slate-500">Haga clic en una boleta para reimprimir/ver</span>
+                        </div>
+                        <div class="overflow-x-auto max-h-44">
+                            <table class="w-full text-xs">
+                                <thead class="bg-slate-950 text-slate-400">
+                                    <tr>
+                                        <th class="p-2 text-left">Boleta</th>
+                                        <th class="p-2 text-left">Hora</th>
+                                        <th class="p-2 text-left">Detalle</th>
+                                        <th class="p-2 text-left">Medio Pago</th>
+                                        <th class="p-2 text-right">Total</th>
+                                        <th class="p-2 text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaVentasTurno"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Carrito Multi-Ítem, Cálculo Automático (CU 21) y Pagos Simples/Combinados (CU 23) -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                    <form id="formVentaTurno" onsubmit="confirmarVentaEnCaja(event)" class="space-y-4 text-sm">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                            <div>
+                                <span class="text-[10px] font-mono uppercase text-amber-400">CU 21 (CU 28,29,30,64) · CU 23 (CU 32,63)</span>
+                                <h3 class="text-base font-bold text-white">Carrito de Venta y Cobro POS</h3>
+                            </div>
+                            <button type="button" onclick="vaciarCarritoPos()"
+                                    class="text-xs text-slate-400 hover:text-rose-400 bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg">
+                                Vaciar Carrito
+                            </button>
+                        </div>
+
+                        <!-- Lista de ítems en el carrito (CU 28 y CU 64) -->
+                        <div id="contenedorCarritoItems" class="bg-slate-950 border border-slate-800 rounded-xl p-3 max-h-52 overflow-y-auto space-y-2">
+                            <div class="text-xs text-slate-500 text-center py-4">
+                                Haga clic en uno o más productos del catálogo para agregarlos a la venta.
+                            </div>
+                        </div>
+
+                        <!-- Desglose automático de Subtotal, Descuento, Neto, IVA y Total (Subflujo CU 64) -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5 text-xs">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Subtotal (<span id="carritoCantUnidades">0</span> unid.):</span>
+                                <span id="carritoSubtotalTxt" class="font-mono text-slate-200">$0</span>
+                            </div>
+                            <div class="flex items-center justify-between text-slate-400">
+                                <span>Descuento ($ CLP):</span>
+                                <input id="ventaDescuentoTotal" type="number" min="0" step="1" value="0"
+                                       oninput="recalcularTotalVentaPos()"
+                                       class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-mono text-amber-300">
+                            </div>
+                            <div class="flex justify-between text-slate-400">
+                                <span>Monto Neto / IVA (19% incl.):</span>
+                                <span class="font-mono text-slate-300">Neto <span id="carritoNetoTxt">$0</span> · IVA <span id="carritoIvaTxt">$0</span></span>
+                            </div>
+                            <div class="flex justify-between items-center pt-1.5 border-t border-slate-800 text-sm">
+                                <span class="font-bold text-white">Total a Pagar (CU 64):</span>
+                                <span id="ventaTotalCalculado" class="font-mono text-lg font-extrabold text-emerald-400">$0</span>
+                            </div>
+                        </div>
+
+                        <!-- Selector de Modalidad de Pago: Pago Único (CU 32) vs Pago Combinado (CU 63) -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Modalidad de Pago (CU 23)</label>
+                                <span class="text-[10px] text-rose-400 font-semibold">🚫 KidZos no admitidos (Sección I.5)</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                                <button type="button" id="btnModoPagoUnico" onclick="cambiarModoPagoPos('unico')"
+                                        class="py-1.5 px-3 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition">
+                                    Pago Único (CU 32)
+                                </button>
+                                <button type="button" id="btnModoPagoCombinado" onclick="cambiarModoPagoPos('combinado')"
+                                        class="py-1.5 px-3 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition">
+                                    Pago Combinado (CU 63)
+                                </button>
+                            </div>
+
+                            <!-- PANEL A: PAGO ÚNICO (CU 32) -->
+                            <div id="panelPagoUnicoPos" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs text-slate-300 mb-1">Medio de Pago *</label>
+                                    <select id="ventaMetodoPago" onchange="actualizarCamposMedioPago()"
+                                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100">
+                                        <option value="efectivo">Efectivo (Calcula vuelto y suma al arqueo)</option>
+                                        <option value="tarjeta_debito">Tarjeta de Débito</option>
+                                        <option value="tarjeta_credito">Tarjeta de Crédito</option>
+                                        <option value="transferencia">Transferencia</option>
+                                    </select>
+                                </div>
+
+                                <div id="contenedorEfectivoRecibido" class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs text-slate-300 mb-1">Efectivo Recibido ($)</label>
+                                        <input id="ventaMontoRecibido" type="number" min="0" step="1"
+                                               oninput="recalcularTotalVentaPos()"
+                                               placeholder="Monto entregado..."
+                                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 font-mono text-white text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-300 mb-1">Vuelto a Entregar</label>
+                                        <div id="ventaVueltoCalculado" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 font-mono font-bold text-amber-300 text-xs">
+                                            $0
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="contenedorCodigoAutorizacion" class="hidden">
+                                    <label class="block text-xs text-slate-300 mb-1">Cód. Autorización Terminal (opcional)</label>
+                                    <input id="ventaCodigoAutorizacion" type="text" placeholder="Ej: AUTH-98412"
+                                           class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+                                </div>
+                            </div>
+
+                            <!-- PANEL B: PAGO COMBINADO (CU 63) -->
+                            <div id="panelPagoCombinadoPos" class="hidden space-y-2.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-400">Divida el total en 2 o más medios de pago:</span>
+                                    <button type="button" onclick="agregarTramoPagoCombinado()"
+                                            class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold px-2.5 py-1 rounded-lg border border-slate-700">
+                                        + Agregar Medio
+                                    </button>
+                                </div>
+
+                                <div id="listaTramosPagoCombinado" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+
+                                <div id="resumenSaldoCombinado" class="p-2.5 rounded-xl border bg-slate-950 border-slate-800 flex items-center justify-between text-xs">
+                                    <span id="lblEstadoSaldoCombinado" class="font-semibold text-slate-300">Saldo pendiente por cubrir:</span>
+                                    <span id="lblMontoSaldoCombinado" class="font-mono font-extrabold text-amber-400">$0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-sm shadow-lg transition">
+                            Confirmar Venta y Emitir Boleta (CU 21 / CU 23)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
     </main>
+
+    <!-- =================================================================== -->
+    <!-- MODAL: CIERRE DE CAJA CON ARQUEO (CU 26 / CU 79)                     -->
+    <!-- =================================================================== -->
+    <div id="modalCierreCaja" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                <div>
+                    <span class="text-[11px] font-mono uppercase text-amber-400">CU 26 (CU Original 79) · Arqueo de Efectivo</span>
+                    <h3 class="text-xl font-extrabold text-white">Cierre de Caja y Arqueo de Turno</h3>
+                </div>
+                <button onclick="cerrarModalCierreCaja()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <!-- Paso A: Formulario de Arqueo antes de confirmar -->
+            <div id="contenidoFormularioArqueo" class="space-y-4 text-sm">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs">
+                    <div>
+                        <span class="text-slate-400 block">Caja Activa</span>
+                        <strong id="arqCajaId" class="text-amber-400 font-mono text-sm">#-</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Puesto de Venta</span>
+                        <strong id="arqPuestoNombre" class="text-white">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Cajero Responsable</span>
+                        <strong id="arqCajeroNombre" class="text-white">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block">Ventas del Turno</span>
+                        <strong id="arqCantidadVentas" class="text-emerald-400">0 ventas</strong>
+                    </div>
+                </div>
+
+                <!-- Resumen del turno por medio de pago (CU 79 Paso 2 y 3) -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Resumen del Turno por Medio de Pago (CU 79 Paso 2)
+                    </h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                        <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                            <span class="text-slate-400 block">Fondo Inicial</span>
+                            <span id="arqFondoInicial" class="font-mono font-bold text-white text-sm">$0</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                            <span class="text-slate-400 block">+ Ventas en Efectivo</span>
+                            <span id="arqVentasEfectivo" class="font-mono font-bold text-emerald-400 text-sm">$0</span>
+                        </div>
+                        <div class="bg-emerald-950/40 border border-emerald-700/60 rounded-lg p-2.5">
+                            <span class="text-emerald-300 block font-semibold">= Efectivo Esperado (Paso 3)</span>
+                            <span id="arqEfectivoEsperado" class="font-mono font-extrabold text-emerald-300 text-base">$0</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                            <span class="text-slate-400 block">Ventas Tarjeta Débito</span>
+                            <span id="arqVentasDebito" class="font-mono font-semibold text-slate-200">$0</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                            <span class="text-slate-400 block">Ventas Tarjeta Crédito</span>
+                            <span id="arqVentasCredito" class="font-mono font-semibold text-slate-200">$0</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5">
+                            <span class="text-slate-400 block">Total Ventas del Turno</span>
+                            <span id="arqTotalVentas" class="font-mono font-bold text-amber-400">$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ingreso de Efectivo Contado y Cálculo de Diferencia (CU 79 Paso 4 y 5) -->
+                <form id="formCerrarCajaArqueo" onsubmit="confirmarCierreConArqueo(event)" class="space-y-4">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold uppercase tracking-wider text-amber-400">
+                                Efectivo Contado Físicamente en Caja ($ CLP) *
+                            </label>
+                            <button type="button" onclick="usarEfectivoEsperadoExacto()"
+                                    class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1 rounded border border-slate-700">
+                                Usar monto esperado exacto
+                            </button>
+                        </div>
+                        <input id="inputEfectivoContadoArqueo" type="number" min="0" step="1" required
+                               oninput="calcularDiferenciaArqueoEnVivo()"
+                               placeholder="Ingrese el efectivo total contado en gaveta..."
+                               class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xl font-mono font-extrabold text-white focus:border-amber-500 focus:outline-none">
+
+                        <!-- Resultado en vivo del arqueo (Paso 5: Cuadra, Sobra o Falta) -->
+                        <div id="panelDiferenciaArqueoVivo" class="p-3.5 rounded-xl border bg-slate-900 border-slate-700 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs text-slate-400">Resultado del Arqueo (Contado − Esperado):</div>
+                                <div id="lblEstadoArqueoVivo" class="text-sm font-bold text-slate-200 mt-0.5">
+                                    Ingrese el efectivo contado para verificar cuadratura
+                                </div>
+                            </div>
+                            <div id="lblMontoDiferenciaVivo" class="text-xl font-mono font-extrabold text-white">
+                                $0
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1">Observación de Cierre / Arqueo (opcional)</label>
+                        <input id="inputObservacionCierre" type="text"
+                               placeholder="Ej: Arqueo conforme al finalizar turno de tarde..."
+                               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200">
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                        <button type="button" onclick="cerrarModalCierreCaja()"
+                                class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                            Volver a la Caja
+                        </button>
+                        <button type="submit"
+                                class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow-lg">
+                            Confirmar Cierre de Caja y Registrar Arqueo
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Paso B: Comprobante Oficial de Arqueo una vez cerrada la caja (CU 79 Paso 7) -->
+            <div id="contenidoComprobanteArqueo" class="hidden space-y-4 text-sm">
+                <div class="p-4 rounded-xl bg-emerald-950/50 border border-emerald-700/60 text-emerald-200">
+                    <div class="font-bold text-base">✅ Caja Cerrada y Arqueo Registrado Exitosamente</div>
+                    <p id="compMensajeResultado" class="text-xs mt-1"></p>
+                </div>
+
+                <div id="comprobanteDetalleHtml" class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2 text-xs font-mono">
+                </div>
+
+                <div class="flex flex-wrap justify-end gap-3 pt-3 border-t border-slate-800">
+                    <button type="button" onclick="continuarEnPosTrasCierre()"
+                            class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold">
+                        Abrir Otro Turno en POS
+                    </button>
+                    <button type="button" onclick="cerrarSesion('v_pos_login.html')"
+                            class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold">
+                        Finalizar Turno y Cerrar Sesión del Cajero
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer Kiosco -->
     <footer class="bg-slate-950 border-t border-slate-900 px-6 py-3 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-        <div>KidZania Santiago · Sistema de Gestión Operativa · Grupo 19</div>
-        <div class="font-mono text-slate-600 mt-1 sm:mt-0">Terminal v1.0.0 (Kiosco)</div>
+        <div>KidZania Santiago · Sistema de Gestión Operativa ParkFlow · Grupo 19</div>
+        <div class="font-mono text-slate-600 mt-1 sm:mt-0">Terminal POS · CU 21, CU 23, CU 25, CU 26 y CU 32</div>
     </footer>
+
+    <!-- =================================================================== -->
+    <!-- MODAL: DETALLE DE BOLETA / COMPROBANTE DE VENTA POS (CU 21 / CU 83) -->
+    <!-- =================================================================== -->
+    <div id="modalBoletaPos" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                <div>
+                    <span class="text-[11px] font-mono uppercase text-emerald-400">Boleta Electrónica POS · KidZania Santiago</span>
+                    <h3 id="boletaFolioTitulo" class="text-xl font-extrabold text-white">Boleta #---</h3>
+                </div>
+                <button onclick="cerrarModalBoletaPos()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <div id="contenidoBoletaPos" class="space-y-4 text-xs font-mono bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button type="button" onclick="cerrarModalBoletaPos()"
+                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                    Cerrar
+                </button>
+                <button type="button" onclick="window.print()"
+                        class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
+                    Imprimir Comprobante
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/app-common.js"></script>
     <script>
-        // Iniciales
         function getInitials(name) {
             const parts = (name || '').trim().split(' ');
             if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
             return (parts[0] ? parts[0].slice(0, 2) : 'KZ').toUpperCase();
         }
 
-        // Cargar datos de la sesión activa
         const posUser = localStorage.getItem('usuario') || 'Cajero Operador';
         const posRole = (localStorage.getItem('rol_nombre') || 'Punto de Venta').toLowerCase();
         const posRolId = localStorage.getItem('rol');
 
         document.getElementById('userName').textContent = posUser;
-        document.getElementById('welcomeName').textContent = posUser;
         const roleLabels = { admin: 'Administrador', cocina: 'Personal de Cocina', caja: 'Cajero POS', cajero: 'Cajero POS' };
         document.getElementById('userRole').textContent = roleLabels[posRole] || 'Punto de Venta';
         document.getElementById('userAvatar').textContent = getInitials(posUser);
 
-        // Si es admin, mostrar enlace de retorno al dashboard
         if (posRolId === '1' || posRole === 'admin') {
             document.getElementById('adminBadgeContainer').classList.remove('hidden');
         }
 
-        // Reloj y Fecha Kiosco
         function updateClock() {
             const now = new Date();
             document.getElementById('posClock').textContent = now.toLocaleTimeString('es-CL', { hour12: false });
@@ -164,17 +596,837 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Confirmar y cerrar turno POS
-        function confirmarCierre() {
-            if (confirm(`¿Deseas cerrar la caja y salir del turno activo de ${posUser}?`)) {
-                cerrarSesion('v_pos_login.html');
+        // Estado global del terminal POS
+        let estadoPos = {
+            tiene_caja_abierta: false,
+            caja_abierta: null,
+            resumen_turno: null,
+            puestos: [],
+            catalogo_puesto: [],
+            ventas_turno: [],
+            puestoSeleccionadoApertura: null,
+            efectivoEsperadoArqueo: 0,
+            // Carrito multi-ítem (CU 21)
+            carrito: [], // { producto_id, producto_codigo, producto_nombre, precio_unitario, cantidad, stock_disponible, descuento_linea }
+            descuentoTotal: 0,
+            modoPago: 'unico', // 'unico' o 'combinado'
+            tramosPago: [
+                { id: 1, metodo: 'efectivo', monto: 0, monto_recibido: null, vuelto: 0, codigo_autorizacion: '' }
+            ]
+        };
+
+        async function cargarEstadoCaja() {
+            try {
+                const data = await api(`${API_URL}/api/cajas/estado-actual`, { headers: authHeaders });
+                estadoPos.tiene_caja_abierta = Boolean(data.tiene_caja_abierta);
+                estadoPos.caja_abierta = data.caja_abierta || null;
+                estadoPos.resumen_turno = data.resumen_turno || null;
+                estadoPos.puestos = data.puestos || [];
+                estadoPos.catalogo_puesto = data.catalogo_puesto || [];
+                estadoPos.ventas_turno = data.ventas_turno || [];
+
+                renderizarVistaPos();
+            } catch (error) {
+                setMensaje('mensajePos', error.message || 'No se pudo consultar el estado de la caja.', false);
             }
         }
 
-        // Volver directamente al login de oficina limpiando la sesión POS activa
+        function renderizarVistaPos() {
+            const vistaApertura = document.getElementById('vistaAperturaCaja');
+            const vistaAbierta = document.getElementById('vistaCajaAbierta');
+            const badgeHeader = document.getElementById('badgeEstadoCajaHeader');
+            const subHeader = document.getElementById('subtituloPuestoHeader');
+            const btnArqueoHeader = document.getElementById('btnAbrirModalArqueo');
+
+            if (!estadoPos.tiene_caja_abierta || !estadoPos.caja_abierta) {
+                vistaAbierta.classList.add('hidden');
+                vistaApertura.classList.remove('hidden');
+                btnArqueoHeader.classList.add('hidden');
+
+                badgeHeader.textContent = 'Sin Caja Abierta';
+                badgeHeader.className = 'text-[10px] font-mono uppercase bg-amber-950/80 text-amber-300 border border-amber-700/80 px-2 py-0.5 rounded font-semibold';
+                subHeader.textContent = 'Seleccione un puesto y declare su fondo inicial para abrir turno (CU 25)';
+
+                renderizarPuestosApertura();
+            } else {
+                const c = estadoPos.caja_abierta;
+                const r = estadoPos.resumen_turno || {
+                    fondo_inicial: c.fondo_inicial,
+                    cantidad_ventas: 0,
+                    total_ventas_monto: 0,
+                    totales_medio_pago: { efectivo: 0, tarjeta_debito: 0, tarjeta_credito: 0, transferencia: 0 },
+                    efectivo_esperado: c.fondo_inicial
+                };
+
+                vistaApertura.classList.add('hidden');
+                vistaAbierta.classList.remove('hidden');
+                btnArqueoHeader.classList.remove('hidden');
+
+                badgeHeader.textContent = `Caja Abierta #${c.caja_id}`;
+                badgeHeader.className = 'text-[10px] font-mono uppercase bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded font-semibold';
+                subHeader.textContent = `${c.puesto_nombre} (${c.puesto_tipo_negocio.toUpperCase()}) · ${c.puesto_ubicacion || 'Parque Araucano'}`;
+
+                document.getElementById('kpiCajaPuestoNombre').textContent = c.puesto_nombre;
+                document.getElementById('kpiCajaIdTipo').textContent = `Caja #${c.caja_id} · Negocio: ${c.puesto_tipo_negocio.toUpperCase()}`;
+                document.getElementById('kpiCajaFondoInicial').textContent = `$${formatoNumero(r.fondo_inicial)}`;
+                document.getElementById('kpiCajaHoraApertura').textContent = `Abierta: ${new Date(c.fecha_apertura).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+                document.getElementById('kpiCajaTotalVentas').textContent = `$${formatoNumero(r.total_ventas_monto)}`;
+                document.getElementById('kpiCajaCantidadVentas').textContent = r.cantidad_ventas;
+                document.getElementById('kpiCajaEfectivoEsperado').textContent = `$${formatoNumero(r.efectivo_esperado)}`;
+                document.getElementById('kpiCajaVentasEfectivo').textContent = formatoNumero(r.totales_medio_pago?.efectivo || 0);
+
+                const noEfectivo = Number(r.totales_medio_pago?.tarjeta_debito || 0) +
+                                   Number(r.totales_medio_pago?.tarjeta_credito || 0) +
+                                   Number(r.totales_medio_pago?.transferencia || 0);
+                document.getElementById('kpiCajaVentasNoEfectivo').textContent = `$${formatoNumero(noEfectivo)}`;
+                document.getElementById('lblCatalogoTipoNegocio').textContent = c.puesto_tipo_negocio === 'comida' ? 'Comida y Bebidas' : 'Merchandising Oficial';
+
+                renderizarCatalogoPuesto();
+                renderizarCarritoPos();
+                renderizarVentasTurno();
+            }
+        }
+
+        // =====================================================================
+        // CU 25 (CU 78): Selección de Puesto y Apertura de Caja
+        // =====================================================================
+        function renderizarPuestosApertura() {
+            const filtroTipo = document.getElementById('filtroTipoPuestoPos').value;
+            const grid = document.getElementById('gridPuestosApertura');
+            const lista = estadoPos.puestos.filter(p => filtroTipo === 'todos' || p.puesto_tipo_negocio === filtroTipo);
+
+            if (!lista.length) {
+                grid.innerHTML = '<div class="col-span-full text-slate-400 text-sm p-6 text-center bg-slate-950 rounded-xl border border-slate-800">No hay puestos de venta registrados.</div>';
+                return;
+            }
+
+            grid.innerHTML = lista.map(p => {
+                const esComida = p.puesto_tipo_negocio === 'comida';
+                const disponible = p.puesto_estado === 'activo' && !p.ocupado;
+                const seleccionado = estadoPos.puestoSeleccionadoApertura && Number(estadoPos.puestoSeleccionadoApertura.puesto_id) === Number(p.puesto_id);
+
+                let badgeDisp = '';
+                if (p.puesto_estado !== 'activo') {
+                    badgeDisp = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-800 text-slate-400">INACTIVO</span>';
+                } else if (p.ocupado) {
+                    badgeDisp = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-950/80 text-rose-300 border border-rose-700/60">OCUPADO (${p.cajero_actual_nombre || 'Cajero'})</span>`;
+                } else {
+                    badgeDisp = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">DISPONIBLE</span>';
+                }
+
+                return `
+                    <div onclick="${disponible ? `seleccionarPuestoParaAbrir(${p.puesto_id})` : ''}"
+                         class="p-4 rounded-xl border transition ${disponible ? 'cursor-pointer hover:border-amber-500/80' : 'opacity-60 cursor-not-allowed'} ${seleccionado ? 'bg-amber-950/30 border-amber-400 ring-2 ring-amber-500/40' : 'bg-slate-950 border-slate-800'}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <span class="text-[11px] font-mono text-slate-400">${p.puesto_codigo}</span>
+                                <h4 class="font-bold text-white text-base">${p.puesto_nombre}</h4>
+                            </div>
+                            ${badgeDisp}
+                        </div>
+                        <div class="mt-2 flex items-center justify-between text-xs">
+                            <span class="px-2 py-0.5 rounded font-semibold ${esComida ? 'bg-orange-950/70 text-orange-300' : 'bg-purple-950/70 text-purple-300'}">
+                                ${esComida ? '🍔 Comida' : '🛍️ Merch'}
+                            </span>
+                            <span class="text-slate-400">${p.puesto_ubicacion || 'KidZania'}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function seleccionarPuestoParaAbrir(puestoId) {
+            const p = estadoPos.puestos.find(item => Number(item.puesto_id) === Number(puestoId));
+            if (!p || p.puesto_estado !== 'activo' || p.ocupado) return;
+            estadoPos.puestoSeleccionadoApertura = p;
+            document.getElementById('inputPuestoIdApertura').value = p.puesto_id;
+            document.getElementById('lblPuestoSeleccionado').textContent = `${p.puesto_nombre} (${p.puesto_codigo})`;
+            document.getElementById('lblTipoPuestoSeleccionado').textContent = `Línea de negocio: ${p.puesto_tipo_negocio.toUpperCase()} · ${p.puesto_ubicacion || ''}`;
+            renderizarPuestosApertura();
+        }
+
+        function fijarFondoRapido(monto) {
+            document.getElementById('inputFondoInicialApertura').value = monto;
+        }
+
+        async function confirmarAperturaCaja(event) {
+            event.preventDefault();
+            const puestoId = document.getElementById('inputPuestoIdApertura').value;
+            const fondo = document.getElementById('inputFondoInicialApertura').value;
+            const obs = document.getElementById('inputObsApertura').value.trim();
+
+            if (!puestoId) {
+                setMensaje('mensajePos', 'Debe seleccionar primero un puesto de venta disponible para abrir la caja (CU 25).', false);
+                return;
+            }
+
+            try {
+                const resp = await api(`${API_URL}/api/cajas/abrir`, {
+                    method: 'POST',
+                    headers: jsonHeaders,
+                    body: JSON.stringify({
+                        puesto_id: Number(puestoId),
+                        fondo_inicial: Number(fondo),
+                        observacion_apertura: obs || null
+                    })
+                });
+                setMensaje('mensajePos', resp.message || 'Caja abierta exitosamente.');
+                await cargarEstadoCaja();
+            } catch (error) {
+                setMensaje('mensajePos', error.message || 'Error al abrir la caja.', false);
+            }
+        }
+
+        // =====================================================================
+        // CU 21: Catálogo, Carrito Multi-Ítem y Cálculo Automático de Total
+        // =====================================================================
+        function renderizarCatalogoPuesto() {
+            const q = (document.getElementById('inputBuscarProdPos').value || '').trim().toLowerCase();
+            const grid = document.getElementById('gridCatalogoPuesto');
+            const items = estadoPos.catalogo_puesto.filter(p => {
+                if (!q) return true;
+                return String(p.producto_nombre || '').toLowerCase().includes(q) ||
+                       String(p.producto_codigo || '').toLowerCase().includes(q);
+            });
+
+            if (!items.length) {
+                grid.innerHTML = '<div class="col-span-full text-slate-400 text-xs p-4 text-center bg-slate-950 rounded-xl border border-slate-800">No hay productos activos para este tipo de negocio o criterio de búsqueda.</div>';
+                return;
+            }
+
+            grid.innerHTML = items.map(p => {
+                const sinStock = Number(p.producto_stock_actual) <= 0;
+                const enCarrito = estadoPos.carrito.find(item => Number(item.producto_id) === Number(p.producto_id));
+                const cantEnCarrito = enCarrito ? enCarrito.cantidad : 0;
+
+                return `
+                    <div onclick="${sinStock ? '' : `agregarProductoAlCarrito(${p.producto_id})`}"
+                         class="p-3 rounded-xl border transition ${sinStock ? 'opacity-50 cursor-not-allowed bg-slate-950 border-slate-800' : 'cursor-pointer hover:border-amber-500/70 hover:scale-[1.01] active:scale-[0.99]'} ${cantEnCarrito > 0 ? 'bg-amber-950/30 border-amber-400 ring-1 ring-amber-500/40' : 'bg-slate-950 border-slate-800'}">
+                        <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                            <span>${p.producto_codigo}</span>
+                            <span class="${sinStock ? 'text-rose-400 font-bold' : 'text-emerald-400'}">
+                                ${sinStock ? 'Sin stock' : `Stock: ${formatoNumero(p.producto_stock_actual)} ${p.unidad_medida_codigo || 'UN'}`}
+                            </span>
+                        </div>
+                        <div class="font-bold text-white text-sm mt-1 truncate" title="${p.producto_nombre}">${p.producto_nombre}</div>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-amber-400 font-mono font-bold text-sm">$${formatoNumero(p.producto_precio)}</span>
+                            ${cantEnCarrito > 0 ? `<span class="bg-amber-500 text-slate-950 text-[11px] font-bold px-2 py-0.5 rounded-full">${cantEnCarrito} en carro</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function agregarProductoAlCarrito(productoId) {
+            const prod = estadoPos.catalogo_puesto.find(p => Number(p.producto_id) === Number(productoId));
+            if (!prod) return;
+
+            const stockDisp = Number(prod.producto_stock_actual || 0);
+            if (stockDisp <= 0) {
+                setMensaje('mensajePos', `El producto ${prod.producto_nombre} no tiene stock disponible.`, false);
+                return;
+            }
+
+            const existente = estadoPos.carrito.find(item => Number(item.producto_id) === Number(productoId));
+            if (existente) {
+                if (existente.cantidad + 1 > stockDisp) {
+                    setMensaje('mensajePos', `Stock insuficiente para ${prod.producto_nombre}. Disponible: ${stockDisp}`, false);
+                    return;
+                }
+                existente.cantidad += 1;
+            } else {
+                estadoPos.carrito.push({
+                    producto_id: prod.producto_id,
+                    producto_codigo: prod.producto_codigo,
+                    producto_nombre: prod.producto_nombre,
+                    precio_unitario: Number(prod.producto_precio || 0),
+                    cantidad: 1,
+                    stock_disponible: stockDisp,
+                    descuento_linea: 0
+                });
+            }
+
+            renderizarCatalogoPuesto();
+            renderizarCarritoPos();
+        }
+
+        function modificarCantidadCarrito(productoId, delta) {
+            const item = estadoPos.carrito.find(it => Number(it.producto_id) === Number(productoId));
+            if (!item) return;
+
+            const nuevaCant = item.cantidad + delta;
+            if (nuevaCant <= 0) {
+                estadoPos.carrito = estadoPos.carrito.filter(it => Number(it.producto_id) !== Number(productoId));
+            } else {
+                if (nuevaCant > item.stock_disponible) {
+                    setMensaje('mensajePos', `Stock insuficiente. Máximo disponible: ${item.stock_disponible}`, false);
+                    return;
+                }
+                item.cantidad = nuevaCant;
+            }
+
+            renderizarCatalogoPuesto();
+            renderizarCarritoPos();
+        }
+
+        function eliminarItemCarrito(productoId) {
+            estadoPos.carrito = estadoPos.carrito.filter(it => Number(it.producto_id) !== Number(productoId));
+            renderizarCatalogoPuesto();
+            renderizarCarritoPos();
+        }
+
+        function vaciarCarritoPos() {
+            estadoPos.carrito = [];
+            renderizarCatalogoPuesto();
+            renderizarCarritoPos();
+        }
+
+        function renderizarCarritoPos() {
+            const cont = document.getElementById('contenedorCarritoItems');
+            if (!estadoPos.carrito.length) {
+                cont.innerHTML = `
+                    <div class="text-xs text-slate-500 text-center py-4">
+                        Haga clic en uno o más productos del catálogo para agregarlos a la venta.
+                    </div>
+                `;
+            } else {
+                cont.innerHTML = estadoPos.carrito.map(it => {
+                    const subL = Math.max(Math.round(it.cantidad * it.precio_unitario - Number(it.descuento_linea || 0)), 0);
+                    return `
+                        <div class="flex items-center justify-between gap-2 p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-white truncate" title="${it.producto_nombre}">${it.producto_nombre}</div>
+                                <div class="text-[11px] text-slate-400 font-mono">$${formatoNumero(it.precio_unitario)} c/u</div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="modificarCantidadCarrito(${it.producto_id}, -1)"
+                                        class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center">-</button>
+                                <span class="font-mono font-bold text-white w-6 text-center">${it.cantidad}</span>
+                                <button type="button" onclick="modificarCantidadCarrito(${it.producto_id}, 1)"
+                                        class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center">+</button>
+                            </div>
+                            <div class="text-right min-w-[70px]">
+                                <div class="font-mono font-bold text-emerald-400">$${formatoNumero(subL)}</div>
+                                <button type="button" onclick="eliminarItemCarrito(${it.producto_id})" class="text-[10px] text-rose-400 hover:text-rose-300">Quitar</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            recalcularTotalVentaPos();
+        }
+
+        function recalcularTotalVentaPos() {
+            const descGlobal = Number(document.getElementById('ventaDescuentoTotal')?.value || 0);
+            estadoPos.descuentoTotal = descGlobal;
+
+            let subtotal = 0;
+            let totalUnidades = 0;
+            for (const item of estadoPos.carrito) {
+                subtotal += (item.cantidad * item.precio_unitario);
+                totalUnidades += item.cantidad;
+            }
+
+            const total = Math.max(Math.round(subtotal - descGlobal), 0);
+            const neto = Math.round(total / 1.19);
+            const iva = Math.max(total - neto, 0);
+
+            document.getElementById('carritoCantUnidades').textContent = totalUnidades;
+            document.getElementById('carritoSubtotalTxt').textContent = `$${formatoNumero(subtotal)}`;
+            document.getElementById('carritoNetoTxt').textContent = `$${formatoNumero(neto)}`;
+            document.getElementById('carritoIvaTxt').textContent = `$${formatoNumero(iva)}`;
+            document.getElementById('ventaTotalCalculado').textContent = `$${formatoNumero(total)}`;
+
+            // Modo Pago Único
+            const inputRecibido = document.getElementById('ventaMontoRecibido');
+            if (inputRecibido) {
+                const recibido = inputRecibido.value !== '' ? Number(inputRecibido.value) : total;
+                const vuelto = Math.max(recibido - total, 0);
+                document.getElementById('ventaVueltoCalculado').textContent = `$${formatoNumero(vuelto)}`;
+            }
+
+            // Modo Pago Combinado
+            recalcularSaldoCombinado(total);
+        }
+
+        // =====================================================================
+        // CU 23: Modalidad de Pago - Pago Único vs Combinado
+        // =====================================================================
+        function cambiarModoPagoPos(modo) {
+            estadoPos.modoPago = modo;
+            const btnU = document.getElementById('btnModoPagoUnico');
+            const btnC = document.getElementById('btnModoPagoCombinado');
+            const pnlU = document.getElementById('panelPagoUnicoPos');
+            const pnlC = document.getElementById('panelPagoCombinadoPos');
+
+            if (modo === 'combinado') {
+                btnC.className = 'py-1.5 px-3 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition';
+                btnU.className = 'py-1.5 px-3 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition';
+                pnlU.classList.add('hidden');
+                pnlC.classList.remove('hidden');
+
+                if (estadoPos.tramosPago.length < 2) {
+                    const total = obtenerTotalVentaActual();
+                    const mitad1 = Math.round(total / 2);
+                    const mitad2 = total - mitad1;
+                    estadoPos.tramosPago = [
+                        { id: 1, metodo: 'efectivo', monto: mitad1, monto_recibido: mitad1, vuelto: 0, codigo_autorizacion: '' },
+                        { id: 2, metodo: 'tarjeta_debito', monto: mitad2, monto_recibido: null, vuelto: 0, codigo_autorizacion: '' }
+                    ];
+                }
+                renderizarTramosPagoCombinado();
+            } else {
+                btnU.className = 'py-1.5 px-3 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition';
+                btnC.className = 'py-1.5 px-3 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition';
+                pnlU.classList.remove('hidden');
+                pnlC.classList.add('hidden');
+                actualizarCamposMedioPago();
+            }
+            recalcularTotalVentaPos();
+        }
+
+        function obtenerTotalVentaActual() {
+            let subtotal = 0;
+            for (const item of estadoPos.carrito) {
+                subtotal += (item.cantidad * item.precio_unitario);
+            }
+            const desc = Number(document.getElementById('ventaDescuentoTotal')?.value || 0);
+            return Math.max(Math.round(subtotal - desc), 0);
+        }
+
+        function agregarTramoPagoCombinado() {
+            const nextId = estadoPos.tramosPago.length ? Math.max(...estadoPos.tramosPago.map(t => t.id)) + 1 : 1;
+            estadoPos.tramosPago.push({
+                id: nextId,
+                metodo: 'tarjeta_credito',
+                monto: 0,
+                monto_recibido: null,
+                vuelto: 0,
+                codigo_autorizacion: ''
+            });
+            renderizarTramosPagoCombinado();
+        }
+
+        function eliminarTramoPagoCombinado(id) {
+            if (estadoPos.tramosPago.length <= 2) {
+                setMensaje('mensajePos', 'El pago combinado debe tener al menos 2 medios de pago distintos (CU 63).', false);
+                return;
+            }
+            estadoPos.tramosPago = estadoPos.tramosPago.filter(t => t.id !== id);
+            renderizarTramosPagoCombinado();
+        }
+
+        function actualizarTramoCampo(id, campo, valor) {
+            const tramo = estadoPos.tramosPago.find(t => t.id === id);
+            if (!tramo) return;
+
+            if (campo === 'monto') {
+                tramo.monto = Number(valor || 0);
+            } else if (campo === 'monto_recibido') {
+                tramo.monto_recibido = valor !== '' ? Number(valor) : null;
+                tramo.vuelto = tramo.monto_recibido !== null ? Math.max(tramo.monto_recibido - tramo.monto, 0) : 0;
+            } else {
+                tramo[campo] = valor;
+            }
+
+            renderizarTramosPagoCombinado();
+        }
+
+        function renderizarTramosPagoCombinado() {
+            const cont = document.getElementById('listaTramosPagoCombinado');
+            cont.innerHTML = estadoPos.tramosPago.map((t, idx) => {
+                const esEfectivo = t.metodo === 'efectivo';
+                return `
+                    <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-bold text-amber-400">Medio ${idx + 1}:</span>
+                            <select onchange="actualizarTramoCampo(${t.id}, 'metodo', this.value)"
+                                    class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs">
+                                <option value="efectivo" ${t.metodo === 'efectivo' ? 'selected' : ''}>Efectivo</option>
+                                <option value="tarjeta_debito" ${t.metodo === 'tarjeta_debito' ? 'selected' : ''}>Tarjeta Débito</option>
+                                <option value="tarjeta_credito" ${t.metodo === 'tarjeta_credito' ? 'selected' : ''}>Tarjeta Crédito</option>
+                                <option value="transferencia" ${t.metodo === 'transferencia' ? 'selected' : ''}>Transferencia</option>
+                            </select>
+                            <input type="number" min="1" step="1" value="${t.monto}"
+                                   oninput="actualizarTramoCampo(${t.id}, 'monto', this.value)"
+                                   placeholder="Monto $"
+                                   class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 font-mono text-emerald-400 font-bold text-right text-xs">
+                            <button type="button" onclick="eliminarTramoPagoCombinado(${t.id})"
+                                    class="text-slate-500 hover:text-rose-400 text-sm font-bold px-1">&times;</button>
+                        </div>
+                        ${esEfectivo ? `
+                            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-900">
+                                <input type="number" min="0" step="1" value="${t.monto_recibido !== null ? t.monto_recibido : ''}"
+                                       oninput="actualizarTramoCampo(${t.id}, 'monto_recibido', this.value)"
+                                       placeholder="Recibido en efectivo..."
+                                       class="bg-slate-900 border border-slate-700 rounded px-2 py-1 font-mono text-white text-[11px]">
+                                <div class="text-[11px] text-right font-mono text-amber-300 py-1">
+                                    Vuelto: $${formatoNumero(t.vuelto || 0)}
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="pt-1 border-t border-slate-900">
+                                <input type="text" value="${t.codigo_autorizacion || ''}"
+                                       oninput="actualizarTramoCampo(${t.id}, 'codigo_autorizacion', this.value)"
+                                       placeholder="Cód. Autorización Terminal (opcional)..."
+                                       class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-300 text-[11px]">
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+
+            recalcularSaldoCombinado(obtenerTotalVentaActual());
+        }
+
+        function recalcularSaldoCombinado(totalVenta) {
+            if (estadoPos.modoPago !== 'combinado') return;
+            const suma = estadoPos.tramosPago.reduce((acc, t) => acc + Number(t.monto || 0), 0);
+            const saldo = totalVenta - suma;
+
+            const pnl = document.getElementById('resumenSaldoCombinado');
+            const lbl = document.getElementById('lblEstadoSaldoCombinado');
+            const monto = document.getElementById('lblMontoSaldoCombinado');
+
+            if (saldo === 0) {
+                pnl.className = 'p-2.5 rounded-xl border bg-emerald-950/40 border-emerald-600/60 flex items-center justify-between text-xs';
+                lbl.textContent = '✅ Total completamente cubierto:';
+                lbl.className = 'font-semibold text-emerald-300';
+                monto.textContent = `$${formatoNumero(suma)}`;
+                monto.className = 'font-mono font-extrabold text-emerald-400';
+            } else if (saldo > 0) {
+                pnl.className = 'p-2.5 rounded-xl border bg-amber-950/40 border-amber-600/60 flex items-center justify-between text-xs';
+                lbl.textContent = '⚠️ Falta cubrir para completar el total:';
+                lbl.className = 'font-semibold text-amber-300';
+                monto.textContent = `$${formatoNumero(saldo)}`;
+                monto.className = 'font-mono font-extrabold text-amber-400';
+            } else {
+                pnl.className = 'p-2.5 rounded-xl border bg-rose-950/40 border-rose-600/60 flex items-center justify-between text-xs';
+                lbl.textContent = '🚨 La suma excede el total de la venta:';
+                lbl.className = 'font-semibold text-rose-300';
+                monto.textContent = `+$${formatoNumero(Math.abs(saldo))}`;
+                monto.className = 'font-mono font-extrabold text-rose-400';
+            }
+        }
+
+        function actualizarCamposMedioPago() {
+            const metodo = document.getElementById('ventaMetodoPago')?.value;
+            const contEfectivo = document.getElementById('contenedorEfectivoRecibido');
+            const contAuth = document.getElementById('contenedorCodigoAutorizacion');
+            if (metodo === 'efectivo') {
+                contEfectivo?.classList.remove('hidden');
+                contAuth?.classList.add('hidden');
+            } else {
+                contEfectivo?.classList.add('hidden');
+                contAuth?.classList.remove('hidden');
+            }
+            recalcularTotalVentaPos();
+        }
+
+        // =====================================================================
+        // CU 21 y CU 23: Confirmar Venta, Descontar Stock y Emitir Boleta
+        // =====================================================================
+        async function confirmarVentaEnCaja(event) {
+            event.preventDefault();
+            if (!estadoPos.carrito.length) {
+                setMensaje('mensajePos', 'Debe agregar al menos un producto al carrito para registrar la venta (CU 21).', false);
+                return;
+            }
+
+            const totalVenta = obtenerTotalVentaActual();
+            const descGlobal = Number(document.getElementById('ventaDescuentoTotal')?.value || 0);
+
+            // Construir payload según la modalidad de pago seleccionada (CU 23)
+            let payload = {
+                items: estadoPos.carrito.map(it => ({
+                    producto_id: it.producto_id,
+                    cantidad: it.cantidad,
+                    precio_unitario: it.precio_unitario,
+                    descuento_linea: it.descuento_linea || 0
+                })),
+                descuento_total: descGlobal
+            };
+
+            if (estadoPos.modoPago === 'combinado') {
+                const suma = estadoPos.tramosPago.reduce((acc, t) => acc + Number(t.monto || 0), 0);
+                if (suma !== totalVenta) {
+                    setMensaje('mensajePos', `En pago combinado la suma de los tramos ($${formatoNumero(suma)}) debe coincidir exactamente con el total a pagar ($${formatoNumero(totalVenta)}).`, false);
+                    return;
+                }
+                payload.metodo_pago = 'combinado';
+                payload.pagos = estadoPos.tramosPago.map(t => ({
+                    metodo_pago: t.metodo,
+                    monto: t.monto,
+                    monto_recibido: t.monto_recibido,
+                    codigo_autorizacion: t.codigo_autorizacion || null
+                }));
+            } else {
+                const metodo = document.getElementById('ventaMetodoPago').value;
+                const recRaw = document.getElementById('ventaMontoRecibido')?.value;
+                const authCode = document.getElementById('ventaCodigoAutorizacion')?.value.trim();
+
+                payload.metodo_pago = metodo;
+                payload.monto_recibido = (metodo === 'efectivo' && recRaw !== '') ? Number(recRaw) : null;
+                payload.codigo_autorizacion = authCode || null;
+            }
+
+            try {
+                const resp = await api(`${API_URL}/api/cajas/ventas-turno`, {
+                    method: 'POST',
+                    headers: jsonHeaders,
+                    body: JSON.stringify(payload)
+                });
+
+                setMensaje('mensajePos', resp.message || 'Venta registrada con éxito.');
+                vaciarCarritoPos();
+                await cargarEstadoCaja();
+
+                // Mostrar Comprobante / Boleta Electrónica Oficial (CU 83)
+                mostrarBoletaVenta(resp.venta, resp.detalles, resp.pagos, resp.insumos_descontados);
+            } catch (error) {
+                setMensaje('mensajePos', error.message || 'Error al registrar la venta.', false);
+            }
+        }
+
+        function mostrarBoletaVenta(venta, detalles = [], pagos = [], insumos = []) {
+            document.getElementById('boletaFolioTitulo').textContent = `Boleta #${venta.folio_boleta || venta.venta_id}`;
+            const c = estadoPos.caja_abierta || {};
+
+            let detallesHtml = (detalles || []).map(d => `
+                <div class="flex justify-between py-0.5">
+                    <span>${d.producto_nombre} x${d.cantidad}</span>
+                    <span class="font-bold">$${formatoNumero(d.subtotal_linea)}</span>
+                </div>
+            `).join('');
+
+            let pagosHtml = (pagos || []).map(p => `
+                <div class="flex justify-between text-slate-300 py-0.5">
+                    <span class="uppercase">${p.metodo_pago.replace('_', ' ')}:</span>
+                    <span>$${formatoNumero(p.monto)} ${p.vuelto > 0 ? `(Vuelto: $${formatoNumero(p.vuelto)})` : ''}</span>
+                </div>
+            `).join('');
+
+            let insumosHtml = '';
+            if (insumos && insumos.length > 0) {
+                insumosHtml = `
+                    <div class="pt-2 border-t border-dashed border-slate-800 text-[11px] text-amber-300">
+                        <div class="font-bold">Descuento automático de receta (CU 19):</div>
+                        ${insumos.map(ins => `<div>• ${ins.insumo_nombre}: -${ins.cantidad_descontada} ${ins.unidad}</div>`).join('')}
+                    </div>
+                `;
+            }
+
+            document.getElementById('contenidoBoletaPos').innerHTML = `
+                <div class="text-center border-b border-dashed border-slate-700 pb-2">
+                    <div class="font-extrabold text-sm text-white">KIDZANIA SANTIAGO S.A.</div>
+                    <div class="text-slate-400">RUT: 76.123.456-7 · Giro: Parque Temático y Retail</div>
+                    <div class="text-slate-400">Av. Presidente Riesco 5330, Las Condes</div>
+                </div>
+                <div class="text-slate-300 space-y-0.5">
+                    <div><strong>Folio:</strong> ${venta.folio_boleta || ('BOL-' + venta.venta_id)}</div>
+                    <div><strong>Puesto:</strong> ${c.puesto_nombre || 'POS'} (${(c.puesto_tipo_negocio || '').toUpperCase()})</div>
+                    <div><strong>Cajero:</strong> ${posUser} (Caja #${c.caja_id || '-'})</div>
+                    <div><strong>Fecha/Hora:</strong> ${new Date(venta.fecha_venta || Date.now()).toLocaleString('es-CL')}</div>
+                </div>
+                <div class="border-t border-b border-dashed border-slate-700 py-2 space-y-1">
+                    <div class="font-bold text-slate-400 text-[11px]">ÍTEMS / PRODUCTOS</div>
+                    ${detallesHtml || `<div class="flex justify-between"><span>Venta de Productos</span><span>$${formatoNumero(venta.total_venta)}</span></div>`}
+                </div>
+                <div class="space-y-1">
+                    <div class="flex justify-between text-slate-400"><span>Monto Neto:</span><span>$${formatoNumero(venta.neto || Math.round(venta.total_venta / 1.19))}</span></div>
+                    <div class="flex justify-between text-slate-400"><span>IVA (19%):</span><span>$${formatoNumero(venta.iva || Math.max(venta.total_venta - Math.round(venta.total_venta / 1.19), 0))}</span></div>
+                    <div class="flex justify-between text-base font-extrabold text-white pt-1 border-t border-slate-800">
+                        <span>TOTAL PAGADO:</span>
+                        <span class="text-emerald-400">$${formatoNumero(venta.total_venta)}</span>
+                    </div>
+                </div>
+                <div class="border-t border-dashed border-slate-700 pt-2 space-y-1">
+                    <div class="font-bold text-slate-400 text-[11px]">DESGLOSE DE MEDIOS DE PAGO (CU 23)</div>
+                    ${pagosHtml}
+                </div>
+                ${insumosHtml}
+                <div class="text-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
+                    Documento tributario electrónico sincronizable con ERP SAP KidZania. ¡Gracias por su compra!
+                </div>
+            `;
+
+            document.getElementById('modalBoletaPos').classList.remove('hidden');
+        }
+
+        function cerrarModalBoletaPos() {
+            document.getElementById('modalBoletaPos').classList.add('hidden');
+        }
+
+        async function verBoletaVentaPorId(ventaId) {
+            try {
+                const resp = await api(`${API_URL}/api/cajas/ventas/${ventaId}`, { headers: authHeaders });
+                mostrarBoletaVenta(resp.venta, resp.detalles, resp.pagos, []);
+            } catch (error) {
+                setMensaje('mensajePos', error.message || 'No se pudo cargar la boleta.', false);
+            }
+        }
+
+        function renderizarVentasTurno() {
+            const tbody = document.getElementById('tablaVentasTurno');
+            if (!estadoPos.ventas_turno.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-slate-500">Aún no se han registrado ventas en este turno.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = estadoPos.ventas_turno.map(v => `
+                <tr class="border-t border-slate-800">
+                    <td class="p-2 font-mono text-amber-400">${v.folio_boleta || ('#' + v.venta_id)}</td>
+                    <td class="p-2 text-slate-400">${new Date(v.fecha_venta).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td class="p-2 text-slate-200">${v.observacion || 'Venta POS'}</td>
+                    <td class="p-2 uppercase text-slate-300">${v.metodo_pago.replace('_', ' ')}</td>
+                    <td class="p-2 text-right font-mono font-bold text-emerald-400">$${formatoNumero(v.total_venta)}</td>
+                    <td class="p-2 text-center">
+                        <button type="button" onclick="verBoletaVentaPorId(${v.venta_id})"
+                                class="bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold px-2 py-0.5 rounded text-[11px]">
+                            Ver Boleta
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // =====================================================================
+        // CU 26 (CU 79): Cierre de Caja con Arqueo
+        // =====================================================================
+        async function abrirModalCierreCaja() {
+            try {
+                const data = await api(`${API_URL}/api/cajas/mi-caja/resumen-cierre`, { headers: authHeaders });
+                const c = data.caja;
+                const r = data.resumen_turno;
+
+                estadoPos.efectivoEsperadoArqueo = Number(r.efectivo_esperado || 0);
+
+                document.getElementById('arqCajaId').textContent = `#${c.caja_id}`;
+                document.getElementById('arqPuestoNombre').textContent = c.puesto_nombre;
+                document.getElementById('arqCajeroNombre').textContent = c.cajero_nombre || posUser;
+                document.getElementById('arqCantidadVentas').textContent = `${r.cantidad_ventas} venta(s)`;
+
+                document.getElementById('arqFondoInicial').textContent = `$${formatoNumero(r.fondo_inicial)}`;
+                document.getElementById('arqVentasEfectivo').textContent = `$${formatoNumero(r.totales_medio_pago.efectivo)}`;
+                document.getElementById('arqEfectivoEsperado').textContent = `$${formatoNumero(r.efectivo_esperado)}`;
+                document.getElementById('arqVentasDebito').textContent = `$${formatoNumero(r.totales_medio_pago.tarjeta_debito)}`;
+                document.getElementById('arqVentasCredito').textContent = `$${formatoNumero(r.totales_medio_pago.tarjeta_credito)}`;
+                document.getElementById('arqTotalVentas').textContent = `$${formatoNumero(r.total_ventas_monto)}`;
+
+                document.getElementById('inputEfectivoContadoArqueo').value = r.efectivo_esperado;
+                document.getElementById('inputObservacionCierre').value = '';
+                calcularDiferenciaArqueoEnVivo();
+
+                document.getElementById('contenidoFormularioArqueo').classList.remove('hidden');
+                document.getElementById('contenidoComprobanteArqueo').classList.add('hidden');
+                document.getElementById('modalCierreCaja').classList.remove('hidden');
+            } catch (error) {
+                setMensaje('mensajePos', error.message || 'No se pudo obtener el resumen de cierre de caja.', false);
+            }
+        }
+
+        function cerrarModalCierreCaja() {
+            document.getElementById('modalCierreCaja').classList.add('hidden');
+        }
+
+        function usarEfectivoEsperadoExacto() {
+            document.getElementById('inputEfectivoContadoArqueo').value = estadoPos.efectivoEsperadoArqueo;
+            calcularDiferenciaArqueoEnVivo();
+        }
+
+        function calcularDiferenciaArqueoEnVivo() {
+            const valStr = document.getElementById('inputEfectivoContadoArqueo').value;
+            const panel = document.getElementById('panelDiferenciaArqueoVivo');
+            const lblEstado = document.getElementById('lblEstadoArqueoVivo');
+            const lblMonto = document.getElementById('lblMontoDiferenciaVivo');
+
+            if (valStr === '' || valStr === null) {
+                lblEstado.textContent = 'Ingrese el efectivo contado para calcular la diferencia';
+                lblMonto.textContent = '$0';
+                panel.className = 'p-3.5 rounded-xl border bg-slate-900 border-slate-700 flex items-center justify-between';
+                return;
+            }
+
+            const contado = Number(valStr);
+            const esperado = Number(estadoPos.efectivoEsperadoArqueo || 0);
+            const dif = Number((contado - esperado).toFixed(2));
+
+            if (Math.abs(dif) < 0.01) {
+                panel.className = 'p-3.5 rounded-xl border bg-emerald-950/40 border-emerald-600/60 flex items-center justify-between';
+                lblEstado.textContent = '✅ CAJA CUADRADA (El efectivo contado coincide con el esperado)';
+                lblEstado.className = 'text-sm font-bold text-emerald-300 mt-0.5';
+                lblMonto.textContent = '$0';
+                lblMonto.className = 'text-xl font-mono font-extrabold text-emerald-400';
+            } else if (dif > 0) {
+                panel.className = 'p-3.5 rounded-xl border bg-amber-950/40 border-amber-600/60 flex items-center justify-between';
+                lblEstado.textContent = '⚠️ SOBRANTE DE CAJA (Efectivo contado supera al esperado)';
+                lblEstado.className = 'text-sm font-bold text-amber-300 mt-0.5';
+                lblMonto.textContent = `+$${formatoNumero(dif)}`;
+                lblMonto.className = 'text-xl font-mono font-extrabold text-amber-400';
+            } else {
+                panel.className = 'p-3.5 rounded-xl border bg-rose-950/40 border-rose-600/60 flex items-center justify-between';
+                lblEstado.textContent = '🚨 FALTANTE DE CAJA (Efectivo contado es menor al esperado)';
+                lblEstado.className = 'text-sm font-bold text-rose-300 mt-0.5';
+                lblMonto.textContent = `-$${formatoNumero(Math.abs(dif))}`;
+                lblMonto.className = 'text-xl font-mono font-extrabold text-rose-400';
+            }
+        }
+
+        async function confirmarCierreConArqueo(event) {
+            event.preventDefault();
+            const efectivoContado = document.getElementById('inputEfectivoContadoArqueo').value;
+            const obsCierre = document.getElementById('inputObservacionCierre').value.trim();
+
+            try {
+                const resp = await api(`${API_URL}/api/cajas/cerrar`, {
+                    method: 'POST',
+                    headers: jsonHeaders,
+                    body: JSON.stringify({
+                        efectivo_contado: Number(efectivoContado),
+                        observacion_cierre: obsCierre || null
+                    })
+                });
+
+                const arq = resp.arqueo;
+                document.getElementById('compMensajeResultado').textContent = resp.message;
+                document.getElementById('comprobanteDetalleHtml').innerHTML = `
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span>Caja / Puesto:</span><strong>#${arq.caja_id} · ${arq.puesto_nombre} (${arq.puesto_tipo_negocio.toUpperCase()})</strong></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span>Fondo Inicial:</span><strong>$${formatoNumero(arq.fondo_inicial)}</strong></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span>Ventas en Efectivo:</span><strong>$${formatoNumero(arq.totales_medio_pago.efectivo)}</strong></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span>Ventas Débito / Crédito / Transf.:</span><strong>$${formatoNumero(arq.totales_medio_pago.tarjeta_debito + arq.totales_medio_pago.tarjeta_credito + arq.totales_medio_pago.transferencia)}</strong></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span>Total Ventas (${arq.cantidad_ventas}):</span><strong>$${formatoNumero(arq.total_ventas_monto)}</strong></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1 text-emerald-300"><span>Efectivo Esperado:</span><strong>$${formatoNumero(arq.efectivo_esperado)}</strong></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1 text-white"><span>Efectivo Contado:</span><strong>$${formatoNumero(arq.efectivo_contado)}</strong></div>
+                    <div class="flex justify-between pt-1 text-sm"><span class="font-bold">Diferencia (${arq.estado_arqueo.toUpperCase()}):</span><strong class="${arq.diferencia_arqueo === 0 ? 'text-emerald-400' : (arq.diferencia_arqueo > 0 ? 'text-amber-300' : 'text-rose-400')}">${arq.diferencia_arqueo > 0 ? '+' : ''}$${formatoNumero(arq.diferencia_arqueo)}</strong></div>
+                `;
+
+                document.getElementById('contenidoFormularioArqueo').classList.add('hidden');
+                document.getElementById('contenidoComprobanteArqueo').classList.remove('hidden');
+                await cargarEstadoCaja();
+            } catch (error) {
+                setMensaje('mensajePos', error.message || 'Error al cerrar la caja.', false);
+            }
+        }
+
+        function continuarEnPosTrasCierre() {
+            cerrarModalCierreCaja();
+            cargarEstadoCaja();
+        }
+
+        function salirDeSesionPos() {
+            if (estadoPos.tiene_caja_abierta) {
+                abrirModalCierreCaja();
+                return;
+            }
+            cerrarSesion('v_pos_login.html');
+        }
+
         function irALoginOficina() {
             cerrarSesion('v_login.html');
         }
+
+        cargarEstadoCaja();
     </script>
 </body>
 </html>
