@@ -55,6 +55,13 @@
                 </div>
             </div>
 
+            <!-- Acceso rápido a Login de Oficina -->
+            <button onclick="irALoginOficina()"
+                    class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-700 transition duration-150 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+                <span>Login Oficina</span>
+            </button>
+
             <!-- Botón Cerrar Turno / Salir -->
             <button onclick="confirmarCierre()" 
                     class="bg-rose-600/90 hover:bg-rose-600 active:scale-95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl border border-rose-500/50 transition duration-150 flex items-center gap-1.5 shadow-lg shadow-rose-950/40">
@@ -133,17 +140,18 @@
         }
 
         // Cargar datos de la sesión activa
-        const user = localStorage.getItem('usuario') || 'Cajero Operador';
-        const role = localStorage.getItem('rol_nombre') || 'Punto de Venta';
-        const rolId = localStorage.getItem('rol');
+        const posUser = localStorage.getItem('usuario') || 'Cajero Operador';
+        const posRole = (localStorage.getItem('rol_nombre') || 'Punto de Venta').toLowerCase();
+        const posRolId = localStorage.getItem('rol');
 
-        document.getElementById('userName').textContent = user;
-        document.getElementById('welcomeName').textContent = user;
-        document.getElementById('userRole').textContent = role === 'admin' ? 'Administrador' : 'Punto de Venta';
-        document.getElementById('userAvatar').textContent = getInitials(user);
+        document.getElementById('userName').textContent = posUser;
+        document.getElementById('welcomeName').textContent = posUser;
+        const roleLabels = { admin: 'Administrador', cocina: 'Personal de Cocina', caja: 'Cajero POS', cajero: 'Cajero POS' };
+        document.getElementById('userRole').textContent = roleLabels[posRole] || 'Punto de Venta';
+        document.getElementById('userAvatar').textContent = getInitials(posUser);
 
         // Si es admin, mostrar enlace de retorno al dashboard
-        if (rolId === '1' || role === 'admin') {
+        if (posRolId === '1' || posRole === 'admin') {
             document.getElementById('adminBadgeContainer').classList.remove('hidden');
         }
 
@@ -156,11 +164,16 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Confirmar y cerrar turno
+        // Confirmar y cerrar turno POS
         function confirmarCierre() {
-            if (confirm(`¿Deseas cerrar la caja y salir del turno activo de ${user}?`)) {
+            if (confirm(`¿Deseas cerrar la caja y salir del turno activo de ${posUser}?`)) {
                 cerrarSesion('v_pos_login.html');
             }
+        }
+
+        // Volver directamente al login de oficina limpiando la sesión POS activa
+        function irALoginOficina() {
+            cerrarSesion('v_login.html');
         }
     </script>
 </body>

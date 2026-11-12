@@ -10,27 +10,252 @@
   <main id="main" class="lg:ml-72 p-6">
     <div id="mensaje" class="hidden"></div>
     <div class="mb-4">
-      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">Agregar nuevo proveedor</button>
+      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">
+        Nuevo proveedor
+      </button>
     </div>
-    <section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6"><h3 class="font-semibold text-lg mb-4">Registrar proveedor</h3><form id="form" class="grid gap-4 md:grid-cols-2"><input name="rut" required placeholder="RUT proveedor" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="nombre" required placeholder="Nombre proveedor" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="contacto_nom" placeholder="Nombre contacto" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="contacto_tel" placeholder="Teléfono contacto" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="contacto_correo" type="email" placeholder="Correo contacto" class="bg-gray-700 rounded p-2 border border-gray-600"><textarea name="condiciones_comerciales" placeholder="Condiciones comerciales" class="bg-gray-700 rounded p-2 border border-gray-600"></textarea><button class="md:col-span-2 bg-amber-500 text-gray-950 font-semibold rounded p-2">Registrar proveedor</button></form></section><section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-900"><tr><th class="p-3 text-left">RUT</th><th class="p-3 text-left">Proveedor</th><th class="p-3 text-left">Contacto</th><th class="p-3 text-left">Correo</th><th class="p-3 text-left">Condiciones</th><th class="p-3 text-left">Estado</th></tr></thead><tbody id="tabla"></tbody></table></div></section>
+
+    <!-- Formulario de Alta de Proveedor (CU 6) -->
+    <section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6">
+      <h3 class="font-semibold text-lg mb-4">Registrar proveedor con condiciones comerciales</h3>
+      <form id="form" class="grid gap-4 md:grid-cols-3">
+        <input name="rut" required placeholder="RUT proveedor (ej: 76543210-1)" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="nombre" required placeholder="Nombre o razón social *" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="contacto_nom" required placeholder="Nombre persona de contacto *" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="contacto_tel" required placeholder="Teléfono contacto (ej: +56 9 8765 4321) *" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="contacto_correo" required type="email" placeholder="Correo contacto (ej: ventas@proveedor.cl) *" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <select name="plazo_pago" class="bg-gray-700 rounded p-2 border border-gray-600">
+          <option value="Contado">Plazo de pago: Contado</option>
+          <option value="15 días">Plazo de pago: 15 días</option>
+          <option value="30 días" selected>Plazo de pago: 30 días</option>
+          <option value="60 días">Plazo de pago: 60 días</option>
+        </select>
+        <select name="modalidad_entrega" class="bg-gray-700 rounded p-2 border border-gray-600">
+          <option value="Despacho en bodega KidZania">Entrega: Despacho en bodega KidZania</option>
+          <option value="Retiro en planta proveedor">Entrega: Retiro en planta proveedor</option>
+          <option value="Abastecimiento programado semanal">Entrega: Abastecimiento semanal</option>
+        </select>
+        <textarea name="condiciones_comerciales" required rows="2" placeholder="Condiciones comerciales (descuentos pactados, monto mínimo, frecuencia de abastecimiento, etc.) *" class="md:col-span-2 bg-gray-700 rounded p-2 border border-gray-600"></textarea>
+        <button class="md:col-span-3 bg-amber-500 text-gray-950 font-semibold rounded p-2 hover:bg-amber-600">
+          Guardar proveedor
+        </button>
+      </form>
+    </section>
+
+    <!-- Listado de Proveedores -->
+    <section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900">
+            <tr>
+              <th class="p-3 text-left">RUT</th>
+              <th class="p-3 text-left">Razón Social</th>
+              <th class="p-3 text-left">Contacto</th>
+              <th class="p-3 text-left">Condiciones Comerciales</th>
+              <th class="p-3 text-left">Vínculos</th>
+              <th class="p-3 text-left">Estado</th>
+              <th class="p-3 text-left">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
+
+  <!-- Modal Edición de Proveedor con Trazabilidad (CU 6) -->
+  <div id="modalEditar" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-xl p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-white">Editar proveedor</h3>
+      <p class="text-xs text-gray-400 mt-1">Todo cambio en datos de contacto o condiciones comerciales queda registrado en la bitácora de auditoría.</p>
+      <div id="errorModalEditar" class="hidden mt-3 p-2.5 rounded bg-red-900/50 border border-red-600 text-red-100 text-xs"></div>
+
+      <form id="formEditar" class="mt-4 grid gap-3 md:grid-cols-2">
+        <input type="hidden" id="edit_id">
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">RUT *</label>
+          <input id="edit_rut" required class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Razón Social *</label>
+          <input id="edit_nombre" required class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Nombre Contacto</label>
+          <input id="edit_contacto_nom" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Teléfono Contacto *</label>
+          <input id="edit_contacto_tel" required class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Correo Contacto *</label>
+          <input id="edit_contacto_correo" type="email" required class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Plazo de Pago</label>
+          <input id="edit_plazo_pago" placeholder="Ej: 30 días" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-gray-300 mb-1">Modalidad de Entrega</label>
+          <input id="edit_modalidad_entrega" placeholder="Ej: Despacho en bodega KidZania" class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-gray-300 mb-1">Condiciones Comerciales *</label>
+          <textarea id="edit_condiciones" rows="3" required class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm"></textarea>
+        </div>
+        <div class="md:col-span-2 flex justify-end gap-2 pt-2">
+          <button type="button" onclick="cerrarModalEditar()" class="bg-gray-700 hover:bg-gray-600 rounded px-4 py-2 text-sm">Cancelar</button>
+          <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded px-4 py-2 text-sm">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="../js/app-common.js"></script>
   <script>
-    montarLayout('Proveedores', 'UR 2.2: datos de identificación, contacto y condiciones comerciales sin duplicidad.');
+    montarLayout('Proveedores', 'CU 6 (UR 2.2 · RF 6): identificación, contacto, condiciones comerciales, edición trazable y preservación de integridad.');
     const formSection = document.getElementById('formSection');
     const btnAgregar = document.getElementById('btnAgregar');
+    const puedeEditar = puedeEscribirModulo('proveedores');
+    let listaProveedores = [];
+
     if (btnAgregar && formSection) {
       btnAgregar.addEventListener('click', () => {
         formSection.classList.toggle('hidden');
-        btnAgregar.textContent = formSection.classList.contains('hidden') ? 'Agregar nuevo proveedor' : 'Ocultar formulario';
+        btnAgregar.textContent = formSection.classList.contains('hidden') ? 'Nuevo proveedor' : 'Ocultar formulario';
       });
     }
 
-    
-async function cargar(){ const data=await api('/api/proveedores',{headers:authHeaders}); document.getElementById('tabla').innerHTML=data.map(p=>`<tr class="border-t border-gray-700"><td class="p-3">${p.proveedor_rut}</td><td class="p-3 font-medium">${p.proveedor_nombre}</td><td class="p-3">${p.proveedor_nombre_contacto||'-'}<br><span class="text-gray-400">${p.proveedor_telefono_contacto||''}</span></td><td class="p-3">${p.proveedor_correo_contacto||'-'}</td><td class="p-3 max-w-xs">${p.proveedor_condiciones_comerciales||'-'}</td><td class="p-3">${p.proveedor_estado}</td></tr>`).join(''); }
-document.getElementById('form').addEventListener('submit',async e=>{ e.preventDefault(); const body=Object.fromEntries(new FormData(e.target).entries()); try{ await api('/api/proveedores',{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)}); setMensaje('mensaje','Proveedor registrado en PostgreSQL'); e.target.reset(); cargar(); }catch(err){setMensaje('mensaje',err.message,false);} });
-cargar().catch(e=>setMensaje('mensaje',e.message,false));
+    async function cargar() {
+      listaProveedores = await api('/api/proveedores', { headers: authHeaders });
+      document.getElementById('tabla').innerHTML = listaProveedores.map(p => {
+        const metaComercial = [
+          p.proveedor_plazo_pago ? `Plazo: ${p.proveedor_plazo_pago}` : null,
+          p.proveedor_modalidad_entrega ? `Entrega: ${p.proveedor_modalidad_entrega}` : null
+        ].filter(Boolean).join(' · ');
 
+        const prodsList = Array.isArray(p.productos_nombres) && p.productos_nombres.length > 0
+          ? `<div class="text-xs text-gray-400 mt-1 truncate max-w-[200px]" title="${p.productos_nombres.join(', ')}">${p.productos_nombres.join(', ')}</div>`
+          : '';
+
+        const badgeEstado = p.proveedor_estado === 'activo'
+          ? '<span class="px-2 py-0.5 rounded text-xs bg-emerald-950/60 border border-emerald-700 text-emerald-200">activo</span>'
+          : '<span class="px-2 py-0.5 rounded text-xs bg-gray-900 border border-gray-600 text-gray-400">inactivo</span>';
+
+        const accionesHtml = puedeEditar
+          ? `<div class="flex flex-wrap gap-1.5">
+               <button onclick="abrirModalEditar(${p.proveedor_id})" class="bg-amber-500/90 hover:bg-amber-500 text-gray-950 font-semibold rounded px-2.5 py-1 text-xs">Editar</button>
+               <button onclick="cambiarEstado(${p.proveedor_id}, '${p.proveedor_estado === 'activo' ? 'inactivo' : 'activo'}')" class="bg-gray-700 hover:bg-gray-600 rounded px-2.5 py-1 text-xs">
+                 ${p.proveedor_estado === 'activo' ? 'Inactivar' : 'Activar'}
+               </button>
+             </div>`
+          : '<span class="text-xs text-gray-500">Solo lectura</span>';
+
+        return `<tr class="border-t border-gray-700 hover:bg-gray-800/50">
+          <td class="p-3 font-mono text-xs">${p.proveedor_rut}</td>
+          <td class="p-3 font-medium text-white">${p.proveedor_nombre}</td>
+          <td class="p-3">
+            <div class="font-medium">${p.proveedor_nombre_contacto || '-'}</div>
+            <div class="text-xs text-gray-400">${p.proveedor_telefono_contacto || '-'}</div>
+            <div class="text-xs text-amber-300/90">${p.proveedor_correo_contacto || '-'}</div>
+          </td>
+          <td class="p-3 max-w-xs">
+            ${metaComercial ? `<div class="text-xs font-semibold text-amber-400 mb-0.5">${metaComercial}</div>` : ''}
+            <div class="text-xs text-gray-200">${p.proveedor_condiciones_comerciales || '-'}</div>
+          </td>
+          <td class="p-3 text-xs">
+            <span class="px-2 py-0.5 rounded bg-gray-900 border border-gray-700">${p.productos_asociados || 0} productos</span>
+            <span class="px-2 py-0.5 rounded bg-gray-900 border border-gray-700 ml-1">${p.lotes_registrados || 0} lotes</span>
+            ${prodsList}
+          </td>
+          <td class="p-3">${badgeEstado}</td>
+          <td class="p-3">${accionesHtml}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7" class="p-4 text-center text-gray-400">No hay proveedores registrados</td></tr>';
+    }
+
+    function abrirModalEditar(id) {
+      const p = listaProveedores.find(x => x.proveedor_id === id);
+      if (!p) return;
+      document.getElementById('edit_id').value = p.proveedor_id;
+      document.getElementById('edit_rut').value = p.proveedor_rut || '';
+      document.getElementById('edit_nombre').value = p.proveedor_nombre || '';
+      document.getElementById('edit_contacto_nom').value = p.proveedor_nombre_contacto || '';
+      document.getElementById('edit_contacto_tel').value = p.proveedor_telefono_contacto || '';
+      document.getElementById('edit_contacto_correo').value = p.proveedor_correo_contacto || '';
+      document.getElementById('edit_plazo_pago').value = p.proveedor_plazo_pago || '';
+      document.getElementById('edit_modalidad_entrega').value = p.proveedor_modalidad_entrega || '';
+      document.getElementById('edit_condiciones').value = p.proveedor_condiciones_comerciales || '';
+      document.getElementById('errorModalEditar').classList.add('hidden');
+      document.getElementById('modalEditar').classList.remove('hidden');
+    }
+
+    function cerrarModalEditar() {
+      document.getElementById('modalEditar').classList.add('hidden');
+    }
+
+    document.getElementById('formEditar').addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = document.getElementById('edit_id').value;
+      const body = {
+        rut: document.getElementById('edit_rut').value,
+        nombre: document.getElementById('edit_nombre').value,
+        contacto_nom: document.getElementById('edit_contacto_nom').value,
+        contacto_tel: document.getElementById('edit_contacto_tel').value,
+        contacto_correo: document.getElementById('edit_contacto_correo').value,
+        plazo_pago: document.getElementById('edit_plazo_pago').value,
+        modalidad_entrega: document.getElementById('edit_modalidad_entrega').value,
+        condiciones_comerciales: document.getElementById('edit_condiciones').value
+      };
+      try {
+        const res = await api(`/api/proveedores/${id}`, {
+          method: 'PUT',
+          headers: jsonHeaders,
+          body: JSON.stringify(body)
+        });
+        cerrarModalEditar();
+        setMensaje('mensaje', res.message || 'Proveedor actualizado correctamente');
+        await cargar();
+      } catch (err) {
+        const errEl = document.getElementById('errorModalEditar');
+        errEl.textContent = err.message;
+        errEl.classList.remove('hidden');
+      }
+    });
+
+    async function cambiarEstado(id, estado) {
+      try {
+        const res = await api(`/api/proveedores/${id}/estado`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ estado })
+        });
+        setMensaje('mensaje', res.message || `Estado del proveedor cambiado a ${estado}`);
+        await cargar();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    }
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target).entries());
+      try {
+        const res = await api('/api/proveedores', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify(body)
+        });
+        setMensaje('mensaje', res.message || 'Proveedor registrado en PostgreSQL');
+        e.target.reset();
+        await cargar();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    cargar().catch(e => setMensaje('mensaje', e.message, false));
   </script>
 </body>
 </html>

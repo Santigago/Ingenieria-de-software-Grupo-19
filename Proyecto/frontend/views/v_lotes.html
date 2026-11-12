@@ -3,35 +3,921 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KidZania - Lotes</title>
+  <title>KidZania - Existencias, Lotes y Control de Vencimientos (CU 10, CU 14, CU 17)</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
   <main id="main" class="lg:ml-72 p-6">
     <div id="mensaje" class="hidden"></div>
-    <div class="mb-4">
-      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">Agregar nuevo lote</button>
+
+    <!-- Barra superior de acciones operativas -->
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition text-sm">
+          + Registrar recepción de mercadería y lote (CU 10)
+        </button>
+        <button id="btnRecalcularStock" type="button" class="bg-gray-800 hover:bg-gray-700 text-amber-300 border border-amber-500/40 rounded px-3.5 py-2 text-xs font-medium transition">
+          ↻ Recalcular stock desde movimientos (CU 41)
+        </button>
+        <button id="btnExportarVencimientos" type="button" class="bg-emerald-700 hover:bg-emerald-600 text-white rounded px-3.5 py-2 text-xs font-medium transition">
+          ⬇ Exportar Reporte Vencimientos (.CSV - CU 74)
+        </button>
+      </div>
+      <a href="v_ingresos.html" class="text-xs text-amber-400 hover:text-amber-300 underline">
+        Ir a vista dedicada de Ingresos de Stock →
+      </a>
     </div>
-    <section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6"><h3 class="font-semibold text-lg mb-4">Registrar lote asociado a producto y proveedor</h3><form id="form" class="grid gap-4 md:grid-cols-3"><input name="lote_codigo" required placeholder="Código de lote" class="bg-gray-700 rounded p-2 border border-gray-600"><select name="producto_id" id="productos" required class="bg-gray-700 rounded p-2 border border-gray-600"></select><select name="proveedor_id" id="proveedores" required class="bg-gray-700 rounded p-2 border border-gray-600"></select><select name="ubicacion_id" id="ubicaciones" class="bg-gray-700 rounded p-2 border border-gray-600"><option value="">Sin ubicación</option></select><input name="cantidad_ingresada" type="number" min="0.01" step="0.01" required placeholder="Cantidad disponible" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="fecha_recepcion" type="date" required class="bg-gray-700 rounded p-2 border border-gray-600"><input name="fecha_vencimiento" type="date" required class="bg-gray-700 rounded p-2 border border-gray-600"><input name="observacion" placeholder="Observación" class="md:col-span-2 bg-gray-700 rounded p-2 border border-gray-600"><button class="bg-amber-500 text-gray-950 font-semibold rounded p-2">Registrar lote</button></form></section><section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-900"><tr><th class="p-3 text-left">Lote</th><th class="p-3 text-left">Producto</th><th class="p-3 text-left">Proveedor</th><th class="p-3 text-left">Ubicación</th><th class="p-3 text-left">Cantidad</th><th class="p-3 text-left">Ingreso</th><th class="p-3 text-left">Vencimiento</th><th class="p-3 text-left">Estado</th></tr></thead><tbody id="tabla"></tbody></table></div></section>
+
+    <!-- Panel de Alertas de Vencimiento y Umbral Configurable (CU 17: Subflujos CU 24, 25, 74) -->
+    <section class="bg-gray-800/90 border border-gray-700 rounded-xl p-4 mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-700 pb-3 mb-4">
+        <div>
+          <span class="text-[11px] uppercase tracking-wider font-bold text-amber-400">Módulo G · Control de Vencimientos y Alertas Automáticas (CU 17)</span>
+          <h3 class="text-base font-bold text-white mt-0.5">Monitoreo FEFO de Caducidad por Lote (Subflujos CU 24, CU 25 y CU 74)</h3>
+        </div>
+        <form id="formUmbral" class="flex items-center gap-2 bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-700">
+          <label class="text-xs text-gray-300">Umbral alerta (días):</label>
+          <input id="inputUmbralDias" type="number" min="1" max="365" value="7" class="w-16 bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-center text-amber-300 font-bold">
+          <button type="submit" id="btnGuardarUmbral" class="bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold text-xs px-2.5 py-1 rounded">
+            Guardar umbral
+          </button>
+        </form>
+      </div>
+
+      <!-- KPIs de Alertas de Vencimiento -->
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 mb-4">
+        <div class="bg-red-950/40 border border-red-700/60 rounded-lg p-3">
+          <div class="text-xs text-red-300">Lotes Vencidos (&lt; 0 días)</div>
+          <div id="kpiVencidos" class="text-2xl font-bold text-red-400 mt-1">0</div>
+        </div>
+        <div class="bg-orange-950/40 border border-orange-700/60 rounded-lg p-3">
+          <div class="text-xs text-orange-300">Críticos (0 a 3 días)</div>
+          <div id="kpiCriticos" class="text-2xl font-bold text-orange-400 mt-1">0</div>
+        </div>
+        <div class="bg-amber-950/40 border border-amber-700/60 rounded-lg p-3">
+          <div class="text-xs text-amber-300">Próximos a Vencer (≤ <span id="lblUmbralKpi">7</span>d)</div>
+          <div id="kpiPorVencer" class="text-2xl font-bold text-amber-400 mt-1">0</div>
+        </div>
+        <div class="bg-emerald-950/30 border border-emerald-700/50 rounded-lg p-3">
+          <div class="text-xs text-emerald-300">Lotes Vigentes</div>
+          <div id="kpiVigentes" class="text-2xl font-bold text-emerald-400 mt-1">0</div>
+        </div>
+        <div class="bg-gray-900 border border-gray-700 rounded-lg p-3">
+          <div class="text-xs text-gray-400">Stock / Valor en Riesgo</div>
+          <div id="kpiValorRiesgo" class="text-lg font-bold text-amber-300 mt-1">$0</div>
+          <div id="kpiUnidadesRiesgo" class="text-[11px] text-gray-400">0 unidades</div>
+        </div>
+      </div>
+
+      <!-- Botones rápidos de rango de días (Subflujo CU 25) -->
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+          <span class="text-gray-400 mr-1">Listar por horizonte (CU 25):</span>
+          <button type="button" data-rango-dias="todos" class="btn-rango-venc px-2.5 py-1 rounded bg-amber-500 text-gray-950 font-semibold">Todos</button>
+          <button type="button" data-rango-dias="vencidos" class="btn-rango-venc px-2.5 py-1 rounded bg-gray-900 hover:bg-gray-700 text-red-300 border border-red-800/60">Solo Vencidos</button>
+          <button type="button" data-rango-dias="3" class="btn-rango-venc px-2.5 py-1 rounded bg-gray-900 hover:bg-gray-700 text-orange-300 border border-orange-800/60">Próximos 3 días</button>
+          <button type="button" data-rango-dias="7" class="btn-rango-venc px-2.5 py-1 rounded bg-gray-900 hover:bg-gray-700 text-amber-300 border border-amber-800/60">Próximos 7 días</button>
+          <button type="button" data-rango-dias="15" class="btn-rango-venc px-2.5 py-1 rounded bg-gray-900 hover:bg-gray-700 text-yellow-200 border border-gray-700">Próximos 15 días</button>
+          <button type="button" data-rango-dias="30" class="btn-rango-venc px-2.5 py-1 rounded bg-gray-900 hover:bg-gray-700 text-sky-300 border border-gray-700">Próximos 30 días</button>
+        </div>
+        <div id="resumenAlertasBanner" class="text-xs text-amber-300 font-medium"></div>
+      </div>
+    </section>
+
+    <!-- Comprobante de recepción generada (Subflujo CU 39) -->
+    <section id="comprobanteSection" class="hidden bg-emerald-950/30 border border-emerald-600/60 rounded-xl p-5 mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <span class="text-xs uppercase tracking-wider font-bold text-emerald-400">Comprobante de Recepción de Mercadería (CU 39)</span>
+          <h4 id="compTitulo" class="text-lg font-bold text-white mt-0.5"></h4>
+        </div>
+        <button type="button" onclick="document.getElementById('comprobanteSection').classList.add('hidden')" class="text-xs text-gray-400 hover:text-white">✕ Cerrar</button>
+      </div>
+      <div id="compDetalle" class="grid gap-3 md:grid-cols-4 text-xs bg-gray-900/80 p-4 rounded-lg border border-gray-800"></div>
+    </section>
+
+    <!-- Formulario de recepción y lote (Subflujos CU 9, 10, 11, 39, 40, 48) -->
+    <section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6">
+      <h3 class="font-semibold text-lg mb-1">Registrar recepción de mercadería y lote (CU 10)</h3>
+      <p class="text-xs text-gray-400 mb-4">
+        Integra validación ISO de fechas (CU 10), documento de respaldo (CU 39), costo unitario mayor a cero (CU 40) y responsable de recepción física habilitado (CU 48).
+      </p>
+
+      <form id="form" class="grid gap-4 md:grid-cols-3">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Escanear / buscar código producto (CU 39)</label>
+          <input id="inputCodigoScan" placeholder="Ej: PIZZ-001 (filtra selector)" class="w-full bg-gray-900 rounded p-2 border border-gray-700 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Producto activo *</label>
+          <select name="producto_id" id="productos" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Proveedor activo *</label>
+          <select name="proveedor_id" id="proveedores" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Código único de lote (CU 9) *</label>
+          <input name="lote_codigo" required placeholder="Ej: LOTE-2026-001" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">N° Documento de respaldo (CU 39) *</label>
+          <input name="documento_respaldo" required placeholder="Ej: GD-45890 / FAC-1023" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Ubicación en bodega (CU 7)</label>
+          <select name="ubicacion_id" id="ubicaciones" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+            <option value="">Sin ubicación específica</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Cantidad ingresada (&gt; 0) *</label>
+          <input name="cantidad_ingresada" id="inputCantidad" type="number" min="0.01" step="0.01" required placeholder="Cantidad recibida" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Costo unitario de lote ($) (CU 40) *</label>
+          <input name="costo_unitario" id="inputCostoUnitario" type="number" min="0.01" step="0.01" required placeholder="Ej: 1250" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Costo total recepción calculado</label>
+          <input id="inputCostoTotalCalculado" readonly value="$0" class="w-full bg-gray-900 text-amber-300 font-semibold rounded p-2 border border-gray-700 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha de ingreso (AAAA-MM-DD) *</label>
+          <input name="fecha_recepcion" id="fecha_recepcion" type="date" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha de vencimiento (&gt; ingreso) (CU 10) *</label>
+          <input name="fecha_vencimiento" id="fecha_vencimiento" type="date" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Responsable de recepción (CU 48) *</label>
+          <select name="responsable_recepcion_id" id="responsables" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Estado físico de recepción (CU 48) *</label>
+          <select name="estado_recepcion" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+            <option value="conforme">Conforme (Sin incidencias)</option>
+            <option value="con_observaciones">Con observaciones</option>
+            <option value="parcial">Recepción parcial</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-gray-400 mb-1">Observaciones de recepción</label>
+          <input name="observacion" placeholder="Detalle estado de envases, temperatura o diferencias observadas" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+
+        <button class="md:col-span-3 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded p-2.5 transition">
+          Confirmar recepción y registrar lote
+        </button>
+      </form>
+    </section>
+
+    <!-- Buscador y Filtros Combinados Acumulativos de Inventario (CU 14: Subflujos CU 19, 20, 21) -->
+    <section class="bg-gray-800 rounded-xl border border-gray-700 p-4 mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <span class="text-[11px] uppercase tracking-wider font-bold text-sky-400">Módulo F · Consulta y Filtrado de Existencias (CU 14)</span>
+          <h3 class="text-sm font-semibold text-white">Búsqueda Multicriterio (CU 19) y Filtros Acumulativos de Inventario (CU 20)</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" id="btnModoLotes" class="px-3 py-1.5 rounded text-xs font-semibold bg-amber-500 text-gray-950">
+            Desglose por Lotes (CU 21)
+          </button>
+          <button type="button" id="btnModoConsolidado" class="px-3 py-1.5 rounded text-xs font-semibold bg-gray-900 text-gray-300 border border-gray-700 hover:bg-gray-700">
+            Consolidado por Producto (CU 21 / CU 41)
+          </button>
+        </div>
+      </div>
+
+      <form id="formFiltros" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="lg:col-span-2">
+          <label class="block text-[11px] text-gray-400 mb-1">Búsqueda rápida (código, nombre, lote, categoría o proveedor - CU 19)</label>
+          <input id="filtroQ" type="text" placeholder="Ej: PIZZ, LOTE-2026, Bebidas..." class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-1.5 text-xs">
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Categoría</label>
+          <select id="filtroCategoria" class="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs">
+            <option value="">Todas las categorías</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Proveedor</label>
+          <select id="filtroProveedor" class="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs">
+            <option value="">Todos los proveedores</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Ubicación en bodega</label>
+          <select id="filtroUbicacion" class="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs">
+            <option value="">Todas las ubicaciones</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Línea de negocio</label>
+          <select id="filtroTipoNegocio" class="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs">
+            <option value="todos">Todos (Comida y Merch)</option>
+            <option value="comida">Comida y Bebidas</option>
+            <option value="merch">Merchandising</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Estado de vencimiento</label>
+          <select id="filtroEstadoVenc" class="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs">
+            <option value="todos">Todos los estados</option>
+            <option value="alertas">Con Alerta (Vencidos + Por vencer)</option>
+            <option value="vencido">Solo Vencidos</option>
+            <option value="critico">Críticos (≤ 3 días)</option>
+            <option value="por_vencer">Próximos a vencer (según umbral)</option>
+            <option value="vigente">Vigentes</option>
+          </select>
+        </div>
+        <div class="flex items-end justify-between gap-2">
+          <label class="inline-flex items-center gap-1.5 text-xs text-gray-300 cursor-pointer select-none">
+            <input id="filtroSoloStock" type="checkbox" class="rounded bg-gray-900 border-gray-600 text-amber-500">
+            <span>Solo con stock &gt; 0</span>
+          </label>
+          <div class="flex gap-1.5">
+            <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white font-semibold px-3 py-1.5 rounded text-xs">
+              Filtrar
+            </button>
+            <button type="button" id="btnLimpiarFiltros" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-2.5 py-1.5 rounded text-xs">
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Chips de filtros activos y resumen de resultados -->
+      <div class="mt-3 pt-3 border-t border-gray-700/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div id="chipsFiltrosActivos" class="flex flex-wrap items-center gap-1.5 text-gray-400">
+          <span>Filtros activos: Ninguno (mostrando inventario completo)</span>
+        </div>
+        <div id="resumenExistenciasFiltro" class="text-gray-300 font-medium"></div>
+      </div>
+    </section>
+
+    <!-- Tabla 1: Desglose de Existencias por Lotes (FEFO - CU 10, CU 14, CU 17) -->
+    <section id="seccionTablaLotes" class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="p-3.5 bg-gray-900/70 border-b border-gray-700 flex items-center justify-between">
+        <h4 class="font-semibold text-sm text-amber-300">Desglose de Existencias por Lote Ordenado por Vencimiento (FEFO)</h4>
+        <span id="contadorLotes" class="text-xs text-gray-400"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900 text-xs text-gray-300">
+            <tr>
+              <th class="p-3 text-left">Lote / Doc.</th>
+              <th class="p-3 text-left">Producto</th>
+              <th class="p-3 text-left">Categoría</th>
+              <th class="p-3 text-left">Proveedor</th>
+              <th class="p-3 text-left">Ubicación</th>
+              <th class="p-3 text-left">Disp. / Ingresado</th>
+              <th class="p-3 text-left">Costo / Valor Stock</th>
+              <th class="p-3 text-left">Ingreso / Vencimiento</th>
+              <th class="p-3 text-left">Alerta Vencimiento</th>
+              <th class="p-3 text-left">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tabla 2: Existencias Consolidadas por Producto (Subflujos CU 21, CU 41 y CU 51) -->
+    <section id="seccionTablaConsolidada" class="hidden bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="p-3.5 bg-gray-900/70 border-b border-gray-700 flex items-center justify-between">
+        <h4 class="font-semibold text-sm text-sky-300">Existencias Consolidadas por Producto y Cálculo por Movimientos (CU 21 / CU 41)</h4>
+        <span id="contadorConsolidado" class="text-xs text-gray-400"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900 text-xs text-gray-300">
+            <tr>
+              <th class="p-3 text-left">Código / Producto</th>
+              <th class="p-3 text-left">Categoría / Negocio</th>
+              <th class="p-3 text-left">Stock Disponible</th>
+              <th class="p-3 text-left">Ingresos / Salidas (CU 41)</th>
+              <th class="p-3 text-left">Lotes Activos</th>
+              <th class="p-3 text-left">Próximo Vencimiento</th>
+              <th class="p-3 text-left">Ubicaciones en Bodega</th>
+              <th class="p-3 text-left">Valorización ($)</th>
+              <th class="p-3 text-left">Tiempo Real (CU 51)</th>
+            </tr>
+          </thead>
+          <tbody id="tablaConsolidada"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Modal de Consulta de Stock en Tiempo Real (Subflujo CU 51) -->
+    <div id="modalTiempoReal" class="hidden fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+      <div class="bg-gray-900 border border-gray-700 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
+        <div class="flex items-start justify-between border-b border-gray-800 pb-3 mb-4">
+          <div>
+            <span class="text-xs uppercase font-bold tracking-wider text-sky-400">Subflujo CU 51 · Consulta de Stock en Tiempo Real</span>
+            <h3 id="trTitulo" class="text-xl font-bold text-white mt-0.5"></h3>
+            <p id="trSubtitulo" class="text-xs text-gray-400 mt-0.5"></p>
+          </div>
+          <button type="button" onclick="cerrarModalTiempoReal()" class="text-gray-400 hover:text-white text-sm px-2 py-1">✕ Cerrar</button>
+        </div>
+
+        <div id="trKpis" class="grid gap-3 sm:grid-cols-4 mb-5"></div>
+
+        <div class="grid gap-4 md:grid-cols-2 mb-5">
+          <div class="bg-gray-800/80 border border-gray-700 rounded-lg p-3.5">
+            <h4 class="text-xs font-bold uppercase text-amber-400 mb-2">Ubicaciones físicas en bodega</h4>
+            <div id="trUbicaciones" class="space-y-1.5 text-xs"></div>
+          </div>
+          <div class="bg-gray-800/80 border border-gray-700 rounded-lg p-3.5">
+            <h4 class="text-xs font-bold uppercase text-emerald-400 mb-2">Lotes activos disponibles (FEFO)</h4>
+            <div id="trLotes" class="space-y-1.5 text-xs max-h-40 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <div class="bg-gray-800/80 border border-gray-700 rounded-lg p-3.5">
+          <h4 class="text-xs font-bold uppercase text-sky-400 mb-2">Últimos movimientos de entrada y salida en tiempo real</h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead class="bg-gray-900 text-gray-400">
+                <tr>
+                  <th class="p-2 text-left">Fecha</th>
+                  <th class="p-2 text-left">Tipo</th>
+                  <th class="p-2 text-left">Motivo</th>
+                  <th class="p-2 text-left">Lote</th>
+                  <th class="p-2 text-left">Cantidad</th>
+                  <th class="p-2 text-left">Responsable</th>
+                </tr>
+              </thead>
+              <tbody id="trMovimientos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
+
   <script src="../js/app-common.js"></script>
   <script>
-    montarLayout('Lotes', 'UR 3.2, UR 4.1 y UR 4.2: lote, proveedor, fechas y stock.');
+    montarLayout(
+      'Existencias, Lotes y Vencimientos',
+      'CU 10: Recepción y lotes · CU 14: Búsqueda, filtros acumulativos y stock en tiempo real · CU 17: Control de vencimientos y alertas configurables.'
+    );
+
     const formSection = document.getElementById('formSection');
     const btnAgregar = document.getElementById('btnAgregar');
+    let productosActivos = [];
+    let modoVista = 'lotes'; // 'lotes' | 'consolidado'
+    let rangoDiasActivo = 'todos';
+    let umbralSistema = 7;
+
+    if (!puedeEscribirModulo('lotes')) {
+      const formUmbral = document.getElementById('formUmbral');
+      if (formUmbral) {
+        document.getElementById('inputUmbralDias').disabled = true;
+        document.getElementById('btnGuardarUmbral').classList.add('hidden');
+      }
+    }
+
     if (btnAgregar && formSection) {
       btnAgregar.addEventListener('click', () => {
         formSection.classList.toggle('hidden');
-        btnAgregar.textContent = formSection.classList.contains('hidden') ? 'Agregar nuevo lote' : 'Ocultar formulario';
+        btnAgregar.textContent = formSection.classList.contains('hidden')
+          ? '+ Registrar recepción de mercadería y lote (CU 10)'
+          : 'Ocultar formulario de recepción';
       });
     }
 
-    
-async function cargarSelects(){ const [productos,proveedores,ubicaciones]=await Promise.all([api(`${API_URL}/api/productos`,{headers:authHeaders}),api(`${API_URL}/api/proveedores`,{headers:authHeaders}),api(`${API_URL}/api/ubicaciones`,{headers:authHeaders})]); document.getElementById('productos').innerHTML=productos.filter(p=>p.producto_estado==='activo').map(p=>`<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre}</option>`).join(''); document.getElementById('proveedores').innerHTML=proveedores.filter(p=>p.proveedor_estado==='activo').map(p=>`<option value="${p.proveedor_id}">${p.proveedor_nombre}</option>`).join(''); document.getElementById('ubicaciones').innerHTML='<option value="">Sin ubicación</option>'+ubicaciones.filter(u=>u.ubicacion_estado==='activo').map(u=>`<option value="${u.ubicacion_id}">${u.ubicacion_codigo} - ${u.ubicacion_nombre}</option>`).join(''); }
-async function cargar(){ const data=await api(`${API_URL}/api/lotes`,{headers:authHeaders}); document.getElementById('tabla').innerHTML=data.map(l=>`<tr class="border-t border-gray-700"><td class="p-3">${l.lote_codigo}</td><td class="p-3">${l.producto_nombre||'-'}</td><td class="p-3">${l.proveedor_nombre||'-'}</td><td class="p-3">${l.ubicacion_codigo||'-'}</td><td class="p-3">${formatoNumero(l.lote_cantidad_disponible)} ${l.unidad_medida_codigo||''}</td><td class="p-3">${formatoFecha(l.lote_fecha_recepcion)}</td><td class="p-3">${formatoFecha(l.lote_fecha_vencimiento)}</td><td class="p-3">${l.estado_vencimiento}</td></tr>`).join(''); }
-document.getElementById('form').addEventListener('submit',async e=>{ e.preventDefault(); const body=Object.fromEntries(new FormData(e.target).entries()); body.producto_id=Number(body.producto_id); body.proveedor_id=Number(body.proveedor_id); body.ubicacion_id=body.ubicacion_id?Number(body.ubicacion_id):null; body.cantidad_ingresada=Number(body.cantidad_ingresada); try{ await api(`${API_URL}/api/lotes`,{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)}); setMensaje('mensaje','Lote registrado y stock actualizado'); e.target.reset(); await cargar(); }catch(err){setMensaje('mensaje',err.message,false);} });
-Promise.all([cargarSelects(),cargar()]).catch(e=>setMensaje('mensaje',e.message,false));
+    const hoyIso = new Date().toISOString().slice(0, 10);
+    document.getElementById('fecha_recepcion').value = hoyIso;
 
+    function actualizarCostoTotalUI() {
+      const cant = Number(document.getElementById('inputCantidad').value || 0);
+      const costo = Number(document.getElementById('inputCostoUnitario').value || 0);
+      const total = cant > 0 && costo > 0 ? cant * costo : 0;
+      document.getElementById('inputCostoTotalCalculado').value = `$${formatoNumero(total)}`;
+    }
+
+    document.getElementById('inputCantidad').addEventListener('input', actualizarCostoTotalUI);
+    document.getElementById('inputCostoUnitario').addEventListener('input', actualizarCostoTotalUI);
+
+    document.getElementById('inputCodigoScan').addEventListener('input', e => {
+      const q = e.target.value.trim().toLowerCase();
+      const filtrados = !q
+        ? productosActivos
+        : productosActivos.filter(p =>
+            p.producto_codigo.toLowerCase().includes(q) ||
+            p.producto_nombre.toLowerCase().includes(q)
+          );
+      document.getElementById('productos').innerHTML = filtrados
+        .map(p => `<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre} (${p.unidad_medida_codigo})</option>`)
+        .join('');
+    });
+
+    // Alternar entre Desglose por Lotes y Consolidado por Producto (Subflujo CU 21)
+    const btnModoLotes = document.getElementById('btnModoLotes');
+    const btnModoConsolidado = document.getElementById('btnModoConsolidado');
+    btnModoLotes.addEventListener('click', () => {
+      modoVista = 'lotes';
+      btnModoLotes.className = 'px-3 py-1.5 rounded text-xs font-semibold bg-amber-500 text-gray-950';
+      btnModoConsolidado.className = 'px-3 py-1.5 rounded text-xs font-semibold bg-gray-900 text-gray-300 border border-gray-700 hover:bg-gray-700';
+      document.getElementById('seccionTablaLotes').classList.remove('hidden');
+      document.getElementById('seccionTablaConsolidada').classList.add('hidden');
+    });
+    btnModoConsolidado.addEventListener('click', () => {
+      modoVista = 'consolidado';
+      btnModoConsolidado.className = 'px-3 py-1.5 rounded text-xs font-semibold bg-sky-500 text-gray-950';
+      btnModoLotes.className = 'px-3 py-1.5 rounded text-xs font-semibold bg-gray-900 text-gray-300 border border-gray-700 hover:bg-gray-700';
+      document.getElementById('seccionTablaConsolidada').classList.remove('hidden');
+      document.getElementById('seccionTablaLotes').classList.add('hidden');
+    });
+
+    async function cargarSelects() {
+      const [productos, proveedores, ubicaciones, responsables, categorias] = await Promise.all([
+        api('/api/productos', { headers: authHeaders }),
+        api('/api/proveedores', { headers: authHeaders }),
+        api('/api/ubicaciones', { headers: authHeaders }),
+        api('/api/lotes/responsables', { headers: authHeaders }),
+        api('/api/productos/categorias', { headers: authHeaders })
+      ]);
+
+      productosActivos = productos.filter(p => p.producto_estado === 'activo');
+      document.getElementById('productos').innerHTML = productosActivos
+        .map(p => `<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre} (${p.unidad_medida_codigo})</option>`)
+        .join('');
+
+      document.getElementById('proveedores').innerHTML = proveedores
+        .filter(p => p.proveedor_estado === 'activo')
+        .map(p => `<option value="${p.proveedor_id}">${p.proveedor_nombre} (${p.proveedor_rut || ''})</option>`)
+        .join('');
+
+      document.getElementById('ubicaciones').innerHTML =
+        '<option value="">Sin ubicación específica</option>' +
+        ubicaciones
+          .filter(u => u.ubicacion_estado === 'activo')
+          .map(u => `<option value="${u.ubicacion_id}">${u.ubicacion_codigo} - ${u.ubicacion_nombre}</option>`)
+          .join('');
+
+      document.getElementById('responsables').innerHTML = responsables
+        .map(r => `<option value="${r.usuario_id}">${r.nombre_completo} (${r.rol_nombre})</option>`)
+        .join('');
+
+      // Poblar selectores de filtro (CU 20)
+      document.getElementById('filtroCategoria').innerHTML =
+        '<option value="">Todas las categorías</option>' +
+        categorias.map(c => `<option value="${c.categoria_id}">${c.categoria_nombre}</option>`).join('');
+
+      document.getElementById('filtroProveedor').innerHTML =
+        '<option value="">Todos los proveedores</option>' +
+        proveedores.map(p => `<option value="${p.proveedor_id}">${p.proveedor_nombre}</option>`).join('');
+
+      document.getElementById('filtroUbicacion').innerHTML =
+        '<option value="">Todas las ubicaciones</option>' +
+        ubicaciones.map(u => `<option value="${u.ubicacion_id}">${u.ubicacion_codigo} - ${u.ubicacion_nombre}</option>`).join('');
+    }
+
+    function mostrarComprobante(c) {
+      if (!c) return;
+      document.getElementById('compTitulo').textContent =
+        `Lote ${c.lote_codigo} · ${c.producto_codigo} - ${c.producto_nombre}`;
+      document.getElementById('compDetalle').innerHTML = `
+        <div><span class="text-gray-400 block">Folio Movimiento</span><strong class="text-white">#${c.movimiento_id}</strong></div>
+        <div><span class="text-gray-400 block">Doc. Respaldo</span><strong class="text-amber-300">${c.documento_respaldo}</strong></div>
+        <div><span class="text-gray-400 block">Proveedor</span><strong class="text-white">${c.proveedor_nombre}</strong></div>
+        <div><span class="text-gray-400 block">Responsable Recepción</span><strong class="text-sky-300">${c.responsable_recepcion}</strong></div>
+        <div><span class="text-gray-400 block">Cantidad Ingresada</span><strong class="text-emerald-300">${formatoNumero(c.cantidad_ingresada)}</strong></div>
+        <div><span class="text-gray-400 block">Costo Unitario / Total</span><strong class="text-amber-300">$${formatoNumero(c.costo_unitario)} / $${formatoNumero(c.costo_total)}</strong></div>
+        <div><span class="text-gray-400 block">Ingreso / Vencimiento</span><strong class="text-white">${c.fecha_recepcion} → ${c.fecha_vencimiento}</strong></div>
+        <div><span class="text-gray-400 block">Stock Resultante Producto</span><strong class="text-emerald-400">${formatoNumero(c.stock_resultante)}</strong></div>
+      `;
+      document.getElementById('comprobanteSection').classList.remove('hidden');
+    }
+
+    function construirQueryFiltros() {
+      const params = new URLSearchParams();
+      const q = document.getElementById('filtroQ').value.trim();
+      const catId = document.getElementById('filtroCategoria').value;
+      const provId = document.getElementById('filtroProveedor').value;
+      const ubiId = document.getElementById('filtroUbicacion').value;
+      const tipoNeg = document.getElementById('filtroTipoNegocio').value;
+      const estVenc = document.getElementById('filtroEstadoVenc').value;
+      const soloStock = document.getElementById('filtroSoloStock').checked;
+
+      if (q) params.set('q', q);
+      if (catId) params.set('categoria_id', catId);
+      if (provId) params.set('proveedor_id', provId);
+      if (ubiId) params.set('ubicacion_id', ubiId);
+      if (tipoNeg && tipoNeg !== 'todos') params.set('tipo_negocio', tipoNeg);
+      if (estVenc && estVenc !== 'todos') params.set('estado_vencimiento', estVenc);
+      if (soloStock) params.set('solo_con_stock', 'true');
+      if (rangoDiasActivo !== 'todos' && rangoDiasActivo !== 'vencidos') {
+        params.set('dias_vencimiento', rangoDiasActivo);
+      }
+      return params;
+    }
+
+    function renderizarChipsFiltros() {
+      const chips = [];
+      const q = document.getElementById('filtroQ').value.trim();
+      const catSel = document.getElementById('filtroCategoria');
+      const provSel = document.getElementById('filtroProveedor');
+      const ubiSel = document.getElementById('filtroUbicacion');
+      const tipoNeg = document.getElementById('filtroTipoNegocio').value;
+      const estVenc = document.getElementById('filtroEstadoVenc').value;
+      const soloStock = document.getElementById('filtroSoloStock').checked;
+
+      if (q) chips.push(`Búsqueda: "${q}"`);
+      if (catSel.value) chips.push(`Categoría: ${catSel.options[catSel.selectedIndex].text}`);
+      if (provSel.value) chips.push(`Proveedor: ${provSel.options[provSel.selectedIndex].text}`);
+      if (ubiSel.value) chips.push(`Ubicación: ${ubiSel.options[ubiSel.selectedIndex].text}`);
+      if (tipoNeg !== 'todos') chips.push(`Negocio: ${tipoNeg}`);
+      if (estVenc !== 'todos') chips.push(`Vencimiento: ${estVenc}`);
+      if (rangoDiasActivo !== 'todos') chips.push(`Horizonte: ${rangoDiasActivo === 'vencidos' ? 'Vencidos' : '≤ ' + rangoDiasActivo + ' días'}`);
+      if (soloStock) chips.push('Solo con stock > 0');
+
+      const cont = document.getElementById('chipsFiltrosActivos');
+      if (chips.length === 0) {
+        cont.innerHTML = '<span>Filtros activos: Ninguno (mostrando inventario completo)</span>';
+      } else {
+        cont.innerHTML = '<span class="text-gray-400">Filtros aplicados (CU 20):</span>' +
+          chips.map(c => `<span class="px-2 py-0.5 rounded bg-sky-950 border border-sky-700 text-sky-200">${c}</span>`).join('');
+      }
+    }
+
+    async function cargarAlertasVencimiento() {
+      const params = new URLSearchParams();
+      if (rangoDiasActivo !== 'todos' && rangoDiasActivo !== 'vencidos') {
+        params.set('dias', rangoDiasActivo);
+      }
+      const data = await api(`/api/lotes/vencimientos?${params.toString()}`, { headers: authHeaders });
+      umbralSistema = data.umbral_configurado || 7;
+      document.getElementById('inputUmbralDias').value = umbralSistema;
+      document.getElementById('lblUmbralKpi').textContent = umbralSistema;
+
+      const r = data.resumen_alertas;
+      document.getElementById('kpiVencidos').textContent = r.lotes_vencidos;
+      document.getElementById('kpiCriticos').textContent = r.lotes_criticos_3_dias;
+      document.getElementById('kpiPorVencer').textContent = r.lotes_proximos_vencer;
+      document.getElementById('kpiVigentes').textContent = r.lotes_vigentes;
+      document.getElementById('kpiValorRiesgo').textContent = `$${formatoNumero(r.valor_en_riesgo)}`;
+      document.getElementById('kpiUnidadesRiesgo').textContent = `${formatoNumero(r.unidades_en_riesgo)} unidades en alerta`;
+
+      const banner = document.getElementById('resumenAlertasBanner');
+      if (r.total_alertas_activas > 0) {
+        banner.innerHTML = `⚠️ <strong>${r.total_alertas_activas} lote(s) con stock</strong> requieren atención (${r.lotes_vencidos} vencidos y ${r.lotes_proximos_vencer} próximos a vencer en ≤ ${umbralSistema} días).`;
+      } else {
+        banner.innerHTML = `<span class="text-emerald-400">✓ Sin lotes vencidos ni próximos a vencer dentro del umbral de ${umbralSistema} días.</span>`;
+      }
+    }
+
+    async function cargarExistenciasYLotes() {
+      renderizarChipsFiltros();
+      const params = construirQueryFiltros();
+      const data = await api(`/api/productos/existencias?${params.toString()}`, { headers: authHeaders });
+
+      const res = data.resumen;
+      document.getElementById('resumenExistenciasFiltro').innerHTML =
+        `Productos: <strong class="text-white">${res.total_productos}</strong> · ` +
+        `Lotes: <strong class="text-amber-300">${res.total_lotes_filtrados}</strong> · ` +
+        `Stock Total: <strong class="text-emerald-300">${formatoNumero(res.total_unidades_stock)}</strong> · ` +
+        `Valorizado: <strong class="text-amber-400">$${formatoNumero(res.valorizacion_total_stock)}</strong>`;
+
+      let lotesLista = data.desglose_lotes || [];
+      if (rangoDiasActivo === 'vencidos') {
+        lotesLista = lotesLista.filter(l => Number(l.dias_restantes) < 0);
+      } else if (rangoDiasActivo !== 'todos') {
+        const maxDias = Number(rangoDiasActivo);
+        lotesLista = lotesLista.filter(l => l.dias_restantes !== null && Number(l.dias_restantes) <= maxDias);
+      }
+
+      document.getElementById('contadorLotes').textContent = `${lotesLista.length} lote(s) encontrados`;
+      document.getElementById('contadorConsolidado').textContent = `${(data.existencias_consolidadas || []).length} producto(s) encontrados`;
+
+      if (lotesLista.length === 0) {
+        document.getElementById('tabla').innerHTML = `
+          <tr>
+            <td colspan="10" class="p-6 text-center text-gray-400">
+              No se encontraron lotes que coincidan con la búsqueda o los filtros aplicados (CU 19 / CU 20).
+            </td>
+          </tr>`;
+      } else {
+        document.getElementById('tabla').innerHTML = lotesLista.map(l => {
+          const d = l.dias_restantes !== null && l.dias_restantes !== undefined ? Number(l.dias_restantes) : null;
+          let badgeEstado = 'bg-emerald-900/60 text-emerald-300';
+          let textoAlerta = d !== null ? `Vigente (${d}d)` : 'Sin venc.';
+          if (l.estado_vencimiento === 'vencido') {
+            badgeEstado = 'bg-red-900/70 text-red-200 border border-red-700';
+            textoAlerta = `VENCIDO (${Math.abs(d)}d)`;
+          } else if (l.estado_vencimiento === 'critico') {
+            badgeEstado = 'bg-orange-900/70 text-orange-200 border border-orange-700';
+            textoAlerta = `CRÍTICO (${d}d)`;
+          } else if (l.estado_vencimiento === 'por_vencer') {
+            badgeEstado = 'bg-amber-900/70 text-amber-200 border border-amber-700';
+            textoAlerta = `POR VENCER (${d}d)`;
+          }
+
+          return `
+            <tr class="border-t border-gray-700 hover:bg-gray-800/50">
+              <td class="p-3">
+                <div class="font-mono font-semibold text-amber-300 text-xs">${l.lote_codigo}</div>
+                <div class="text-[11px] text-gray-400">Doc: ${l.lote_documento_respaldo || 'S/D'}</div>
+              </td>
+              <td class="p-3">
+                <div class="font-medium text-xs">${l.producto_nombre || '-'}</div>
+                <div class="text-[11px] text-gray-400">${l.producto_codigo || ''}</div>
+              </td>
+              <td class="p-3 text-xs text-gray-300">${l.producto_categoria || '-'}</td>
+              <td class="p-3 text-xs">${l.proveedor_nombre || '-'}</td>
+              <td class="p-3 text-xs">${l.ubicacion_codigo ? `${l.ubicacion_codigo} (${l.ubicacion_nombre})` : '-'}</td>
+              <td class="p-3 text-xs">
+                <span class="font-semibold text-white">${formatoNumero(l.lote_cantidad_disponible)}</span>
+                <span class="text-gray-400">/ ${formatoNumero(l.lote_cantidad_ingresada)} ${l.unidad_medida_codigo || ''}</span>
+              </td>
+              <td class="p-3 text-xs">
+                <div class="text-amber-300 font-medium">$${formatoNumero(l.lote_costo_unitario)} c/u</div>
+                <div class="text-gray-400">Disp: $${formatoNumero(l.valor_stock_lote)}</div>
+              </td>
+              <td class="p-3 text-xs">
+                <div>Ing: ${formatoFecha(l.lote_fecha_recepcion)}</div>
+                <div class="font-medium">Venc: ${formatoFecha(l.lote_fecha_vencimiento)}</div>
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${badgeEstado}">${textoAlerta}</span>
+              </td>
+              <td class="p-3 text-xs">
+                <button type="button" onclick="verStockTiempoReal(${l.producto_id})" class="px-2.5 py-1 rounded bg-sky-900/60 hover:bg-sky-800 text-sky-200 border border-sky-700/60 text-[11px]">
+                  ⚡ Tiempo Real
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const consolidados = data.existencias_consolidadas || [];
+      if (consolidados.length === 0) {
+        document.getElementById('tablaConsolidada').innerHTML = `
+          <tr>
+            <td colspan="9" class="p-6 text-center text-gray-400">
+              No se encontraron productos que coincidan con los criterios seleccionados (CU 19 / CU 20).
+            </td>
+          </tr>`;
+      } else {
+        document.getElementById('tablaConsolidada').innerHTML = consolidados.map(p => `
+          <tr class="border-t border-gray-700 hover:bg-gray-800/50">
+            <td class="p-3">
+              <div class="font-semibold text-white text-xs">${p.producto_nombre}</div>
+              <div class="font-mono text-[11px] text-amber-300">${p.producto_codigo}</div>
+            </td>
+            <td class="p-3 text-xs">
+              <div>${p.producto_categoria || '-'}</div>
+              <div class="text-[11px] text-gray-400 uppercase">${p.producto_tipo_negocio} · ${p.producto_tipo_control_stock}</div>
+            </td>
+            <td class="p-3 text-xs">
+              <span class="font-bold text-sm ${p.stock_critico ? 'text-red-400' : 'text-emerald-300'}">${formatoNumero(p.producto_stock_actual)} ${p.unidad_medida_codigo}</span>
+              ${p.stock_critico ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-red-950 text-red-300 border border-red-800 text-[10px]">Crítico</span>' : ''}
+            </td>
+            <td class="p-3 text-xs">
+              <div class="text-emerald-400">+${formatoNumero(p.total_ingresos)} ing.</div>
+              <div class="text-amber-400">-${formatoNumero(p.total_salidas)} sal.</div>
+            </td>
+            <td class="p-3 text-xs font-semibold">${p.lotes_activos} lote(s) (${formatoNumero(p.stock_disponible_lotes)} ${p.unidad_medida_codigo})</td>
+            <td class="p-3 text-xs">${p.proximo_vencimiento ? `${formatoFecha(p.proximo_vencimiento)} (${p.dias_proximo_vencimiento}d)` : '-'}</td>
+            <td class="p-3 text-xs text-gray-300">${(p.ubicaciones || []).join(', ') || 'Sin ubicación'}</td>
+            <td class="p-3 text-xs font-semibold text-amber-300">$${formatoNumero(p.valorizacion_stock)}</td>
+            <td class="p-3 text-xs">
+              <button type="button" onclick="verStockTiempoReal(${p.producto_id})" class="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white font-semibold text-[11px]">
+                ⚡ Ver en vivo (CU 51)
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function cargarTodo() {
+      await Promise.all([cargarAlertasVencimiento(), cargarExistenciasYLotes()]);
+    }
+
+    // Modal de Stock en Tiempo Real (Subflujo CU 51)
+    async function verStockTiempoReal(productoId) {
+      try {
+        const data = await api(`/api/productos/${productoId}/tiempo-real`, { headers: authHeaders });
+        const p = data.producto;
+        const tr = data.tiempo_real;
+
+        document.getElementById('trTitulo').textContent = `${p.producto_codigo} — ${p.producto_nombre}`;
+        document.getElementById('trSubtitulo').textContent =
+          `Categoría: ${p.producto_categoria || '-'} · Negocio: ${p.producto_tipo_negocio.toUpperCase()} · Control por ${p.producto_tipo_control_stock.toUpperCase()} · Consultado: ${new Date(data.consultado_en).toLocaleTimeString('es-CL')}`;
+
+        document.getElementById('trKpis').innerHTML = `
+          <div class="bg-gray-800 border border-gray-700 rounded-lg p-3">
+            <div class="text-[11px] text-gray-400">Stock Disponible Actual</div>
+            <div class="text-xl font-bold text-emerald-400 mt-0.5">${formatoNumero(tr.stock_disponible)} ${p.unidad_medida_codigo}</div>
+          </div>
+          <div class="bg-gray-800 border border-gray-700 rounded-lg p-3">
+            <div class="text-[11px] text-gray-400">Stock en Lotes Activos</div>
+            <div class="text-xl font-bold text-amber-300 mt-0.5">${formatoNumero(tr.stock_en_lotes_activos)} ${p.unidad_medida_codigo}</div>
+          </div>
+          <div class="bg-gray-800 border border-gray-700 rounded-lg p-3">
+            <div class="text-[11px] text-gray-400">Ingresos / Salidas Históricas</div>
+            <div class="text-sm font-semibold text-white mt-1">+${formatoNumero(tr.total_ingresos_registrados)} / -${formatoNumero(tr.total_salidas_registradas)}</div>
+          </div>
+          <div class="bg-gray-800 border border-gray-700 rounded-lg p-3">
+            <div class="text-[11px] text-gray-400">Estado de Disponibilidad</div>
+            <div class="text-sm font-bold uppercase mt-1 ${tr.estado_stock === 'disponible' ? 'text-emerald-400' : 'text-red-400'}">${tr.estado_stock}</div>
+          </div>
+        `;
+
+        document.getElementById('trUbicaciones').innerHTML = (tr.ubicaciones || []).length > 0
+          ? tr.ubicaciones.map(u => `
+              <div class="flex justify-between items-center bg-gray-900 px-3 py-1.5 rounded border border-gray-700">
+                <span class="text-gray-200">${u.ubicacion}</span>
+                <span class="font-semibold text-amber-300">${formatoNumero(u.cantidad_disponible)} ${p.unidad_medida_codigo} (${u.lotes} lote/s)</span>
+              </div>
+            `).join('')
+          : '<div class="text-gray-400">Sin ubicaciones con stock activo</div>';
+
+        document.getElementById('trLotes').innerHTML = (data.lotes_activos || []).length > 0
+          ? data.lotes_activos.map(l => `
+              <div class="flex justify-between items-center bg-gray-900 px-3 py-1.5 rounded border border-gray-700">
+                <div>
+                  <span class="font-mono text-amber-300 font-semibold">${l.lote_codigo}</span>
+                  <span class="text-gray-400 ml-1">· Vence: ${formatoFecha(l.lote_fecha_vencimiento)} (${l.dias_restantes}d)</span>
+                </div>
+                <span class="font-semibold text-emerald-300">${formatoNumero(l.lote_cantidad_disponible)} ${p.unidad_medida_codigo}</span>
+              </div>
+            `).join('')
+          : '<div class="text-gray-400">Sin lotes activos disponibles</div>';
+
+        document.getElementById('trMovimientos').innerHTML = (data.ultimos_movimientos || []).length > 0
+          ? data.ultimos_movimientos.map(m => `
+              <tr class="border-t border-gray-800">
+                <td class="p-2">${new Date(m.movimiento_fecha).toLocaleString('es-CL')}</td>
+                <td class="p-2">
+                  <span class="px-1.5 py-0.5 rounded ${m.movimiento_tipo === 'ingreso' ? 'bg-emerald-900/60 text-emerald-300' : 'bg-amber-900/60 text-amber-300'}">${m.movimiento_tipo}</span>
+                </td>
+                <td class="p-2">${m.motivo_codigo ? `${m.motivo_codigo} (${m.motivo_catalogo_nombre})` : (m.movimiento_motivo || 'Recepción')}</td>
+                <td class="p-2 font-mono text-amber-300">${m.lote_codigo || '-'}</td>
+                <td class="p-2 font-semibold">${formatoNumero(m.movimiento_cantidad)}</td>
+                <td class="p-2">${m.usuario_nombre || '-'}</td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="6" class="p-3 text-center text-gray-400">Sin movimientos registrados para este producto</td></tr>';
+
+        document.getElementById('modalTiempoReal').classList.remove('hidden');
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    }
+
+    function cerrarModalTiempoReal() {
+      document.getElementById('modalTiempoReal').classList.add('hidden');
+    }
+
+    // Eventos de filtros y umbral
+    document.getElementById('formFiltros').addEventListener('submit', e => {
+      e.preventDefault();
+      cargarExistenciasYLotes().catch(err => setMensaje('mensaje', err.message, false));
+    });
+
+    document.getElementById('btnLimpiarFiltros').addEventListener('click', () => {
+      document.getElementById('formFiltros').reset();
+      rangoDiasActivo = 'todos';
+      actualizarBotonesRangoUI();
+      cargarTodo().catch(err => setMensaje('mensaje', err.message, false));
+    });
+
+    function actualizarBotonesRangoUI() {
+      document.querySelectorAll('.btn-rango-venc').forEach(btn => {
+        const val = btn.getAttribute('data-rango-dias');
+        if (val === rangoDiasActivo) {
+          btn.className = 'btn-rango-venc px-2.5 py-1 rounded bg-amber-500 text-gray-950 font-semibold';
+        } else {
+          btn.className = 'btn-rango-venc px-2.5 py-1 rounded bg-gray-900 hover:bg-gray-700 text-gray-300 border border-gray-700';
+        }
+      });
+    }
+
+    document.querySelectorAll('.btn-rango-venc').forEach(btn => {
+      btn.addEventListener('click', () => {
+        rangoDiasActivo = btn.getAttribute('data-rango-dias');
+        if (rangoDiasActivo === 'vencidos') {
+          document.getElementById('filtroEstadoVenc').value = 'vencido';
+        } else if (rangoDiasActivo === 'todos') {
+          document.getElementById('filtroEstadoVenc').value = 'todos';
+        } else {
+          document.getElementById('filtroEstadoVenc').value = 'por_vencer';
+        }
+        actualizarBotonesRangoUI();
+        cargarTodo().catch(err => setMensaje('mensaje', err.message, false));
+      });
+    });
+
+    document.getElementById('formUmbral').addEventListener('submit', async e => {
+      e.preventDefault();
+      const dias = Number(document.getElementById('inputUmbralDias').value);
+      try {
+        const resp = await api('/api/lotes/vencimientos/umbral', {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ umbral_dias: dias })
+        });
+        setMensaje('mensaje', resp.message);
+        await cargarTodo();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    document.getElementById('btnRecalcularStock').addEventListener('click', async () => {
+      try {
+        const resp = await api('/api/productos/recalcular-stock', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({})
+        });
+        setMensaje('mensaje', `${resp.message} (${resp.total_evaluados} productos verificados)`);
+        await cargarTodo();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    // Exportar Reporte de Vencimientos a CSV compatible con Excel (Subflujo CU 74)
+    document.getElementById('btnExportarVencimientos').addEventListener('click', async () => {
+      try {
+        const params = construirQueryFiltros();
+        const data = await api(`/api/productos/existencias?${params.toString()}`, { headers: authHeaders });
+        const lotes = data.desglose_lotes || [];
+        const sep = ';';
+        const headers = ['Codigo Lote', 'Codigo Producto', 'Producto', 'Categoria', 'Proveedor', 'Ubicacion', 'Fecha Ingreso', 'Fecha Vencimiento', 'Dias Restantes', 'Estado Vencimiento', 'Stock Disponible', 'Costo Unitario', 'Valor Stock'];
+        const filas = lotes.map(l => [
+          l.lote_codigo,
+          l.producto_codigo,
+          `"${String(l.producto_nombre || '').replace(/"/g, '""')}"`,
+          `"${String(l.producto_categoria || '').replace(/"/g, '""')}"`,
+          `"${String(l.proveedor_nombre || '').replace(/"/g, '""')}"`,
+          `"${String(l.ubicacion_codigo ? l.ubicacion_codigo + ' ' + l.ubicacion_nombre : 'Sin ubicacion').replace(/"/g, '""')}"`,
+          formatoFecha(l.lote_fecha_recepcion),
+          formatoFecha(l.lote_fecha_vencimiento),
+          l.dias_restantes ?? '',
+          l.estado_vencimiento,
+          l.lote_cantidad_disponible,
+          l.lote_costo_unitario,
+          l.valor_stock_lote
+        ].join(sep));
+
+        const csv = '\uFEFF' + [headers.join(sep), ...filas].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ParkFlow_Reporte_Vencimientos_Existencias_${hoyIso}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target).entries());
+      body.producto_id = Number(body.producto_id);
+      body.proveedor_id = Number(body.proveedor_id);
+      body.ubicacion_id = body.ubicacion_id ? Number(body.ubicacion_id) : null;
+      body.cantidad_ingresada = Number(body.cantidad_ingresada);
+      body.costo_unitario = Number(body.costo_unitario);
+      body.responsable_recepcion_id = Number(body.responsable_recepcion_id);
+
+      if (body.fecha_vencimiento <= body.fecha_recepcion) {
+        setMensaje('mensaje', 'Inconsistencia de fechas: la fecha de vencimiento debe ser estrictamente posterior a la fecha de ingreso (CU 10)', false);
+        return;
+      }
+
+      try {
+        const resp = await api('/api/lotes', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify(body)
+        });
+        setMensaje('mensaje', resp.message || 'Recepción de mercadería y lote registrados correctamente');
+        mostrarComprobante(resp.comprobante);
+        e.target.reset();
+        document.getElementById('fecha_recepcion').value = hoyIso;
+        actualizarCostoTotalUI();
+        await cargarTodo();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    Promise.all([cargarSelects(), cargarTodo()]).catch(e => setMensaje('mensaje', e.message, false));
   </script>
 </body>
 </html>

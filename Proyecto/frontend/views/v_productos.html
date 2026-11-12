@@ -3,35 +3,1002 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KidZania - Productos perecibles</title>
+  <title>KidZania - Catálogo de Productos</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
   <main id="main" class="lg:ml-72 p-6">
     <div id="mensaje" class="hidden"></div>
-    <div class="mb-4">
-      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">Agregar nuevo producto</button>
+
+    <!-- Barra de acciones superiores -->
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap gap-2">
+        <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">
+          Agregar nuevo producto
+        </button>
+        <button id="btnCategorias" type="button" class="bg-indigo-600 text-white font-semibold rounded px-4 py-2 hover:bg-indigo-500 transition">
+          Gestionar categorías (CU 34)
+        </button>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-gray-400">
+        <span>Filtrar por negocio:</span>
+        <select id="filtroTipoNegocio" class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-200">
+          <option value="">Todos</option>
+          <option value="comida">Comida y Bebidas</option>
+          <option value="merch">Merchandising</option>
+        </select>
+        <span>Control stock:</span>
+        <select id="filtroControlStock" class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-200">
+          <option value="">Todos</option>
+          <option value="lote">Por Lote</option>
+          <option value="unidad">Por Unidad</option>
+        </select>
+      </div>
     </div>
-    <section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6"><h3 class="font-semibold text-lg mb-4">Registrar producto perecible</h3><form id="form" class="grid gap-4 md:grid-cols-3"><input name="codigo" required placeholder="Código único" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="nombre" required placeholder="Nombre producto" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="categoria" required placeholder="Categoría" class="bg-gray-700 rounded p-2 border border-gray-600"><select name="unidad_medida_id" id="unidades" required class="bg-gray-700 rounded p-2 border border-gray-600"></select><select name="estado" class="bg-gray-700 rounded p-2 border border-gray-600"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select><input name="precio" type="number" min="0" step="1" value="0" placeholder="Precio referencial" class="bg-gray-700 rounded p-2 border border-gray-600"><button class="md:col-span-3 bg-amber-500 text-gray-950 font-semibold rounded p-2">Registrar producto</button></form></section><section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-900"><tr><th class="p-3 text-left">Código</th><th class="p-3 text-left">Producto</th><th class="p-3 text-left">Categoría</th><th class="p-3 text-left">Unidad</th><th class="p-3 text-left">Stock</th><th class="p-3 text-left">Estado</th></tr></thead><tbody id="tabla"></tbody></table></div></section>
+
+    <!-- Sección Subflujo CU 34: Gestión de Categorías de Productos -->
+    <section id="categoriasSection" class="hidden bg-gray-800 rounded-lg border border-indigo-500/40 p-5 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-semibold text-lg text-indigo-300">Gestión de Categorías de Productos (Subflujo CU 34)</h3>
+          <p class="text-xs text-gray-400">Configure las categorías activas del catálogo. Las categorías con productos asociados no se eliminan físicamente; solo se inactivan.</p>
+        </div>
+        <button type="button" id="btnCerrarCategorias" class="text-xs text-gray-400 hover:text-gray-200 underline">Cerrar panel</button>
+      </div>
+
+      <form id="formCategoria" class="grid gap-3 md:grid-cols-4 mb-4">
+        <input type="hidden" name="categoria_id" id="catIdInput">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Nombre de categoría *</label>
+          <input name="nombre" id="catNombreInput" required placeholder="Ej: Bebidas Calientes" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-gray-400 mb-1">Descripción</label>
+          <input name="descripcion" id="catDescInput" placeholder="Descripción operativa de la categoría" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div class="flex items-end gap-2">
+          <button type="submit" id="btnSubmitCategoria" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-semibold rounded p-2 text-sm">
+            Guardar categoría
+          </button>
+          <button type="button" id="btnCancelarCatEdicion" class="hidden bg-gray-700 hover:bg-gray-600 text-gray-200 rounded p-2 text-sm">
+            Cancelar
+          </button>
+        </div>
+      </form>
+
+      <div class="overflow-x-auto border border-gray-700 rounded">
+        <table class="w-full text-xs">
+          <thead class="bg-gray-900 text-gray-300">
+            <tr>
+              <th class="p-2 text-left">Categoría</th>
+              <th class="p-2 text-left">Descripción</th>
+              <th class="p-2 text-left">Productos asociados</th>
+              <th class="p-2 text-left">Estado</th>
+              <th class="p-2 text-left">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaCategorias"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Sección Subflujos CU 7, CU 35 y CU 37: Registrar / Actualizar Producto -->
+    <section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="formTitle" class="font-semibold text-lg">Registrar producto en catálogo (CU 8)</h3>
+        <button id="btnCancelarEdicion" type="button" class="hidden text-sm text-gray-400 hover:text-gray-200 underline">
+          Cancelar edición
+        </button>
+      </div>
+      <form id="form" class="grid gap-4 md:grid-cols-3">
+        <input type="hidden" name="producto_id" id="producto_id">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Código único *</label>
+          <input name="codigo" id="prod_codigo" required placeholder="Ej: PROD-001" class="w-full bg-gray-700 rounded p-2 border border-gray-600">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Nombre del producto *</label>
+          <input name="nombre" id="prod_nombre" required placeholder="Nombre descriptivo" class="w-full bg-gray-700 rounded p-2 border border-gray-600">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Categoría activa *</label>
+          <select name="categoria_id" id="prod_categoria_id" required class="w-full bg-gray-700 rounded p-2 border border-gray-600"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Unidad de medida activa *</label>
+          <select name="unidad_medida_id" id="unidades" required class="w-full bg-gray-700 rounded p-2 border border-gray-600"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Tipo de negocio *</label>
+          <select name="tipo_negocio" id="prod_tipo_negocio" required class="w-full bg-gray-700 rounded p-2 border border-gray-600">
+            <option value="comida">Comida y Bebidas (Perecibles / Cocina)</option>
+            <option value="merch">Merchandising (Artículos / Tienda)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Tipo de control de stock (CU 37) *</label>
+          <select name="tipo_control_stock" id="prod_tipo_control_stock" required class="w-full bg-gray-700 rounded p-2 border border-gray-600">
+            <option value="lote">Control por Lote (vencimiento / FEFO)</option>
+            <option value="unidad">Control por Unidad</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Precio referencial ($) *</label>
+          <input name="precio" id="prod_precio" type="number" min="0" step="1" value="0" required class="w-full bg-gray-700 rounded p-2 border border-gray-600">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Stock mínimo alerta</label>
+          <input name="stock_minimo" id="prod_stock_minimo" type="number" min="0" step="0.01" value="0" class="w-full bg-gray-700 rounded p-2 border border-gray-600">
+        </div>
+        <div id="divMotivoCambio" class="hidden">
+          <label class="block text-xs text-amber-300 mb-1">Motivo de actualización (Auditoría CU 35) *</label>
+          <input name="motivo_cambio" id="prod_motivo_cambio" placeholder="Ej: Ajuste de precio o cambio de categoría" class="w-full bg-gray-700 rounded p-2 border border-amber-500/60">
+        </div>
+        <button id="btnSubmit" class="md:col-span-3 bg-amber-500 text-gray-950 font-semibold rounded p-2 hover:bg-amber-600 transition">
+          Registrar producto
+        </button>
+      </form>
+    </section>
+
+    <!-- Tabla principal de catálogo de productos -->
+    <section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900">
+            <tr>
+              <th class="p-3 text-left">Código</th>
+              <th class="p-3 text-left">Producto</th>
+              <th class="p-3 text-left">Negocio</th>
+              <th class="p-3 text-left">Categoría</th>
+              <th class="p-3 text-left">Unidad</th>
+              <th class="p-3 text-left">Control Stock</th>
+              <th class="p-3 text-left">Precio</th>
+              <th class="p-3 text-left">Stock</th>
+              <th class="p-3 text-left">Proveedores (CU 9)</th>
+              <th class="p-3 text-left">Estado</th>
+              <th class="p-3 text-left">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Modal CU 9: Asociar Productos con Proveedores -->
+    <div id="modalProveedores" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div class="bg-gray-800 border border-gray-700 rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-amber-400">Ficha de Producto — Proveedores Asociados (CU 9)</h3>
+            <p id="modalProvSubtitulo" class="text-xs text-gray-300 mt-1"></p>
+          </div>
+          <button type="button" onclick="cerrarModalProveedores()" class="text-gray-400 hover:text-white text-sm">✕ Cerrar</button>
+        </div>
+
+        <div class="mb-5">
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Proveedores actualmente vinculados</h4>
+          <div id="listaProveedoresVinculados" class="space-y-2 text-xs"></div>
+        </div>
+
+        <form id="formAsociarProveedores" class="border-t border-gray-700 pt-4">
+          <input type="hidden" id="asociarProductoId">
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">Seleccionar uno o más proveedores activos para asociar</h4>
+          <div id="checkboxesProveedoresActivos" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-900 rounded border border-gray-700 mb-4 text-xs"></div>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="cerrarModalProveedores()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded text-xs">Cancelar</button>
+            <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold px-4 py-2 rounded text-xs">Asociar proveedores seleccionados</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Subflujo CU 36: Baja Lógica de Producto con Motivo Obligatorio -->
+    <div id="modalBajaLogica" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div class="bg-gray-800 border border-red-500/40 rounded-xl max-w-md w-full p-6">
+        <h3 class="text-lg font-bold text-red-300 mb-1">Baja Lógica de Producto (Subflujo CU 36)</h3>
+        <p id="modalBajaProductoNombre" class="text-xs text-gray-300 mb-3"></p>
+        <p class="text-xs text-gray-400 mb-4">
+          La eliminación física está bloqueada para conservar la trazabilidad histórica de lotes y movimientos. Indique el motivo obligatorio de la baja lógica:
+        </p>
+        <form id="formBajaLogica">
+          <input type="hidden" id="bajaProductoId">
+          <label class="block text-xs text-gray-300 mb-1">Motivo de la baja *</label>
+          <textarea id="bajaMotivoInput" required rows="3" placeholder="Ej: Producto descontinuado de carta de temporada" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-gray-100 mb-4"></textarea>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="cerrarModalBaja()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded text-xs">Cancelar</button>
+            <button type="submit" class="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded text-xs">Confirmar baja lógica</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Subflujo CU 35: Historial de Auditoría del Producto -->
+    <div id="modalAuditoriaProducto" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div class="bg-gray-800 border border-gray-700 rounded-xl max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-lg font-bold text-sky-400">Historial de Auditoría del Producto (Subflujo CU 35)</h3>
+            <p id="modalAuditoriaSubtitulo" class="text-xs text-gray-300 mt-1"></p>
+          </div>
+          <button type="button" onclick="cerrarModalAuditoria()" class="text-gray-400 hover:text-white text-sm">✕ Cerrar</button>
+        </div>
+        <div id="listaAuditoriaProducto" class="space-y-3 text-xs"></div>
+      </div>
+    </div>
+
+    <!-- Modal CU 16: Configurar Límites Mínimo/Máximo y Alertas de Stock Crítico (Subflujos CU 22, CU 23, CU 52) -->
+    <div id="modalParametrosStock" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div class="bg-gray-800 border border-orange-500/40 rounded-xl max-w-lg w-full p-6">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <span class="text-xs uppercase font-bold text-orange-400">CU 16 · Límites y Alertas de Stock Crítico</span>
+            <h3 id="modalStockTitulo" class="text-lg font-bold text-white mt-0.5"></h3>
+          </div>
+          <button type="button" onclick="cerrarModalParametrosStock()" class="text-gray-400 hover:text-white text-sm">✕</button>
+        </div>
+        <form id="formParametrosStock" class="space-y-3 text-xs">
+          <input type="hidden" id="paramStockProductoId">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-gray-300 mb-1">Stock Mínimo (Umbral crítico - CU 22) *</label>
+              <input id="inputStockMin" type="number" min="0" step="0.01" required class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white">
+            </div>
+            <div>
+              <label class="block text-gray-300 mb-1">Stock Máximo (&gt; Mínimo - CU 22)</label>
+              <input id="inputStockMax" type="number" min="0" step="0.01" placeholder="Opcional" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white">
+            </div>
+          </div>
+          <div class="bg-gray-900/80 border border-gray-700 rounded-lg p-3 space-y-2">
+            <div class="font-semibold text-amber-300">Canales de Notificación de Alerta (Subflujo CU 52)</div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="chkCanalSistema" type="checkbox" checked class="rounded border-gray-600 text-amber-500">
+              <span>Activar alerta visual automática en paneles del sistema (CU 23)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="chkCanalCorreo" type="checkbox" class="rounded border-gray-600 text-amber-500">
+              <span>Activar disparo de alerta por correo electrónico (CU 52)</span>
+            </label>
+            <div>
+              <label class="block text-gray-400 mb-1">Correo electrónico de destino (validado si activa correo)</label>
+              <input id="inputCorreoAlerta" type="email" placeholder="abastecimiento@kidzania.cl" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-xs">
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" onclick="cerrarModalParametrosStock()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded">Cancelar</button>
+            <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold px-4 py-2 rounded">Guardar parámetros y alertas (CU 16)</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal CU 19: Definir Receta de Producto de Comida y Descuento Automático de Insumos (Subflujos CU 26 y CU 27) -->
+    <div id="modalRecetaProducto" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <div class="bg-gray-800 border border-emerald-500/40 rounded-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <span class="text-xs uppercase font-bold text-emerald-400">CU 19 · Receta de Producto y Consumo Automático de Insumos (CU 26 / CU 27)</span>
+            <h3 id="modalRecetaTitulo" class="text-lg font-bold text-white mt-0.5"></h3>
+          </div>
+          <button type="button" onclick="cerrarModalReceta()" class="text-gray-400 hover:text-white text-sm">✕</button>
+        </div>
+
+        <input type="hidden" id="recetaProductoId">
+        <div class="bg-gray-900/80 border border-gray-700 rounded-lg p-3 mb-4 text-xs">
+          <div class="font-semibold text-gray-200 mb-2">Agregar ingrediente / insumo activo a la receta</div>
+          <div class="grid gap-2 sm:grid-cols-4">
+            <div class="sm:col-span-2">
+              <select id="selectInsumoReceta" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-xs"></select>
+            </div>
+            <div>
+              <input id="inputCantInsumoReceta" type="number" min="0.01" step="0.01" placeholder="Cantidad por unidad" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-xs">
+            </div>
+            <div>
+              <button type="button" id="btnAgregarLineaReceta" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded p-2 text-xs">
+                + Añadir insumo
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <h4 class="text-xs font-semibold uppercase text-gray-400 mb-2">Ingredientes configurados en la receta</h4>
+          <div id="listaLineasReceta" class="space-y-1.5 text-xs"></div>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button type="button" onclick="cerrarModalReceta()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-4 py-2 rounded text-xs">Cerrar</button>
+          <button type="button" id="btnGuardarRecetaFinal" class="bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold px-4 py-2 rounded text-xs">
+            Guardar receta del producto (CU 26)
+          </button>
+        </div>
+      </div>
+    </div>
   </main>
+
   <script src="../js/app-common.js"></script>
   <script>
-    montarLayout('Productos perecibles', 'UR 3.1: código único, nombre, categoría, unidad y estado activo/inactivo.');
+    montarLayout(
+      'Catálogo de Productos y Asociación con Proveedores',
+      'CU 8 y CU 9: Registro de productos (comida y merchandising), categorías (CU 34), actualización con auditoría (CU 35), baja lógica con motivo (CU 36), tipo de control de stock por lote o unidad (CU 37) y vínculo con proveedores (CU 8).'
+    );
+
     const formSection = document.getElementById('formSection');
+    const categoriasSection = document.getElementById('categoriasSection');
     const btnAgregar = document.getElementById('btnAgregar');
-    if (btnAgregar && formSection) {
-      btnAgregar.addEventListener('click', () => {
-        formSection.classList.toggle('hidden');
-        btnAgregar.textContent = formSection.classList.contains('hidden') ? 'Agregar nuevo producto' : 'Ocultar formulario';
-      });
+    const btnCategorias = document.getElementById('btnCategorias');
+    const btnCancelarEdicion = document.getElementById('btnCancelarEdicion');
+    const form = document.getElementById('form');
+    const formTitle = document.getElementById('formTitle');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const divMotivoCambio = document.getElementById('divMotivoCambio');
+
+    let productosCache = [];
+    let categoriasCache = [];
+    let proveedoresCache = [];
+
+    function resetFormularioProducto() {
+      form.reset();
+      document.getElementById('producto_id').value = '';
+      formTitle.textContent = 'Registrar producto en catálogo (CU 8)';
+      btnSubmit.textContent = 'Registrar producto';
+      divMotivoCambio.classList.add('hidden');
+      document.getElementById('prod_motivo_cambio').required = false;
+      btnCancelarEdicion.classList.add('hidden');
     }
 
-    
-async function cargarUnidades(){ const data=await api('/api/unidades',{headers:authHeaders}); document.getElementById('unidades').innerHTML=data.filter(u=>u.unidad_medida_estado==='activo').map(u=>`<option value="${u.unidad_medida_id}">${u.unidad_medida_nombre} (${u.unidad_medida_codigo})</option>`).join(''); }
-async function cargar(){ const data=await api('/api/productos',{headers:authHeaders}); document.getElementById('tabla').innerHTML=data.map(p=>`<tr class="border-t border-gray-700"><td class="p-3">${p.producto_codigo}</td><td class="p-3 font-medium">${p.producto_nombre}</td><td class="p-3">${p.producto_categoria}</td><td class="p-3">${p.unidad_medida_codigo}</td><td class="p-3">${formatoNumero(p.producto_stock_actual)}</td><td class="p-3">${p.producto_estado}</td></tr>`).join(''); }
-document.getElementById('form').addEventListener('submit',async e=>{ e.preventDefault(); const body=Object.fromEntries(new FormData(e.target).entries()); body.unidad_medida_id=Number(body.unidad_medida_id); body.precio=Number(body.precio||0); try{ await api('/api/productos',{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)}); setMensaje('mensaje','Producto registrado correctamente'); e.target.reset(); await cargar(); }catch(err){setMensaje('mensaje',err.message,false);} });
-Promise.all([cargarUnidades(),cargar()]).catch(e=>setMensaje('mensaje',e.message,false));
+    btnAgregar.addEventListener('click', () => {
+      if (!formSection.classList.contains('hidden') && document.getElementById('producto_id').value) {
+        resetFormularioProducto();
+        return;
+      }
+      resetFormularioProducto();
+      formSection.classList.toggle('hidden');
+      btnAgregar.textContent = formSection.classList.contains('hidden') ? 'Agregar nuevo producto' : 'Ocultar formulario';
+    });
 
+    btnCancelarEdicion.addEventListener('click', () => {
+      resetFormularioProducto();
+      formSection.classList.add('hidden');
+      btnAgregar.textContent = 'Agregar nuevo producto';
+    });
+
+    btnCategorias.addEventListener('click', () => {
+      categoriasSection.classList.toggle('hidden');
+    });
+
+    document.getElementById('btnCerrarCategorias').addEventListener('click', () => {
+      categoriasSection.classList.add('hidden');
+    });
+
+    // =========================================================================
+    // Subflujo CU 34: Categorías de Productos
+    // =========================================================================
+    async function cargarCategorias() {
+      categoriasCache = await api('/api/productos/categorias', { headers: authHeaders });
+      const activas = categoriasCache.filter(c => c.categoria_estado === 'activo');
+      const selectCat = document.getElementById('prod_categoria_id');
+      selectCat.innerHTML = activas.map(c =>
+        `<option value="${c.categoria_id}">${c.categoria_nombre}</option>`
+      ).join('');
+
+      const tbodyCat = document.getElementById('tablaCategorias');
+      tbodyCat.innerHTML = categoriasCache.map(c => `
+        <tr class="border-t border-gray-700">
+          <td class="p-2 font-medium text-gray-100">${c.categoria_nombre}</td>
+          <td class="p-2 text-gray-300">${c.categoria_descripcion || '-'}</td>
+          <td class="p-2 text-gray-300">${c.productos_asociados || 0}</td>
+          <td class="p-2">
+            <span class="px-2 py-0.5 rounded text-xs ${c.categoria_estado === 'activo' ? 'bg-emerald-900/60 text-emerald-300' : 'bg-red-900/60 text-red-300'}">
+              ${c.categoria_estado}
+            </span>
+          </td>
+          <td class="p-2 flex gap-2">
+            <button type="button" onclick="editarCategoria(${c.categoria_id})" class="bg-sky-700 hover:bg-sky-600 text-white px-2 py-1 rounded">Editar</button>
+            <button type="button" onclick="toggleEstadoCategoria(${c.categoria_id}, '${c.categoria_estado === 'activo' ? 'inactivo' : 'activo'}')" class="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded">
+              ${c.categoria_estado === 'activo' ? 'Inactivar' : 'Activar'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window.editarCategoria = (id) => {
+      const cat = categoriasCache.find(c => c.categoria_id === id);
+      if (!cat) return;
+      document.getElementById('catIdInput').value = cat.categoria_id;
+      document.getElementById('catNombreInput').value = cat.categoria_nombre;
+      document.getElementById('catDescInput').value = cat.categoria_descripcion || '';
+      document.getElementById('btnSubmitCategoria').textContent = 'Actualizar categoría';
+      document.getElementById('btnCancelarCatEdicion').classList.remove('hidden');
+    };
+
+    document.getElementById('btnCancelarCatEdicion').addEventListener('click', () => {
+      document.getElementById('formCategoria').reset();
+      document.getElementById('catIdInput').value = '';
+      document.getElementById('btnSubmitCategoria').textContent = 'Guardar categoría';
+      document.getElementById('btnCancelarCatEdicion').classList.add('hidden');
+    });
+
+    document.getElementById('formCategoria').addEventListener('submit', async e => {
+      e.preventDefault();
+      const catId = document.getElementById('catIdInput').value;
+      const body = {
+        nombre: document.getElementById('catNombreInput').value.trim(),
+        descripcion: document.getElementById('catDescInput').value.trim()
+      };
+      try {
+        if (catId) {
+          await api(`/api/productos/categorias/${catId}`, {
+            method: 'PUT',
+            headers: jsonHeaders,
+            body: JSON.stringify(body)
+          });
+          setMensaje('mensaje', 'Categoría actualizada correctamente');
+        } else {
+          await api('/api/productos/categorias', {
+            method: 'POST',
+            headers: jsonHeaders,
+            body: JSON.stringify(body)
+          });
+          setMensaje('mensaje', 'Categoría creada correctamente');
+        }
+        document.getElementById('btnCancelarCatEdicion').click();
+        await Promise.all([cargarCategorias(), cargarProductos()]);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    window.toggleEstadoCategoria = async (id, estado) => {
+      try {
+        await api(`/api/productos/categorias/${id}/estado`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ estado })
+        });
+        setMensaje('mensaje', `Categoría ${estado === 'inactivo' ? 'inactivada' : 'activada'} correctamente`);
+        await cargarCategorias();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    };
+
+    // =========================================================================
+    // Carga de Unidades, Proveedores y Productos
+    // =========================================================================
+    async function cargarUnidades() {
+      const data = await api('/api/unidades', { headers: authHeaders });
+      document.getElementById('unidades').innerHTML = data
+        .filter(u => u.unidad_medida_estado === 'activo')
+        .map(u => `<option value="${u.unidad_medida_id}">${u.unidad_medida_nombre} (${u.unidad_medida_codigo})</option>`)
+        .join('');
+    }
+
+    async function cargarProveedoresActivos() {
+      try {
+        proveedoresCache = await api('/api/proveedores', { headers: authHeaders });
+      } catch (_) {
+        proveedoresCache = [];
+      }
+    }
+
+    function renderizarTablaProductos() {
+      const filtroNegocio = document.getElementById('filtroTipoNegocio').value;
+      const filtroStock = document.getElementById('filtroControlStock').value;
+
+      const filtrados = productosCache.filter(p => {
+        if (filtroNegocio && p.producto_tipo_negocio !== filtroNegocio) return false;
+        if (filtroStock && p.producto_tipo_control_stock !== filtroStock) return false;
+        return true;
+      });
+
+      document.getElementById('tabla').innerHTML = filtrados.map(p => {
+        const nombresProv = Array.isArray(p.proveedores_nombres) && p.proveedores_nombres.length > 0
+          ? p.proveedores_nombres.join(', ')
+          : 'Sin proveedores activos';
+
+        return `
+          <tr class="border-t border-gray-700 hover:bg-gray-800/60">
+            <td class="p-3 font-mono text-xs text-amber-300">${p.producto_codigo}</td>
+            <td class="p-3">
+              <div class="font-medium text-gray-100">${p.producto_nombre}</div>
+              ${p.producto_motivo_baja ? `<div class="text-xs text-red-400 mt-0.5">Motivo baja: ${p.producto_motivo_baja}</div>` : ''}
+            </td>
+            <td class="p-3 text-xs">
+              <span class="px-2 py-0.5 rounded ${p.producto_tipo_negocio === 'merch' ? 'bg-purple-900/60 text-purple-300' : 'bg-amber-900/60 text-amber-300'}">
+                ${p.producto_tipo_negocio === 'merch' ? 'Merchandising' : 'Comida'}
+              </span>
+            </td>
+            <td class="p-3 text-xs text-gray-300">${p.producto_categoria}</td>
+            <td class="p-3 text-xs">${p.unidad_medida_codigo}</td>
+            <td class="p-3 text-xs">
+              <button type="button" onclick="cambiarControlStockRapido(${p.producto_id})" title="Clic para alternar control por lote / unidad (CU 37)" class="px-2 py-0.5 rounded border ${p.producto_tipo_control_stock === 'unidad' ? 'bg-cyan-900/50 border-cyan-600 text-cyan-200' : 'bg-indigo-900/50 border-indigo-600 text-indigo-200'}">
+                Por ${p.producto_tipo_control_stock}
+              </button>
+            </td>
+            <td class="p-3 text-xs">$${formatoNumero(p.producto_precio)}</td>
+            <td class="p-3 text-xs font-semibold">
+              <div>${formatoNumero(p.producto_stock_actual)}</div>
+              <div class="text-[10px] ${p.stock_critico ? 'text-red-400 font-bold' : 'text-gray-400'}">Mín: ${formatoNumero(p.producto_stock_minimo ?? 5)}${p.producto_stock_maximo ? ' / Máx: ' + formatoNumero(p.producto_stock_maximo) : ''}</div>
+            </td>
+            <td class="p-3 text-xs">
+              <div class="font-semibold text-gray-200">${p.proveedores_asociados || 0} vinculado(s)</div>
+              <div class="text-gray-400 truncate max-w-[160px]" title="${nombresProv}">${nombresProv}</div>
+            </td>
+            <td class="p-3">
+              <span class="px-2 py-1 rounded text-xs font-medium ${p.producto_estado === 'activo' ? 'bg-emerald-900/60 text-emerald-300' : 'bg-red-900/60 text-red-300'}">
+                ${p.producto_estado}
+              </span>
+            </td>
+            <td class="p-3">
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="abrirModalProveedores(${p.producto_id})" class="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 px-2 py-1 rounded text-xs">
+                  Proveedores
+                </button>
+                <button type="button" onclick="editarProducto(${p.producto_id})" class="bg-sky-700 hover:bg-sky-600 text-white px-2 py-1 rounded text-xs">
+                  Editar
+                </button>
+                <button type="button" onclick="abrirModalParametrosStock(${p.producto_id})" class="bg-orange-900/50 hover:bg-orange-800 border border-orange-700/60 text-orange-200 px-2 py-1 rounded text-xs">
+                  Límites / Alerta (CU 16)
+                </button>
+                ${p.producto_tipo_negocio === 'comida'
+                  ? `<button type="button" onclick="abrirModalReceta(${p.producto_id})" class="bg-emerald-900/50 hover:bg-emerald-800 border border-emerald-700/60 text-emerald-200 px-2 py-1 rounded text-xs">🍲 Receta (CU 19)</button>`
+                  : ''
+                }
+                <button type="button" onclick="verAuditoriaProducto(${p.producto_id})" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded text-xs">
+                  Auditoría
+                </button>
+                <a href="v_movimientos.html?producto_id=${p.producto_id}" class="bg-indigo-900/60 hover:bg-indigo-800 border border-indigo-700/60 text-indigo-200 px-2 py-1 rounded text-xs">
+                  Kardex (CU 42)
+                </a>
+                ${p.producto_estado === 'activo'
+                  ? `<button type="button" onclick="abrirModalBaja(${p.producto_id})" class="bg-red-700/80 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">Baja lógica</button>`
+                  : `<button type="button" onclick="reactivarProducto(${p.producto_id})" class="bg-emerald-700 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs">Reactivar</button>`
+                }
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function cargarProductos() {
+      productosCache = await api('/api/productos', { headers: authHeaders });
+      renderizarTablaProductos();
+    }
+
+    document.getElementById('filtroTipoNegocio').addEventListener('change', renderizarTablaProductos);
+    document.getElementById('filtroControlStock').addEventListener('change', renderizarTablaProductos);
+
+    // =========================================================================
+    // Subflujos CU 7, CU 35 y CU 37: Crear / Editar Producto / Control Stock
+    // =========================================================================
+    window.editarProducto = (id) => {
+      const p = productosCache.find(item => item.producto_id === id);
+      if (!p) return;
+
+      document.getElementById('producto_id').value = p.producto_id;
+      document.getElementById('prod_codigo').value = p.producto_codigo || '';
+      document.getElementById('prod_nombre').value = p.producto_nombre || '';
+      if (p.categoria_id) {
+        document.getElementById('prod_categoria_id').value = p.categoria_id;
+      }
+      document.getElementById('unidades').value = p.producto_unidad_medida_id;
+      document.getElementById('prod_tipo_negocio').value = p.producto_tipo_negocio || 'comida';
+      document.getElementById('prod_tipo_control_stock').value = p.producto_tipo_control_stock || 'lote';
+      document.getElementById('prod_precio').value = Number(p.producto_precio || 0);
+      document.getElementById('prod_stock_minimo').value = Number(p.producto_stock_minimo || 0);
+      document.getElementById('prod_motivo_cambio').value = '';
+
+      divMotivoCambio.classList.remove('hidden');
+      document.getElementById('prod_motivo_cambio').required = true;
+      formTitle.textContent = `Actualizar producto con auditoría (CU 35): ${p.producto_codigo}`;
+      btnSubmit.textContent = 'Guardar cambios y auditar';
+      btnCancelarEdicion.classList.remove('hidden');
+      formSection.classList.remove('hidden');
+      btnAgregar.textContent = 'Ocultar formulario';
+      formSection.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target).entries());
+      const productoId = body.producto_id;
+      delete body.producto_id;
+      body.categoria_id = Number(body.categoria_id);
+      body.unidad_medida_id = Number(body.unidad_medida_id);
+      body.precio = Number(body.precio || 0);
+      body.stock_minimo = Number(body.stock_minimo || 0);
+
+      try {
+        if (productoId) {
+          await api(`/api/productos/${productoId}`, {
+            method: 'PUT',
+            headers: jsonHeaders,
+            body: JSON.stringify(body)
+          });
+          setMensaje('mensaje', 'Producto actualizado correctamente con registro en auditoría');
+        } else {
+          await api('/api/productos', {
+            method: 'POST',
+            headers: jsonHeaders,
+            body: JSON.stringify(body)
+          });
+          setMensaje('mensaje', 'Producto registrado correctamente en el catálogo');
+        }
+        resetFormularioProducto();
+        formSection.classList.add('hidden');
+        btnAgregar.textContent = 'Agregar nuevo producto';
+        await cargarProductos();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    window.cambiarControlStockRapido = async (id) => {
+      const p = productosCache.find(item => item.producto_id === id);
+      if (!p) return;
+      const nuevoControl = p.producto_tipo_control_stock === 'lote' ? 'unidad' : 'lote';
+      try {
+        await api(`/api/productos/${id}/control-stock`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            tipo_control_stock: nuevoControl,
+            motivo: `Cambio de control de stock a ${nuevoControl} desde catálogo`
+          })
+        });
+        setMensaje('mensaje', `Tipo de control de stock cambiado a "${nuevoControl}"`);
+        await cargarProductos();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    };
+
+    // =========================================================================
+    // Subflujo CU 36: Baja Lógica y Reactivación
+    // =========================================================================
+    window.abrirModalBaja = (id) => {
+      const p = productosCache.find(item => item.producto_id === id);
+      if (!p) return;
+      document.getElementById('bajaProductoId').value = p.producto_id;
+      document.getElementById('modalBajaProductoNombre').textContent = `${p.producto_codigo} — ${p.producto_nombre}`;
+      document.getElementById('bajaMotivoInput').value = '';
+      document.getElementById('modalBajaLogica').classList.remove('hidden');
+    };
+
+    window.cerrarModalBaja = () => {
+      document.getElementById('modalBajaLogica').classList.add('hidden');
+    };
+
+    document.getElementById('formBajaLogica').addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = document.getElementById('bajaProductoId').value;
+      const motivo = document.getElementById('bajaMotivoInput').value.trim();
+      try {
+        await api(`/api/productos/${id}/estado`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ estado: 'inactivo', motivo })
+        });
+        cerrarModalBaja();
+        setMensaje('mensaje', 'Baja lógica registrada correctamente con su motivo y usuario responsable');
+        await cargarProductos();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    window.reactivarProducto = async (id) => {
+      try {
+        await api(`/api/productos/${id}/estado`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ estado: 'activo', motivo: 'Reactivación en catálogo' })
+        });
+        setMensaje('mensaje', 'Producto reactivado correctamente');
+        await cargarProductos();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    };
+
+    // =========================================================================
+    // Subflujo CU 35: Historial de Auditoría de Producto
+    // =========================================================================
+    window.verAuditoriaProducto = async (id) => {
+      const p = productosCache.find(item => item.producto_id === id);
+      if (!p) return;
+      document.getElementById('modalAuditoriaSubtitulo').textContent = `${p.producto_codigo} — ${p.producto_nombre}`;
+      const contenedor = document.getElementById('listaAuditoriaProducto');
+      contenedor.innerHTML = '<div class="text-gray-400">Cargando historial...</div>';
+      document.getElementById('modalAuditoriaProducto').classList.remove('hidden');
+
+      try {
+        const registros = await api(`/api/productos/${id}/auditoria`, { headers: authHeaders });
+        if (registros.length === 0) {
+          contenedor.innerHTML = '<div class="text-gray-400">No hay eventos de auditoría registrados para este producto.</div>';
+          return;
+        }
+        contenedor.innerHTML = registros.map(r => `
+          <div class="bg-gray-900 border border-gray-700 rounded p-3">
+            <div class="flex flex-wrap justify-between gap-2 mb-1">
+              <span class="font-semibold text-amber-300">${r.accion}</span>
+              <span class="text-gray-400">${new Date(r.fecha_hora).toLocaleString('es-CL')}</span>
+            </div>
+            <div class="text-gray-300 mb-1">
+              <strong>Responsable:</strong> ${r.usuario_nombre || r.usuario_correo || 'Sistema'} ·
+              <strong>Motivo:</strong> ${r.motivo || 'Sin motivo especificado'}
+            </div>
+            ${r.valores_anteriores ? `<div class="text-gray-400 font-mono text-[11px] bg-gray-950 p-1.5 rounded mb-1">Anterior: ${JSON.stringify(r.valores_anteriores)}</div>` : ''}
+            ${r.valores_nuevos ? `<div class="text-emerald-300 font-mono text-[11px] bg-gray-950 p-1.5 rounded">Nuevo: ${JSON.stringify(r.valores_nuevos)}</div>` : ''}
+          </div>
+        `).join('');
+      } catch (err) {
+        contenedor.innerHTML = `<div class="text-red-400">${err.message}</div>`;
+      }
+    };
+
+    window.cerrarModalAuditoria = () => {
+      document.getElementById('modalAuditoriaProducto').classList.add('hidden');
+    };
+
+    // =========================================================================
+    // CU 9 (Subflujo CU 8): Asociar Productos con Proveedores
+    // =========================================================================
+    window.abrirModalProveedores = async (productoId) => {
+      document.getElementById('asociarProductoId').value = productoId;
+      document.getElementById('modalProveedores').classList.remove('hidden');
+      await cargarProveedoresDeProductoModal(productoId);
+    };
+
+    window.cerrarModalProveedores = () => {
+      document.getElementById('modalProveedores').classList.add('hidden');
+    };
+
+    async function cargarProveedoresDeProductoModal(productoId) {
+      const listaDiv = document.getElementById('listaProveedoresVinculados');
+      const checksDiv = document.getElementById('checkboxesProveedoresActivos');
+      listaDiv.innerHTML = '<div class="text-gray-400">Cargando proveedores...</div>';
+
+      try {
+        await cargarProveedoresActivos();
+        const data = await api(`/api/productos/${productoId}/proveedores`, { headers: authHeaders });
+        document.getElementById('modalProvSubtitulo').textContent =
+          `${data.producto.producto_codigo} — ${data.producto.producto_nombre}`;
+
+        const vinculados = data.proveedores || [];
+        if (vinculados.length === 0) {
+          listaDiv.innerHTML = '<div class="text-gray-400 bg-gray-900 p-3 rounded border border-gray-700">Este producto aún no tiene proveedores asociados.</div>';
+        } else {
+          listaDiv.innerHTML = vinculados.map(v => `
+            <div class="flex items-center justify-between bg-gray-900 border border-gray-700 rounded p-2.5">
+              <div>
+                <div class="font-semibold text-gray-100">${v.proveedor_nombre} <span class="text-gray-400 font-normal">(${v.proveedor_rut || 'Sin RUT'})</span></div>
+                <div class="text-gray-400">Contacto: ${v.proveedor_contacto || '-'} · Tel: ${v.proveedor_telefono || '-'} · Pago: ${v.proveedor_plazo_pago || '-'}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded ${v.asociacion_estado === 'activo' && v.proveedor_estado === 'activo' ? 'bg-emerald-900/60 text-emerald-300' : 'bg-red-900/60 text-red-300'}">
+                  ${v.asociacion_estado}
+                </span>
+                ${v.asociacion_estado === 'activo'
+                  ? `<button type="button" onclick="desvincularProveedor(${productoId}, ${v.proveedor_id})" class="bg-red-800/70 hover:bg-red-700 text-red-100 px-2 py-1 rounded">Desasociar</button>`
+                  : ''
+                }
+              </div>
+            </div>
+          `).join('');
+        }
+
+        const activosDisponibles = proveedoresCache.filter(pr => pr.proveedor_estado === 'activo');
+        const idsActivosVinculados = new Set(
+          vinculados.filter(v => v.asociacion_estado === 'activo').map(v => v.proveedor_id)
+        );
+
+        if (activosDisponibles.length === 0) {
+          checksDiv.innerHTML = '<div class="text-gray-400 col-span-2">No hay proveedores activos registrados.</div>';
+        } else {
+          checksDiv.innerHTML = activosDisponibles.map(pr => `
+            <label class="flex items-center gap-2 p-1.5 rounded hover:bg-gray-800 cursor-pointer">
+              <input type="checkbox" name="proveedores_ids" value="${pr.proveedor_id}" ${idsActivosVinculados.has(pr.proveedor_id) ? 'checked' : ''} class="rounded border-gray-600 text-amber-500">
+              <span>
+                <strong class="text-gray-200">${pr.proveedor_nombre}</strong>
+                <span class="text-gray-400 block text-[11px]">${pr.proveedor_rut || ''} · ${pr.proveedor_modalidad_entrega || ''}</span>
+              </span>
+            </label>
+          `).join('');
+        }
+      } catch (err) {
+        listaDiv.innerHTML = `<div class="text-red-400">${err.message}</div>`;
+      }
+    }
+
+    document.getElementById('formAsociarProveedores').addEventListener('submit', async e => {
+      e.preventDefault();
+      const productoId = document.getElementById('asociarProductoId').value;
+      const seleccionados = Array.from(
+        document.querySelectorAll('#checkboxesProveedoresActivos input[name="proveedores_ids"]:checked')
+      ).map(cb => Number(cb.value));
+
+      if (seleccionados.length === 0) {
+        setMensaje('mensaje', 'Seleccione al menos un proveedor activo para asociar', false);
+        return;
+      }
+
+      try {
+        await api(`/api/productos/${productoId}/proveedores`, {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({ proveedores_ids: seleccionados })
+        });
+        setMensaje('mensaje', 'Proveedor(es) asociado(s) correctamente a la ficha del producto');
+        await Promise.all([cargarProveedoresDeProductoModal(productoId), cargarProductos()]);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    window.desvincularProveedor = async (productoId, proveedorId) => {
+      try {
+        await api(`/api/productos/${productoId}/proveedores/${proveedorId}`, {
+          method: 'DELETE',
+          headers: authHeaders
+        });
+        setMensaje('mensaje', 'Vínculo con proveedor inactivado correctamente');
+        await Promise.all([cargarProveedoresDeProductoModal(productoId), cargarProductos()]);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    };
+
+    // =========================================================================
+    // CU 16: Configurar Límites de Stock Mínimo/Máximo y Alertas (Subflujos CU 22, 23, 52)
+    // =========================================================================
+    window.abrirModalParametrosStock = (id) => {
+      const p = productosCache.find(item => item.producto_id === id);
+      if (!p) return;
+      document.getElementById('paramStockProductoId').value = p.producto_id;
+      document.getElementById('modalStockTitulo').textContent = `${p.producto_codigo} — ${p.producto_nombre}`;
+      document.getElementById('inputStockMin').value = Number(p.producto_stock_minimo ?? 5);
+      document.getElementById('inputStockMax').value = p.producto_stock_maximo !== null && p.producto_stock_maximo !== undefined ? Number(p.producto_stock_maximo) : '';
+      document.getElementById('chkCanalSistema').checked = p.alerta_canal_sistema !== false;
+      document.getElementById('chkCanalCorreo').checked = Boolean(p.alerta_canal_correo);
+      document.getElementById('inputCorreoAlerta').value = p.alerta_correo_destino || '';
+      document.getElementById('modalParametrosStock').classList.remove('hidden');
+    };
+
+    window.cerrarModalParametrosStock = () => {
+      document.getElementById('modalParametrosStock').classList.add('hidden');
+    };
+
+    document.getElementById('formParametrosStock').addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = document.getElementById('paramStockProductoId').value;
+      const minVal = Number(document.getElementById('inputStockMin').value);
+      const maxStr = document.getElementById('inputStockMax').value.trim();
+      const maxVal = maxStr !== '' ? Number(maxStr) : null;
+
+      try {
+        const resp = await api(`/api/productos/${id}/parametros-stock`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            stock_minimo: minVal,
+            stock_maximo: maxVal,
+            alerta_canal_sistema: document.getElementById('chkCanalSistema').checked,
+            alerta_canal_correo: document.getElementById('chkCanalCorreo').checked,
+            alerta_correo_destino: document.getElementById('inputCorreoAlerta').value.trim()
+          })
+        });
+        setMensaje('mensaje', resp.message);
+        cerrarModalParametrosStock();
+        await cargarProductos();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    // =========================================================================
+    // CU 19: Definir Receta de Producto y Descuento de Insumos (Subflujos CU 26 y CU 27)
+    // =========================================================================
+    let lineasRecetaTemp = [];
+
+    function renderizarLineasRecetaModal() {
+      const div = document.getElementById('listaLineasReceta');
+      if (lineasRecetaTemp.length === 0) {
+        div.innerHTML = '<div class="text-gray-400 p-2">Sin ingredientes agregados aún. Añada al menos un insumo activo.</div>';
+        return;
+      }
+      div.innerHTML = lineasRecetaTemp.map((ing, idx) => `
+        <div class="flex items-center justify-between bg-gray-900 px-3 py-2 rounded border border-gray-700">
+          <div>
+            <strong class="text-amber-300 font-mono">${ing.insumo_codigo}</strong>
+            <span class="text-white ml-1">${ing.insumo_nombre}</span>
+            <span class="text-emerald-300 font-semibold ml-2">→ ${formatoNumero(ing.cantidad)} ${ing.unidad_medida_codigo || ''} por unidad</span>
+          </div>
+          <button type="button" onclick="quitarLineaReceta(${idx})" class="text-red-400 hover:text-red-300 text-xs">Quitar</button>
+        </div>
+      `).join('');
+    }
+
+    window.quitarLineaReceta = (idx) => {
+      lineasRecetaTemp.splice(idx, 1);
+      renderizarLineasRecetaModal();
+    };
+
+    window.abrirModalReceta = async (id) => {
+      const p = productosCache.find(item => item.producto_id === id);
+      if (!p) return;
+      document.getElementById('recetaProductoId').value = id;
+      document.getElementById('modalRecetaTitulo').textContent = `${p.producto_codigo} — ${p.producto_nombre}`;
+
+      const posiblesInsumos = productosCache.filter(x => x.producto_estado === 'activo' && x.producto_id !== id);
+      document.getElementById('selectInsumoReceta').innerHTML = posiblesInsumos.map(x =>
+        `<option value="${x.producto_id}">${x.producto_codigo} - ${x.producto_nombre} (${x.unidad_medida_codigo})</option>`
+      ).join('');
+
+      try {
+        const data = await api(`/api/productos/${id}/receta`, { headers: authHeaders });
+        lineasRecetaTemp = (data.ingredientes || []).map(i => ({
+          insumo_producto_id: i.insumo_producto_id,
+          insumo_codigo: i.insumo_codigo,
+          insumo_nombre: i.insumo_nombre,
+          unidad_medida_codigo: i.unidad_medida_codigo,
+          cantidad: Number(i.cantidad_requerida)
+        }));
+        renderizarLineasRecetaModal();
+        document.getElementById('modalRecetaProducto').classList.remove('hidden');
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    };
+
+    window.cerrarModalReceta = () => {
+      document.getElementById('modalRecetaProducto').classList.add('hidden');
+    };
+
+    document.getElementById('btnAgregarLineaReceta').addEventListener('click', () => {
+      const insId = Number(document.getElementById('selectInsumoReceta').value);
+      const cant = Number(document.getElementById('inputCantInsumoReceta').value);
+      if (!insId || !Number.isFinite(cant) || cant <= 0) {
+        setMensaje('mensaje', 'Seleccione un insumo e indique una cantidad mayor a cero', false);
+        return;
+      }
+      const ins = productosCache.find(x => x.producto_id === insId);
+      if (!ins) return;
+      const existente = lineasRecetaTemp.find(l => l.insumo_producto_id === insId);
+      if (existente) {
+        existente.cantidad = cant;
+      } else {
+        lineasRecetaTemp.push({
+          insumo_producto_id: ins.producto_id,
+          insumo_codigo: ins.producto_codigo,
+          insumo_nombre: ins.producto_nombre,
+          unidad_medida_codigo: ins.unidad_medida_codigo,
+          cantidad: cant
+        });
+      }
+      document.getElementById('inputCantInsumoReceta').value = '';
+      renderizarLineasRecetaModal();
+    });
+
+    document.getElementById('btnGuardarRecetaFinal').addEventListener('click', async () => {
+      const id = document.getElementById('recetaProductoId').value;
+      try {
+        const resp = await api(`/api/productos/${id}/receta`, {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({ ingredientes: lineasRecetaTemp })
+        });
+        setMensaje('mensaje', resp.message);
+        cerrarModalReceta();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    Promise.all([cargarCategorias(), cargarUnidades(), cargarProveedoresActivos(), cargarProductos()])
+      .catch(e => setMensaje('mensaje', e.message, false));
   </script>
 </body>
 </html>

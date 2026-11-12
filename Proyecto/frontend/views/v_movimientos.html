@@ -1,11 +1,589 @@
 <!DOCTYPE html>
 <html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>KidZania - Historial movimientos</title><script src="https://cdn.tailwindcss.com"></script></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KidZania - Historial de Movimientos de Inventario (CU 15)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
-  <main id="main" class="lg:ml-72 p-6"><div id="mensaje" class="hidden"></div><section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"><div class="p-4 border-b border-gray-700"><h3 class="font-semibold">Últimos 100 movimientos</h3></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-900"><tr><th class="p-3 text-left">Fecha</th><th class="p-3 text-left">Tipo</th><th class="p-3 text-left">Motivo</th><th class="p-3 text-left">Producto</th><th class="p-3 text-left">Lote</th><th class="p-3 text-left">Proveedor</th><th class="p-3 text-left">Cantidad</th><th class="p-3 text-left">Usuario</th></tr></thead><tbody id="tabla"></tbody></table></div></section></main>
+  <main id="main" class="lg:ml-72 p-6">
+    <div id="mensaje" class="hidden"></div>
+
+    <!-- Panel de Filtros del Historial General y por Producto (CU 15: Subflujos CU 17 y CU 42) -->
+    <section class="bg-gray-800 rounded-xl border border-gray-700 p-5 mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <span class="text-xs uppercase tracking-wider font-bold text-amber-400">Módulo D · Trazabilidad de Movimientos (CU 15 y CU 12)</span>
+          <h3 class="font-semibold text-base text-white mt-0.5">Consulta General (CU 17), Kardex por Producto (CU 42), Conteos, Ajustes y Transferencias (CU 12)</h3>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="btnToggleOperacionesCU12" class="bg-amber-500 hover:bg-amber-600 text-gray-950 text-xs font-semibold px-3.5 py-2 rounded transition">
+            📋 Conteo Físico, Ajustes y Transferencias (CU 12)
+          </button>
+          <button type="button" id="btnExportarCsv" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2 rounded transition">
+            ⬇ Exportar Historial Filtrado (.CSV)
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel desplegable CU 12: Conteo Físico (CU 15/53), Ajuste de Inventario (CU 14/43) y Transferencia Interna (CU 16) -->
+      <div id="panelOperacionesCU12" class="hidden mb-5 bg-gray-900/90 border border-amber-500/40 rounded-xl p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800 pb-3 mb-4">
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-tab-cu12="conteo" class="btn-tab-cu12 px-3 py-1.5 rounded text-xs font-semibold bg-amber-500 text-gray-950">
+              1. Registrar Conteo Físico (CU 15 / CU 53)
+            </button>
+            <button type="button" data-tab-cu12="ajuste" class="btn-tab-cu12 px-3 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700">
+              2. Ajustar Inventario y Obs. Crítica (CU 14 / CU 43)
+            </button>
+            <button type="button" data-tab-cu12="transferencia" class="btn-tab-cu12 px-3 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700">
+              3. Transferencia Interna de Bodega (CU 16)
+            </button>
+          </div>
+          <span class="text-[11px] text-amber-300">Umbral de ajuste crítico configurado: <strong id="lblUmbralAjuste">10%</strong> (CU 43)</span>
+        </div>
+
+        <!-- Sub-formulario 1: Conteo Físico (CU 15 / CU 53) -->
+        <div id="tabCu12Conteo" class="space-y-4">
+          <form id="formConteoFisico" class="grid gap-3 md:grid-cols-4 text-xs">
+            <div>
+              <label class="block text-gray-400 mb-1">Producto a contar *</label>
+              <select id="conteoProducto" required class="w-full bg-gray-800 border border-gray-700 rounded p-2"></select>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Lote específico (opcional)</label>
+              <select id="conteoLote" class="w-full bg-gray-800 border border-gray-700 rounded p-2">
+                <option value="">Stock global del producto</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Cantidad física observada *</label>
+              <input id="conteoObservada" type="number" min="0" step="0.01" required placeholder="Cantidad real contada" class="w-full bg-gray-800 border border-gray-700 rounded p-2">
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Observación del conteo</label>
+              <input id="conteoObs" placeholder="Ej: Toma física turno mañana" class="w-full bg-gray-800 border border-gray-700 rounded p-2">
+            </div>
+            <div class="md:col-span-4 flex justify-end">
+              <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold px-4 py-2 rounded">
+                Guardar conteo físico y calcular diferencia (CU 15)
+              </button>
+            </div>
+          </form>
+          <div id="listaConteosRecientes" class="text-xs space-y-1.5 max-h-44 overflow-y-auto"></div>
+        </div>
+
+        <!-- Sub-formulario 2: Ajuste de Inventario (CU 14 / CU 43) -->
+        <div id="tabCu12Ajuste" class="hidden space-y-4">
+          <form id="formAjusteInv" class="grid gap-3 md:grid-cols-4 text-xs">
+            <input type="hidden" id="ajusteConteoId" value="">
+            <div>
+              <label class="block text-gray-400 mb-1">Producto a ajustar *</label>
+              <select id="ajusteProducto" required class="w-full bg-gray-800 border border-gray-700 rounded p-2"></select>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Lote afectado (opcional)</label>
+              <select id="ajusteLote" class="w-full bg-gray-800 border border-gray-700 rounded p-2">
+                <option value="">Ajustar stock del producto</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Nuevo stock físico real *</label>
+              <input id="ajusteStockObjetivo" type="number" min="0" step="0.01" required placeholder="Ej: 20" class="w-full bg-gray-800 border border-gray-700 rounded p-2">
+            </div>
+            <div>
+              <label class="block text-amber-300 mb-1">Motivo de ajuste (Catálogo CU 18) *</label>
+              <select id="ajusteMotivo" required class="w-full bg-gray-800 border border-amber-500/60 rounded p-2"></select>
+            </div>
+            <div class="md:col-span-3">
+              <label class="block text-gray-300 mb-1">Observación / Justificación detallada (Obligatoria ≥ 10 caracteres en ajustes críticos - CU 43) *</label>
+              <input id="ajusteObs" required placeholder="Describa la causa verificada de la diferencia para trazabilidad de auditoría" class="w-full bg-gray-800 border border-gray-700 rounded p-2">
+            </div>
+            <div class="flex items-end">
+              <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded">
+                Confirmar ajuste (CU 14)
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Sub-formulario 3: Transferencia Interna (CU 16) -->
+        <div id="tabCu12Transferencia" class="hidden space-y-4">
+          <form id="formTransferencia" class="grid gap-3 md:grid-cols-4 text-xs">
+            <div class="md:col-span-2">
+              <label class="block text-gray-400 mb-1">Lote de origen con stock disponible (CU 16) *</label>
+              <select id="transLoteOrigen" required class="w-full bg-gray-800 border border-gray-700 rounded p-2"></select>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Ubicación de destino (distinta a origen) *</label>
+              <select id="transUbicacionDestino" required class="w-full bg-gray-800 border border-gray-700 rounded p-2"></select>
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Cantidad a transferir *</label>
+              <input id="transCantidad" type="number" min="0.01" step="0.01" required placeholder="Cantidad" class="w-full bg-gray-800 border border-gray-700 rounded p-2">
+            </div>
+            <div class="md:col-span-3">
+              <label class="block text-gray-400 mb-1">Observación de traslado interno</label>
+              <input id="transObs" placeholder="Ej: Reposición hacia cámara de cocina principal" class="w-full bg-gray-800 border border-gray-700 rounded p-2">
+            </div>
+            <div class="flex items-end">
+              <button type="submit" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold px-4 py-2 rounded">
+                Ejecutar transferencia (CU 16)
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <form id="formFiltros" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="lg:col-span-2">
+          <label class="block text-xs text-gray-400 mb-1">Producto específico (Subflujo CU 42)</label>
+          <select id="filtroProducto" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+            <option value="">Todos los productos del catálogo</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha desde (AAAA-MM-DD)</label>
+          <input id="filtroFechaDesde" type="date" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha hasta (AAAA-MM-DD)</label>
+          <input id="filtroFechaHasta" type="date" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Tipo de movimiento</label>
+          <select id="filtroTipo" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+            <option value="todos">Todos (Ingresos y Salidas)</option>
+            <option value="ingreso">Solo Ingresos / Recepciones</option>
+            <option value="salida">Solo Salidas / Descuentos</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Motivo clasificado</label>
+          <select id="filtroMotivo" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+            <option value="todos">Todos los motivos</option>
+            <option value="recepcion">Recepción de mercadería</option>
+            <option value="venta">Salida por Venta</option>
+            <option value="consumo_interno">Consumo Interno</option>
+            <option value="merma">Merma / Desperdicio</option>
+            <option value="descarte">Descarte Operativo</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Proveedor</label>
+          <select id="filtroProveedor" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+            <option value="">Todos los proveedores</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Usuario / Responsable</label>
+          <select id="filtroUsuario" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+            <option value="">Todos los usuarios</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label class="block text-xs text-gray-400 mb-1">Búsqueda por código de lote, documento de respaldo u observación</label>
+          <input id="filtroQ" type="text" placeholder="Ej: LOTE-2026, GD-45890, degustación..." class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+        </div>
+        <div class="flex items-end gap-2">
+          <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded py-2 px-3 text-xs transition">
+            Consultar movimientos
+          </button>
+          <button type="button" id="btnLimpiar" class="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded py-2 px-3 text-xs transition">
+            Limpiar
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Resumen de trazabilidad del filtro actual -->
+    <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 mb-6">
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-3.5">
+        <div class="text-xs text-gray-400">Movimientos Encontrados</div>
+        <div id="kpiTotalMovs" class="text-2xl font-bold text-white mt-1">0</div>
+      </div>
+      <div class="bg-emerald-950/30 border border-emerald-700/50 rounded-lg p-3.5">
+        <div class="text-xs text-emerald-300">Unidades Ingresadas (+)</div>
+        <div id="kpiIngresosCant" class="text-2xl font-bold text-emerald-400 mt-1">0</div>
+      </div>
+      <div class="bg-amber-950/30 border border-amber-700/50 rounded-lg p-3.5">
+        <div class="text-xs text-amber-300">Unidades Salidas (-)</div>
+        <div id="kpiSalidasCant" class="text-2xl font-bold text-amber-400 mt-1">0</div>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-3.5">
+        <div class="text-xs text-gray-400">Costo Total Ingresos</div>
+        <div id="kpiIngresosCosto" class="text-xl font-bold text-emerald-300 mt-1">$0</div>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-3.5">
+        <div class="text-xs text-gray-400">Valorizado Salidas / Mermas</div>
+        <div id="kpiSalidasCosto" class="text-xl font-bold text-amber-300 mt-1">$0</div>
+      </div>
+    </section>
+
+    <!-- Tabla de Historial de Movimientos -->
+    <section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex flex-wrap items-center justify-between gap-2">
+        <h3 id="tituloTabla" class="font-semibold text-sm">Registro cronológico de movimientos de inventario</h3>
+        <span id="subtituloFiltro" class="text-xs text-amber-300"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900 text-xs text-gray-300">
+            <tr>
+              <th class="p-3 text-left">Folio / Fecha</th>
+              <th class="p-3 text-left">Tipo</th>
+              <th class="p-3 text-left">Motivo / Documento</th>
+              <th class="p-3 text-left">Producto</th>
+              <th class="p-3 text-left">Lote</th>
+              <th class="p-3 text-left">Proveedor</th>
+              <th class="p-3 text-left">Cantidad</th>
+              <th class="p-3 text-left">Costo Unit. / Total</th>
+              <th class="p-3 text-left">Responsable / Detalle</th>
+            </tr>
+          </thead>
+          <tbody id="tabla"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
   <script src="../js/app-common.js"></script>
-  <script>montarLayout('Historial movimientos', 'Evidencia transaccional de ingresos y salidas de stock.');
-async function cargar(){ const data=await api(`${API_URL}/api/movimientos`,{headers:authHeaders}); document.getElementById('tabla').innerHTML=data.map(m=>`<tr class="border-t border-gray-700"><td class="p-3">${new Date(m.movimiento_fecha).toLocaleString('es-CL')}</td><td class="p-3">${m.movimiento_tipo}</td><td class="p-3">${m.movimiento_motivo||'-'}</td><td class="p-3">${m.producto_codigo} - ${m.producto_nombre}</td><td class="p-3">${m.lote_codigo||'-'}</td><td class="p-3">${m.proveedor_nombre||'-'}</td><td class="p-3">${formatoNumero(m.movimiento_cantidad)}</td><td class="p-3">${m.usuario_correo||'-'}</td></tr>`).join('') || '<tr><td class="p-3 text-gray-400" colspan="8">Sin movimientos registrados</td></tr>'; }
-cargar().catch(e=>setMensaje('mensaje',e.message,false));
-</script>
-</body></html>
+  <script>
+    montarLayout(
+      'Historial de Movimientos',
+      'CU 15: Consulta general de movimientos (CU 17) y trazabilidad histórica por producto, fechas, motivo, lote y usuario (CU 42).'
+    );
+
+    let movimientosActuales = [];
+    let todosLotesCache = [];
+
+    const btnToggleCU12 = document.getElementById('btnToggleOperacionesCU12');
+    const panelCU12 = document.getElementById('panelOperacionesCU12');
+    if (!puedeEscribirModulo('movimientos')) {
+      if (btnToggleCU12) btnToggleCU12.classList.add('hidden');
+    } else if (btnToggleCU12 && panelCU12) {
+      btnToggleCU12.addEventListener('click', () => {
+        panelCU12.classList.toggle('hidden');
+      });
+    }
+
+    document.querySelectorAll('.btn-tab-cu12').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-tab-cu12');
+        document.querySelectorAll('.btn-tab-cu12').forEach(b => {
+          b.className = b.getAttribute('data-tab-cu12') === tab
+            ? 'btn-tab-cu12 px-3 py-1.5 rounded text-xs font-semibold bg-amber-500 text-gray-950'
+            : 'btn-tab-cu12 px-3 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700';
+        });
+        document.getElementById('tabCu12Conteo').classList.toggle('hidden', tab !== 'conteo');
+        document.getElementById('tabCu12Ajuste').classList.toggle('hidden', tab !== 'ajuste');
+        document.getElementById('tabCu12Transferencia').classList.toggle('hidden', tab !== 'transferencia');
+      });
+    });
+
+    async function cargarSelectores() {
+      const [productos, proveedores, responsables, lotes, ubicaciones, motivosAjuste, conteosData] = await Promise.all([
+        api('/api/productos', { headers: authHeaders }),
+        api('/api/proveedores', { headers: authHeaders }),
+        api('/api/lotes/responsables', { headers: authHeaders }),
+        api('/api/lotes', { headers: authHeaders }),
+        api('/api/ubicaciones', { headers: authHeaders }),
+        api('/api/movimientos/motivos?categoria=ajuste', { headers: authHeaders }),
+        api('/api/movimientos/conteos', { headers: authHeaders })
+      ]);
+
+      todosLotesCache = lotes;
+      const prodActivos = productos.filter(p => p.producto_estado === 'activo');
+
+      const optsProd = prodActivos.map(p => `<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre} (Stock: ${formatoNumero(p.producto_stock_actual)})</option>`).join('');
+      document.getElementById('conteoProducto').innerHTML = optsProd;
+      document.getElementById('ajusteProducto').innerHTML = optsProd;
+
+      const actualizarLotesSelector = (prodSelectId, loteSelectId, textoVacio) => {
+        const pid = Number(document.getElementById(prodSelectId).value);
+        const lotesProd = todosLotesCache.filter(l => Number(l.producto_id) === pid);
+        document.getElementById(loteSelectId).innerHTML =
+          `<option value="">${textoVacio}</option>` +
+          lotesProd.map(l => `<option value="${l.lote_id}">${l.lote_codigo} (Disp: ${formatoNumero(l.lote_cantidad_disponible)})</option>`).join('');
+      };
+
+      document.getElementById('conteoProducto').addEventListener('change', () => actualizarLotesSelector('conteoProducto', 'conteoLote', 'Stock global del producto'));
+      document.getElementById('ajusteProducto').addEventListener('change', () => actualizarLotesSelector('ajusteProducto', 'ajusteLote', 'Ajustar stock del producto'));
+      actualizarLotesSelector('conteoProducto', 'conteoLote', 'Stock global del producto');
+      actualizarLotesSelector('ajusteProducto', 'ajusteLote', 'Ajustar stock del producto');
+
+      document.getElementById('ajusteMotivo').innerHTML = motivosAjuste.map(m =>
+        `<option value="${m.motivo_id}">${m.motivo_codigo} - ${m.motivo_nombre}</option>`
+      ).join('');
+
+      document.getElementById('transLoteOrigen').innerHTML = lotes
+        .filter(l => Number(l.lote_cantidad_disponible) > 0 && l.ubicacion_id)
+        .map(l => `<option value="${l.lote_id}">${l.lote_codigo} · ${l.producto_nombre} · Origen: ${l.ubicacion_codigo} (Disp: ${formatoNumero(l.lote_cantidad_disponible)})</option>`)
+        .join('') || '<option value="">Sin lotes con ubicación y stock disponible</option>';
+
+      document.getElementById('transUbicacionDestino').innerHTML = ubicaciones
+        .filter(u => u.ubicacion_estado === 'activo')
+        .map(u => `<option value="${u.ubicacion_id}">${u.ubicacion_codigo} - ${u.ubicacion_nombre}</option>`)
+        .join('');
+
+      document.getElementById('lblUmbralAjuste').textContent = `${conteosData.umbral_porcentaje_ajuste_critico || 10}%`;
+      const listaConteos = document.getElementById('listaConteosRecientes');
+      if (listaConteos) {
+        listaConteos.innerHTML = (conteosData.conteos || []).slice(0, 6).map(c => `
+          <div class="flex flex-wrap items-center justify-between bg-gray-800 px-3 py-1.5 rounded border border-gray-700">
+            <div>
+              <span class="font-semibold text-white">${c.producto_codigo}</span>
+              ${c.lote_codigo ? `<span class="font-mono text-amber-300 ml-1">(${c.lote_codigo})</span>` : ''}
+              <span class="text-gray-400 ml-2">Teórico: ${formatoNumero(c.stock_teorico)} · Físico: ${formatoNumero(c.cantidad_observada)} · Dif: <strong class="${Number(c.diferencia) === 0 ? 'text-emerald-400' : 'text-red-400'}">${Number(c.diferencia) > 0 ? '+' : ''}${formatoNumero(c.diferencia)} (${c.porcentaje_diferencia}%)</strong></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[10px] uppercase ${c.estado_conteo === 'cuadrado' ? 'bg-emerald-900/60 text-emerald-300' : 'bg-amber-900/60 text-amber-300'}">${c.estado_conteo}</span>
+              ${c.estado_conteo === 'pendiente_ajuste' ? `<button type="button" onclick="prepararAjusteDesdeConteo(${c.conteo_id}, ${c.producto_id}, ${c.lote_id || 'null'}, ${c.cantidad_observada})" class="px-2 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white text-[11px]">Ajustar ahora</button>` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('filtroProducto').innerHTML =
+        '<option value="">Todos los productos del catálogo</option>' +
+        productos.map(p => `<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre}</option>`).join('');
+
+      document.getElementById('filtroProveedor').innerHTML =
+        '<option value="">Todos los proveedores</option>' +
+        proveedores.map(p => `<option value="${p.proveedor_id}">${p.proveedor_nombre}</option>`).join('');
+
+      document.getElementById('filtroUsuario').innerHTML =
+        '<option value="">Todos los usuarios</option>' +
+        responsables.map(u => `<option value="${u.usuario_id}">${u.nombre_completo} (${u.rol_nombre})</option>`).join('');
+
+      // Si viene ?producto_id= en la URL, seleccionarlo automáticamente (Subflujo CU 42)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('producto_id')) {
+        document.getElementById('filtroProducto').value = urlParams.get('producto_id');
+      }
+    }
+
+    function construirParams() {
+      const params = new URLSearchParams();
+      params.set('con_resumen', 'true');
+
+      const prodId = document.getElementById('filtroProducto').value;
+      const fDesde = document.getElementById('filtroFechaDesde').value;
+      const fHasta = document.getElementById('filtroFechaHasta').value;
+      const tipo = document.getElementById('filtroTipo').value;
+      const motivo = document.getElementById('filtroMotivo').value;
+      const provId = document.getElementById('filtroProveedor').value;
+      const usuId = document.getElementById('filtroUsuario').value;
+      const q = document.getElementById('filtroQ').value.trim();
+
+      if (prodId) params.set('producto_id', prodId);
+      if (fDesde) params.set('fecha_desde', fDesde);
+      if (fHasta) params.set('fecha_hasta', fHasta);
+      if (tipo && tipo !== 'todos') params.set('tipo', tipo);
+      if (motivo && motivo !== 'todos') params.set('motivo', motivo);
+      if (provId) params.set('proveedor_id', provId);
+      if (usuId) params.set('usuario_id', usuId);
+      if (q) params.set('q', q);
+
+      return params;
+    }
+
+    async function cargar() {
+      const fDesde = document.getElementById('filtroFechaDesde').value;
+      const fHasta = document.getElementById('filtroFechaHasta').value;
+
+      if (fDesde && fHasta && fHasta < fDesde) {
+        setMensaje('mensaje', 'El rango de fechas es inválido: la fecha final no puede ser menor que la fecha inicial (CU 15)', false);
+        return;
+      }
+
+      const params = construirParams();
+      const resp = await api(`/api/movimientos?${params.toString()}`, { headers: authHeaders });
+      const data = Array.isArray(resp) ? resp : (resp.movimientos || []);
+      movimientosActuales = data;
+
+      const r = resp.resumen || {
+        total_movimientos: data.length,
+        unidades_ingresadas: 0,
+        unidades_salidas: 0,
+        costo_total_ingresos: 0,
+        costo_total_salidas: 0
+      };
+
+      document.getElementById('kpiTotalMovs').textContent = r.total_movimientos;
+      document.getElementById('kpiIngresosCant').textContent = `+${formatoNumero(r.unidades_ingresadas)}`;
+      document.getElementById('kpiSalidasCant').textContent = `-${formatoNumero(r.unidades_salidas)}`;
+      document.getElementById('kpiIngresosCosto').textContent = `$${formatoNumero(r.costo_total_ingresos)}`;
+      document.getElementById('kpiSalidasCosto').textContent = `$${formatoNumero(r.costo_total_salidas)}`;
+
+      const prodSel = document.getElementById('filtroProducto');
+      document.getElementById('subtituloFiltro').textContent = prodSel.value
+        ? `Historial específico: ${prodSel.options[prodSel.selectedIndex].text} (CU 42)`
+        : 'Vista general de todos los productos (CU 17)';
+
+      document.getElementById('tabla').innerHTML = data.map(m => `
+        <tr class="border-t border-gray-700 hover:bg-gray-800/50">
+          <td class="p-3 text-xs">
+            <div class="font-mono text-gray-400">#${m.movimiento_id}</div>
+            <div>${new Date(m.movimiento_fecha).toLocaleString('es-CL')}</div>
+          </td>
+          <td class="p-3 text-xs">
+            <span class="px-2 py-0.5 rounded font-semibold ${m.movimiento_tipo === 'ingreso' ? 'bg-emerald-900/60 text-emerald-300' : 'bg-amber-900/60 text-amber-300'}">
+              ${m.movimiento_tipo}
+            </span>
+            ${m.es_excepcion_stock ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-red-900/70 text-red-200 text-[10px]">Excepción</span>' : ''}
+          </td>
+          <td class="p-3 text-xs">
+            <div class="font-medium">${m.motivo_codigo ? `${m.motivo_codigo} (${m.motivo_catalogo_nombre})` : (m.movimiento_motivo || 'Recepción de lote')}</div>
+            ${m.movimiento_documento_respaldo ? `<div class="text-gray-400">Doc: ${m.movimiento_documento_respaldo}</div>` : ''}
+            ${m.referencia_autorizacion ? `<div class="text-amber-300">Aut: ${m.referencia_autorizacion}</div>` : ''}
+          </td>
+          <td class="p-3 text-xs">
+            <div class="font-medium text-white">${m.producto_nombre}</div>
+            <div class="font-mono text-amber-300 text-[11px]">${m.producto_codigo}</div>
+          </td>
+          <td class="p-3 font-mono text-xs text-amber-300">${m.lote_codigo || '-'}</td>
+          <td class="p-3 text-xs">${m.proveedor_nombre || '-'}</td>
+          <td class="p-3 text-xs font-semibold ${m.movimiento_tipo === 'ingreso' ? 'text-emerald-300' : 'text-amber-300'}">
+            ${m.movimiento_tipo === 'ingreso' ? '+' : '-'}${formatoNumero(m.movimiento_cantidad)} ${m.unidad_medida_codigo || ''}
+          </td>
+          <td class="p-3 text-xs">
+            <div>${m.movimiento_costo_total !== null && m.movimiento_costo_total !== undefined ? '$' + formatoNumero(m.movimiento_costo_total) : '-'}</div>
+            ${m.movimiento_costo_unitario ? `<div class="text-[11px] text-gray-400">$${formatoNumero(m.movimiento_costo_unitario)} c/u</div>` : ''}
+          </td>
+          <td class="p-3 text-xs">
+            <div class="text-gray-200">${m.responsable_recepcion_nombre || m.usuario_nombre || m.usuario_correo || '-'}</div>
+            ${m.movimiento_observacion ? `<div class="text-gray-400 text-[11px] truncate max-w-[220px]" title="${m.movimiento_observacion}">${m.movimiento_observacion}</div>` : ''}
+          </td>
+        </tr>
+      `).join('') || '<tr><td class="p-6 text-center text-gray-400" colspan="9">No se encontraron movimientos registrados para el producto o período seleccionado (CU 15).</td></tr>';
+    }
+
+    document.getElementById('formFiltros').addEventListener('submit', e => {
+      e.preventDefault();
+      document.getElementById('mensaje').classList.add('hidden');
+      cargar().catch(err => setMensaje('mensaje', err.message, false));
+    });
+
+    document.getElementById('btnLimpiar').addEventListener('click', () => {
+      document.getElementById('formFiltros').reset();
+      document.getElementById('mensaje').classList.add('hidden');
+      cargar().catch(err => setMensaje('mensaje', err.message, false));
+    });
+
+    document.getElementById('btnExportarCsv').addEventListener('click', () => {
+      const sep = ';';
+      const headers = ['Folio', 'Fecha', 'Tipo', 'Motivo', 'Documento Respaldo', 'Codigo Producto', 'Producto', 'Lote', 'Proveedor', 'Cantidad', 'Costo Unitario', 'Costo Total', 'Responsable', 'Observacion'];
+      const filas = movimientosActuales.map(m => [
+        m.movimiento_id,
+        new Date(m.movimiento_fecha).toLocaleString('es-CL'),
+        m.movimiento_tipo,
+        `"${String(m.motivo_codigo ? m.motivo_codigo + ' - ' + m.motivo_catalogo_nombre : (m.movimiento_motivo || 'Recepcion')).replace(/"/g, '""')}"`,
+        `"${String(m.movimiento_documento_respaldo || '').replace(/"/g, '""')}"`,
+        m.producto_codigo,
+        `"${String(m.producto_nombre || '').replace(/"/g, '""')}"`,
+        m.lote_codigo || '',
+        `"${String(m.proveedor_nombre || '').replace(/"/g, '""')}"`,
+        m.movimiento_cantidad,
+        m.movimiento_costo_unitario || 0,
+        m.movimiento_costo_total || 0,
+        `"${String(m.responsable_recepcion_nombre || m.usuario_nombre || m.usuario_correo || '').replace(/"/g, '""')}"`,
+        `"${String(m.movimiento_observacion || '').replace(/"/g, '""')}"`
+      ].join(sep));
+
+      const csv = '\uFEFF' + [headers.join(sep), ...filas].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ParkFlow_Historial_Movimientos_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    window.prepararAjusteDesdeConteo = (conteoId, prodId, loteId, cantObs) => {
+      document.querySelector('[data-tab-cu12="ajuste"]').click();
+      document.getElementById('ajusteConteoId').value = conteoId;
+      document.getElementById('ajusteProducto').value = prodId;
+      document.getElementById('ajusteProducto').dispatchEvent(new Event('change'));
+      if (loteId) document.getElementById('ajusteLote').value = loteId;
+      document.getElementById('ajusteStockObjetivo').value = cantObs;
+      document.getElementById('ajusteObs').value = `Ajuste derivado de conteo físico #${conteoId} verificado en bodega`;
+    };
+
+    document.getElementById('formConteoFisico').addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+        const resp = await api('/api/movimientos/conteos', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            producto_id: Number(document.getElementById('conteoProducto').value),
+            lote_id: document.getElementById('conteoLote').value ? Number(document.getElementById('conteoLote').value) : null,
+            cantidad_observada: Number(document.getElementById('conteoObservada').value),
+            observacion: document.getElementById('conteoObs').value.trim()
+          })
+        });
+        setMensaje('mensaje', resp.message);
+        document.getElementById('conteoObservada').value = '';
+        document.getElementById('conteoObs').value = '';
+        await Promise.all([cargarSelectores(), cargar()]);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    document.getElementById('formAjusteInv').addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+        const resp = await api('/api/movimientos/ajustes', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            conteo_id: document.getElementById('ajusteConteoId').value ? Number(document.getElementById('ajusteConteoId').value) : null,
+            producto_id: Number(document.getElementById('ajusteProducto').value),
+            lote_id: document.getElementById('ajusteLote').value ? Number(document.getElementById('ajusteLote').value) : null,
+            stock_objetivo: Number(document.getElementById('ajusteStockObjetivo').value),
+            motivo_catalogo_id: Number(document.getElementById('ajusteMotivo').value),
+            observacion: document.getElementById('ajusteObs').value.trim()
+          })
+        });
+        setMensaje('mensaje', resp.message);
+        document.getElementById('ajusteConteoId').value = '';
+        document.getElementById('ajusteStockObjetivo').value = '';
+        document.getElementById('ajusteObs').value = '';
+        await Promise.all([cargarSelectores(), cargar()]);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    document.getElementById('formTransferencia').addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+        const resp = await api('/api/movimientos/transferencias', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            lote_id: Number(document.getElementById('transLoteOrigen').value),
+            ubicacion_destino_id: Number(document.getElementById('transUbicacionDestino').value),
+            cantidad: Number(document.getElementById('transCantidad').value),
+            observacion: document.getElementById('transObs').value.trim()
+          })
+        });
+        setMensaje('mensaje', resp.message);
+        document.getElementById('transCantidad').value = '';
+        document.getElementById('transObs').value = '';
+        await Promise.all([cargarSelectores(), cargar()]);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    Promise.all([cargarSelectores(), cargar()]).catch(e => setMensaje('mensaje', e.message, false));
+  </script>
+</body>
+</html>

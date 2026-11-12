@@ -1,11 +1,21 @@
 const router = require('express').Router();
-const { crearUsuario, obtenerUsuarios, obtenerRoles, actualizarEstadoUsuario, desbloquearUsuario } = require('../controllers/c_userController');
-const { verificarToken, esGestionUsuarios } = require('../middleware/authMiddleware');
+const {
+    crearUsuario,
+    obtenerUsuarios,
+    obtenerRoles,
+    actualizarEstadoUsuario,
+    asignarPinTrabajador,
+    desbloquearUsuario,
+    obtenerBitacoraAuditoria
+} = require('../controllers/c_userController');
+const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
-router.get('/roles', verificarToken, esGestionUsuarios, obtenerRoles);
-router.get('/', verificarToken, esGestionUsuarios, obtenerUsuarios);
-router.post('/', verificarToken, esGestionUsuarios, crearUsuario);
-router.patch('/:id/estado', verificarToken, esGestionUsuarios, actualizarEstadoUsuario);
-router.patch('/:id/desbloquear', verificarToken, esGestionUsuarios, desbloquearUsuario);
+router.get('/roles', verificarToken, requerirPermiso('usuarios', 'ver'), obtenerRoles);
+router.get('/auditoria', verificarToken, requerirPermiso('usuarios', 'ver'), obtenerBitacoraAuditoria);
+router.get('/', verificarToken, requerirPermiso('usuarios', 'ver'), obtenerUsuarios);
+router.post('/', verificarToken, requerirPermiso('usuarios', 'crear'), crearUsuario);
+router.patch('/:id/estado', verificarToken, requerirPermiso('usuarios', 'inactivar'), actualizarEstadoUsuario);
+router.patch('/:id/pin', verificarToken, requerirPermiso('usuarios', 'asignar_pin'), asignarPinTrabajador);
+router.patch('/:id/desbloquear', verificarToken, requerirPermiso('usuarios', 'desbloquear'), desbloquearUsuario);
 
 module.exports = router;

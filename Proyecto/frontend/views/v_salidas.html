@@ -1,27 +1,283 @@
 <!DOCTYPE html>
 <html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>KidZania - Salidas de stock</title><script src="https://cdn.tailwindcss.com"></script></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KidZania - Salidas de Stock (CU 11)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
-  <main id="main" class="lg:ml-72 p-6"><div id="mensaje" class="hidden"></div>
-    <div class="mb-4">
-      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">Agregar nueva salida</button>
-    </div><section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6"><h3 class="font-semibold text-lg mb-4">Registrar salida de stock</h3><form id="form" class="grid gap-4 md:grid-cols-3"><select name="producto_id" id="productos" required class="bg-gray-700 rounded p-2 border border-gray-600"></select><select name="lote_id" id="lotes" required class="bg-gray-700 rounded p-2 border border-gray-600"></select><input name="cantidad" type="number" min="0.01" step="0.01" required placeholder="Cantidad" class="bg-gray-700 rounded p-2 border border-gray-600"><select name="motivo" required class="bg-gray-700 rounded p-2 border border-gray-600"><option value="venta">Venta</option><option value="consumo_interno">Consumo interno</option><option value="merma">Merma</option><option value="descarte">Descarte</option></select><input name="fecha" type="datetime-local" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="observacion" placeholder="Observación" class="bg-gray-700 rounded p-2 border border-gray-600"><button class="md:col-span-3 bg-amber-500 text-gray-950 font-semibold rounded p-2">Registrar salida</button></form></section><section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"><div class="p-4 border-b border-gray-700"><h3 class="font-semibold">Lotes disponibles del producto seleccionado</h3></div><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-900"><tr><th class="p-3 text-left">Lote</th><th class="p-3 text-left">Producto</th><th class="p-3 text-left">Proveedor</th><th class="p-3 text-left">Disponible</th><th class="p-3 text-left">Vencimiento</th></tr></thead><tbody id="tabla"></tbody></table></div></section></main>
+  <main id="main" class="lg:ml-72 p-6">
+    <div id="mensaje" class="hidden"></div>
+
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">
+        Registrar nueva salida de inventario
+      </button>
+      <a href="v_mermas.html" class="text-xs text-amber-400 hover:text-amber-300 underline">
+        Ir al Panel de Mermas y Costos por Desperdicio (CU 13) →
+      </a>
+    </div>
+
+    <section id="formSection" class="bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6">
+      <h3 class="font-semibold text-lg mb-1">Registrar salida de inventario con clasificación de motivo y validación de stock (CU 11)</h3>
+      <p class="text-xs text-gray-400 mb-4">
+        Verifica disponibilidad en tiempo real antes de confirmar (CU 44) y exige motivo del catálogo para salidas no asociadas a venta (CU 13).
+      </p>
+
+      <form id="form" class="grid gap-4 md:grid-cols-3">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Producto activo *</label>
+          <select name="producto_id" id="productos" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Lote afectado *</label>
+          <select name="lote_id" id="lotes" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Cantidad de salida (&gt; 0) *</label>
+          <input name="cantidad" id="inputCantidad" type="number" min="0.01" step="0.01" required placeholder="Cantidad a retirar" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Tipo de salida (CU 12) *</label>
+          <select name="motivo" id="selectTipoSalida" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+            <option value="consumo_interno">Consumo interno</option>
+            <option value="merma">Merma</option>
+            <option value="descarte">Descarte</option>
+            <option value="venta">Venta manual / operativa</option>
+          </select>
+        </div>
+
+        <!-- Subflujo CU 13: Clasificando Motivo de Salida (obligatorio si no es venta) -->
+        <div id="divMotivoCatalogo">
+          <label class="block text-xs text-amber-300 mb-1">Motivo clasificado del catálogo (CU 13) *</label>
+          <select name="motivo_catalogo_id" id="selectMotivoCatalogo" class="w-full bg-gray-700 rounded p-2 border border-amber-500/60 text-sm"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha y hora</label>
+          <input name="fecha" type="datetime-local" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+
+        <!-- Indicador en tiempo real Subflujo CU 44 -->
+        <div id="panelDisponibilidad" class="md:col-span-3 p-3 rounded-lg border border-gray-700 bg-gray-900 text-xs">
+          Seleccione un producto, lote y cantidad para verificar disponibilidad de stock en tiempo real (CU 44).
+        </div>
+
+        <!-- Bloque de Excepción Autorizada por Rol (CU 44 / Sección D.11) -->
+        <div id="bloqueExcepcion" class="hidden md:col-span-3 p-4 rounded-lg border border-amber-500/60 bg-amber-950/30 space-y-3">
+          <label class="flex items-center gap-2 text-xs font-semibold text-amber-300 cursor-pointer">
+            <input type="checkbox" id="chkExcepcion" class="rounded border-amber-500 text-amber-500">
+            <span>Aplicar autorización excepcional de regularización por rol (CU 44 — Trazabilidad especial obligatoria)</span>
+          </label>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div>
+              <label class="block text-xs text-amber-200 mb-1">Referencia de autorización *</label>
+              <input id="inputRefAutorizacion" placeholder="Ej: AUT-GER-2026-04 / Acta Supervisión" class="w-full bg-gray-900 rounded p-2 border border-amber-600/60 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-xs text-amber-200 mb-1">Justificación de excepción (se adjunta a observación) *</label>
+              <input id="inputJustificacionExcepcion" placeholder="Detalle por qué se autoriza la regularización" class="w-full bg-gray-900 rounded p-2 border border-amber-600/60 text-xs text-white">
+            </div>
+          </div>
+        </div>
+
+        <div class="md:col-span-3">
+          <label class="block text-xs text-gray-400 mb-1">Observación adicional</label>
+          <input name="observacion" id="inputObservacion" placeholder="Detalle complementario del movimiento de salida" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+
+        <button id="btnSubmitSalida" class="md:col-span-3 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded p-2.5 transition">
+          Confirmar y registrar salida de inventario
+        </button>
+      </form>
+    </section>
+
+    <section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="p-4 border-b border-gray-700">
+        <h3 class="font-semibold">Lotes disponibles del producto seleccionado</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900">
+            <tr>
+              <th class="p-3 text-left">Lote</th>
+              <th class="p-3 text-left">Producto</th>
+              <th class="p-3 text-left">Proveedor</th>
+              <th class="p-3 text-left">Disponible</th>
+              <th class="p-3 text-left">Costo Unit. Lote</th>
+              <th class="p-3 text-left">Vencimiento</th>
+            </tr>
+          </thead>
+          <tbody id="tabla"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
   <script src="../js/app-common.js"></script>
-  <script>montarLayout('Salidas de stock', 'UR 4.3: venta, consumo interno, merma o descarte.');
+  <script>
+    montarLayout('Salidas de stock', 'CU 11: Registro de salidas por motivos clasificados del catálogo (CU 13) y validación de disponibilidad en tiempo real (CU 44).');
+
     const formSection = document.getElementById('formSection');
     const btnAgregar = document.getElementById('btnAgregar');
     if (btnAgregar && formSection) {
       btnAgregar.addEventListener('click', () => {
         formSection.classList.toggle('hidden');
-        btnAgregar.textContent = formSection.classList.contains('hidden') ? 'Agregar nueva salida' : 'Ocultar formulario';
+        btnAgregar.textContent = formSection.classList.contains('hidden')
+          ? 'Registrar nueva salida de inventario'
+          : 'Ocultar formulario';
       });
     }
 
-let todosLotes=[];
-async function cargarProductos(){ const productos=await api(`${API_URL}/api/productos`,{headers:authHeaders}); document.getElementById('productos').innerHTML=productos.filter(p=>p.producto_estado==='activo').map(p=>`<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre}</option>`).join(''); await cargarLotes(); }
-async function cargarLotes(){ const pid=document.getElementById('productos').value; todosLotes=await api(`${API_URL}/api/lotes?producto_id=${pid}`,{headers:authHeaders}); const disponibles=todosLotes.filter(l=>Number(l.lote_cantidad_disponible)>0); document.getElementById('lotes').innerHTML=disponibles.map(l=>`<option value="${l.lote_id}">${l.lote_codigo} · disp. ${formatoNumero(l.lote_cantidad_disponible)} ${l.unidad_medida_codigo||''}</option>`).join(''); document.getElementById('tabla').innerHTML=disponibles.map(l=>`<tr class="border-t border-gray-700"><td class="p-3">${l.lote_codigo}</td><td class="p-3">${l.producto_nombre}</td><td class="p-3">${l.proveedor_nombre||'-'}</td><td class="p-3">${formatoNumero(l.lote_cantidad_disponible)} ${l.unidad_medida_codigo||''}</td><td class="p-3">${formatoFecha(l.lote_fecha_vencimiento)}</td></tr>`).join('') || '<tr><td class="p-3 text-gray-400" colspan="5">No existen lotes disponibles</td></tr>'; }
-document.getElementById('productos').addEventListener('change',cargarLotes);
-document.getElementById('form').addEventListener('submit',async e=>{ e.preventDefault(); const body=Object.fromEntries(new FormData(e.target).entries()); body.producto_id=Number(body.producto_id); body.lote_id=Number(body.lote_id); body.cantidad=Number(body.cantidad); if(!body.fecha) delete body.fecha; try{ await api(`${API_URL}/api/movimientos/salidas`,{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)}); setMensaje('mensaje','Salida registrada y stock descontado'); e.target.reset(); await cargarLotes(); }catch(err){setMensaje('mensaje',err.message,false);} });
-cargarProductos().catch(e=>setMensaje('mensaje',e.message,false));
-</script>
-</body></html>
+    let todosLotes = [];
+    let motivosCatalogo = [];
+
+    async function cargarMotivos() {
+      motivosCatalogo = await api('/api/movimientos/motivos', { headers: authHeaders });
+      actualizarSelectorMotivoCatalogo();
+    }
+
+    function actualizarSelectorMotivoCatalogo() {
+      const tipo = document.getElementById('selectTipoSalida').value;
+      const divCat = document.getElementById('divMotivoCatalogo');
+      const selectCat = document.getElementById('selectMotivoCatalogo');
+
+      if (tipo === 'venta') {
+        divCat.classList.add('hidden');
+        selectCat.required = false;
+        selectCat.innerHTML = '<option value="">No aplica para venta</option>';
+        return;
+      }
+
+      divCat.classList.remove('hidden');
+      selectCat.required = true;
+      const filtrados = motivosCatalogo.filter(m => m.motivo_categoria === tipo || m.motivo_categoria === 'salida');
+      selectCat.innerHTML = filtrados.length > 0
+        ? filtrados.map(m => `<option value="${m.motivo_id}">${m.motivo_codigo} — ${m.motivo_nombre}</option>`).join('')
+        : '<option value="">Sin motivos activos para este tipo</option>';
+    }
+
+    document.getElementById('selectTipoSalida').addEventListener('change', actualizarSelectorMotivoCatalogo);
+
+    async function cargarProductos() {
+      const productos = await api('/api/productos', { headers: authHeaders });
+      document.getElementById('productos').innerHTML = productos
+        .filter(p => p.producto_estado === 'activo')
+        .map(p => `<option value="${p.producto_id}" data-control="${p.producto_tipo_control_stock || 'lote'}">${p.producto_codigo} - ${p.producto_nombre} (Stock: ${formatoNumero(p.producto_stock_actual)})</option>`)
+        .join('');
+      await cargarLotes();
+    }
+
+    async function cargarLotes() {
+      const pid = document.getElementById('productos').value;
+      if (!pid) return;
+      todosLotes = await api(`/api/lotes?producto_id=${pid}`, { headers: authHeaders });
+      const disponibles = todosLotes.filter(l => Number(l.lote_cantidad_disponible) > 0);
+      const todosOpciones = disponibles.length > 0 ? disponibles : todosLotes;
+
+      document.getElementById('lotes').innerHTML = todosOpciones
+        .map(l => `<option value="${l.lote_id}">${l.lote_codigo} · disp. ${formatoNumero(l.lote_cantidad_disponible)} ${l.unidad_medida_codigo || ''} ($${formatoNumero(l.lote_costo_unitario || 0)})</option>`)
+        .join('');
+
+      document.getElementById('tabla').innerHTML = disponibles.map(l => `
+        <tr class="border-t border-gray-700">
+          <td class="p-3 font-mono text-xs text-amber-300">${l.lote_codigo}</td>
+          <td class="p-3">${l.producto_nombre}</td>
+          <td class="p-3">${l.proveedor_nombre || '-'}</td>
+          <td class="p-3 font-semibold">${formatoNumero(l.lote_cantidad_disponible)} ${l.unidad_medida_codigo || ''}</td>
+          <td class="p-3 text-amber-300">$${formatoNumero(l.lote_costo_unitario || 0)}</td>
+          <td class="p-3">${formatoFecha(l.lote_fecha_vencimiento)}</td>
+        </tr>
+      `).join('') || '<tr><td class="p-3 text-gray-400" colspan="6">No existen lotes con saldo disponible para este producto</td></tr>';
+
+      await verificarDisponibilidadTiempoReal();
+    }
+
+    // Subflujo CU 44: Verificación en tiempo real de stock disponible
+    async function verificarDisponibilidadTiempoReal() {
+      const producto_id = document.getElementById('productos').value;
+      const lote_id = document.getElementById('lotes').value;
+      const cantidad = Number(document.getElementById('inputCantidad').value || 0);
+      const panel = document.getElementById('panelDisponibilidad');
+      const bloqueExcepcion = document.getElementById('bloqueExcepcion');
+
+      if (!producto_id) return;
+
+      try {
+        const params = new URLSearchParams({
+          producto_id,
+          ...(lote_id ? { lote_id } : {}),
+          cantidad: String(cantidad)
+        });
+        const disp = await api(`/api/movimientos/disponibilidad?${params.toString()}`, { headers: authHeaders });
+
+        if (cantidad <= 0) {
+          panel.className = 'md:col-span-3 p-3 rounded-lg border border-gray-700 bg-gray-900 text-xs text-gray-300';
+          panel.innerHTML = `📊 <strong>Stock disponible actual (CU 44):</strong> ${formatoNumero(disp.stock_disponible)} unidades en ${disp.lote_codigo ? 'lote ' + disp.lote_codigo : 'producto'}. Ingrese la cantidad a retirar.`;
+          bloqueExcepcion.classList.add('hidden');
+          return;
+        }
+
+        if (disp.suficiente) {
+          panel.className = 'md:col-span-3 p-3 rounded-lg border border-emerald-600/60 bg-emerald-950/30 text-xs text-emerald-200';
+          panel.innerHTML = `✅ <strong>Stock suficiente verificado en tiempo real (CU 44):</strong> Disponible ${formatoNumero(disp.stock_disponible)} · Solicitado ${formatoNumero(disp.cantidad_solicitada)} · Saldo restante: <strong>${formatoNumero(disp.diferencia)}</strong>.`;
+          bloqueExcepcion.classList.add('hidden');
+          document.getElementById('chkExcepcion').checked = false;
+        } else {
+          panel.className = 'md:col-span-3 p-3 rounded-lg border border-red-600/70 bg-red-950/40 text-xs text-red-200';
+          panel.innerHTML = `⛔ <strong>Stock insuficiente detectado (CU 44):</strong> Disponible ${formatoNumero(disp.stock_disponible)}, pero solicita retirar ${formatoNumero(disp.cantidad_solicitada)}. La operación será bloqueada${disp.puede_autorizar_excepcion ? ' salvo que active la autorización excepcional de regularización.' : '.'}`;
+          if (disp.puede_autorizar_excepcion) {
+            bloqueExcepcion.classList.remove('hidden');
+          } else {
+            bloqueExcepcion.classList.add('hidden');
+          }
+        }
+      } catch (err) {
+        panel.className = 'md:col-span-3 p-3 rounded-lg border border-red-700 bg-red-950/30 text-xs text-red-300';
+        panel.textContent = err.message;
+      }
+    }
+
+    document.getElementById('productos').addEventListener('change', cargarLotes);
+    document.getElementById('lotes').addEventListener('change', verificarDisponibilidadTiempoReal);
+    document.getElementById('inputCantidad').addEventListener('input', verificarDisponibilidadTiempoReal);
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target).entries());
+      body.producto_id = Number(body.producto_id);
+      body.lote_id = body.lote_id ? Number(body.lote_id) : null;
+      body.cantidad = Number(body.cantidad);
+      body.motivo_catalogo_id = body.motivo_catalogo_id ? Number(body.motivo_catalogo_id) : null;
+      if (!body.fecha) delete body.fecha;
+
+      const chkExcepcion = document.getElementById('chkExcepcion');
+      if (chkExcepcion && chkExcepcion.checked) {
+        body.autorizacion_excepcional = true;
+        body.referencia_autorizacion = document.getElementById('inputRefAutorizacion').value.trim();
+        const justif = document.getElementById('inputJustificacionExcepcion').value.trim();
+        body.observacion = [justif, body.observacion].filter(Boolean).join(' · ');
+      }
+
+      try {
+        const resp = await api('/api/movimientos/salidas', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify(body)
+        });
+        setMensaje('mensaje', resp.message || 'Salida registrada y stock descontado');
+        e.target.reset();
+        actualizarSelectorMotivoCatalogo();
+        document.getElementById('bloqueExcepcion').classList.add('hidden');
+        await Promise.all([cargarProductos(), cargarLotes()]);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    Promise.all([cargarMotivos(), cargarProductos()]).catch(e => setMensaje('mensaje', e.message, false));
+  </script>
+</body>
+</html>

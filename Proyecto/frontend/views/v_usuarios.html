@@ -3,36 +3,155 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KidZania - Usuarios y roles</title>
+  <title>KidZania - Usuarios, Roles y Credenciales</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
   <main id="main" class="lg:ml-72 p-6">
     <div id="mensaje" class="hidden"></div>
-    <div class="mb-4">
-      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">Agregar nuevo usuario</button>
+
+    <!-- Barra de acciones -->
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">
+        Agregar nuevo usuario
+      </button>
+      <button id="btnToggleAuditoria" type="button" class="bg-gray-800 border border-gray-700 text-gray-200 font-medium rounded px-4 py-2 hover:bg-gray-700 transition text-sm">
+        Ver bitácora de auditoría
+      </button>
     </div>
+
+    <!-- Formulario de registro de usuario -->
     <section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6">
-  <h3 class="font-semibold text-lg mb-4">Registrar usuario</h3>
-  <form id="form" class="grid gap-4 md:grid-cols-2">
-    <input name="run" required placeholder="RUN" class="bg-gray-700 rounded p-2 border border-gray-600">
-    <input name="nombres" required placeholder="Nombres" class="bg-gray-700 rounded p-2 border border-gray-600">
-    <input name="ap_paterno" required placeholder="Apellido paterno" class="bg-gray-700 rounded p-2 border border-gray-600">
-    <input name="ap_materno" placeholder="Apellido materno" class="bg-gray-700 rounded p-2 border border-gray-600">
-    <input name="correo" required type="email" placeholder="correo@kidzania.cl" class="bg-gray-700 rounded p-2 border border-gray-600">
-    <input name="contrasena" required type="password" placeholder="Contraseña" class="bg-gray-700 rounded p-2 border border-gray-600">
-    <select name="rol_id" id="roles" required class="bg-gray-700 rounded p-2 border border-gray-600"></select>
-    <select name="estado" class="bg-gray-700 rounded p-2 border border-gray-600"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select>
-    <button class="md:col-span-2 bg-amber-500 text-gray-950 font-semibold rounded p-2 hover:bg-amber-600">Crear usuario</button>
-  </form>
-</section>
-<section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-900"><tr><th class="p-3 text-left">RUN</th><th class="p-3 text-left">Nombre</th><th class="p-3 text-left">Correo</th><th class="p-3 text-left">Rol</th><th class="p-3 text-left">Estado</th><th class="p-3 text-left">Acción</th></tr></thead><tbody id="tabla"></tbody></table></div></section>
+      <h3 class="font-semibold text-lg mb-4">Registrar usuario</h3>
+      <form id="form" class="grid gap-4 md:grid-cols-2">
+        <input name="run" required placeholder="RUN (ej: 12345678-9)" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="nombres" required placeholder="Nombres" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="ap_paterno" required placeholder="Apellido paterno" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="ap_materno" placeholder="Apellido materno" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="correo" required type="email" placeholder="correo@kidzania.cl" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <input name="contrasena" required type="password" placeholder="Contraseña inicial" class="bg-gray-700 rounded p-2 border border-gray-600">
+        <select name="rol_id" id="roles" required class="bg-gray-700 rounded p-2 border border-gray-600"></select>
+        <select name="estado" class="bg-gray-700 rounded p-2 border border-gray-600">
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+        </select>
+
+        <!-- Campos opcionales de PIN cuando el rol es Cajero o Cocina -->
+        <div id="pinFieldsCreate" class="hidden md:col-span-2 grid gap-4 md:grid-cols-2 p-3 rounded bg-gray-900/70 border border-amber-500/40">
+          <div class="md:col-span-2 text-xs text-amber-300 font-medium">
+            🔑 Trabajador de punto de venta (Cajero / Cocina): puede asignar un PIN numérico de 4 dígitos ahora o desde el listado.
+          </div>
+          <input name="pin" id="inputPinCrear" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="PIN de 4 dígitos (ej: 1234)" class="bg-gray-700 rounded p-2 border border-gray-600">
+          <input name="pin_confirmacion" id="inputPinConfirmCrear" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="Confirmar PIN de 4 dígitos" class="bg-gray-700 rounded p-2 border border-gray-600">
+        </div>
+
+        <button class="md:col-span-2 bg-amber-500 text-gray-950 font-semibold rounded p-2 hover:bg-amber-600">Crear usuario</button>
+      </form>
+    </section>
+
+    <!-- Tabla principal de usuarios y estado de PIN (CU 3: Subflujos 85 y 86) -->
+    <section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-6">
+      <div class="p-4 border-b border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h3 class="font-semibold text-base">Listado de usuarios y credenciales</h3>
+          <p class="text-xs text-gray-400">Los trabajadores con el PIN bloqueado por intentos fallidos se destacan en rojo para su desbloqueo o restablecimiento de PIN.</p>
+        </div>
+        <span id="contadorBloqueados" class="hidden text-xs font-semibold px-3 py-1 rounded-full bg-red-950 border border-red-600 text-red-200"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900">
+            <tr>
+              <th class="p-3 text-left">RUN</th>
+              <th class="p-3 text-left">Nombre</th>
+              <th class="p-3 text-left">Correo</th>
+              <th class="p-3 text-left">Rol</th>
+              <th class="p-3 text-left">Estado Cuenta</th>
+              <th class="p-3 text-left">Estado PIN (POS)</th>
+              <th class="p-3 text-left">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Sección de Bitácora de Auditoría de Accesos y Credenciales -->
+    <section id="auditoriaSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-base">Bitácora de Auditoría de Accesos, Roles y Credenciales</h3>
+          <p class="text-xs text-gray-400">Registro trazable de inicios de sesión, intentos fallidos, bloqueos, desbloqueos, asignaciones de PIN y validaciones de permisos.</p>
+        </div>
+        <button onclick="cargarAuditoria()" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded">Actualizar</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="bg-gray-900 text-gray-300">
+            <tr>
+              <th class="p-3 text-left">Fecha y Hora</th>
+              <th class="p-3 text-left">Evento / Acción</th>
+              <th class="p-3 text-left">Módulo</th>
+              <th class="p-3 text-left">Usuario Afectado</th>
+              <th class="p-3 text-left">Ejecutado por</th>
+              <th class="p-3 text-left">Resultado</th>
+              <th class="p-3 text-left">Detalle</th>
+            </tr>
+          </thead>
+          <tbody id="tablaAuditoria"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
+
+  <!-- Modal para Asignar o Restablecer PIN de 4 dígitos (CU 3 - Subflujo CU 85) -->
+  <div id="modalPin" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-md p-6 shadow-2xl">
+      <h3 id="modalPinTitulo" class="text-lg font-bold text-white">Asignar PIN de Trabajador</h3>
+      <p id="modalPinSubtitulo" class="text-xs text-gray-400 mt-1">Ingrese y confirme un PIN numérico de 4 dígitos. Se almacenará cifrado y desbloqueará la cuenta si estaba bloqueada.</p>
+
+      <div id="modalPinError" class="hidden mt-3 p-2.5 rounded bg-red-900/50 border border-red-600 text-red-100 text-xs"></div>
+
+      <form id="formPin" class="mt-4 space-y-4">
+        <input type="hidden" id="pinUsuarioId">
+        <div>
+          <label class="block text-xs text-gray-300 mb-1 font-medium">Nuevo PIN (4 dígitos numéricos)</label>
+          <input type="password" id="nuevoPin" inputmode="numeric" maxlength="4" pattern="\d{4}" required
+                 placeholder="••••"
+                 class="w-full bg-gray-900 border border-gray-600 rounded p-2.5 text-white tracking-widest text-center text-lg font-mono">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1 font-medium">Confirmar nuevo PIN</label>
+          <input type="password" id="confirmarPin" inputmode="numeric" maxlength="4" pattern="\d{4}" required
+                 placeholder="••••"
+                 class="w-full bg-gray-900 border border-gray-600 rounded p-2.5 text-white tracking-widest text-center text-lg font-mono">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="cerrarModalPin()" class="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded px-4 py-2 text-sm">
+            Cancelar
+          </button>
+          <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded px-4 py-2 text-sm">
+            Guardar PIN Cifrado
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="../js/app-common.js"></script>
   <script>
-    montarLayout('Usuarios y roles', 'UR 1.1 y UR 1.2: autenticación, estado activo y perfiles diferenciados.');
+    montarLayout('Usuarios y roles', 'CU 1, CU 2 y CU 3: gestión de cuentas, roles, asignación/restablecimiento de PIN y desbloqueo de trabajadores.');
+
     const formSection = document.getElementById('formSection');
     const btnAgregar = document.getElementById('btnAgregar');
+    const auditoriaSection = document.getElementById('auditoriaSection');
+    const btnToggleAuditoria = document.getElementById('btnToggleAuditoria');
+    const rolesSelect = document.getElementById('roles');
+    const pinFieldsCreate = document.getElementById('pinFieldsCreate');
+
+    let rolesLista = [];
+    let usuariosLista = [];
+
     if (btnAgregar && formSection) {
       btnAgregar.addEventListener('click', () => {
         formSection.classList.toggle('hidden');
@@ -40,13 +159,258 @@
       });
     }
 
-    
-async function cargarRoles(){ const roles=await api(`${API_URL}/api/admin/usuarios/roles`,{headers:authHeaders}); document.getElementById('roles').innerHTML=roles.map(r=>`<option value="${r.rol_id}">${r.rol_nombre}</option>`).join(''); }
-async function cargar(){ const data=await api(`${API_URL}/api/admin/usuarios`,{headers:authHeaders}); document.getElementById('tabla').innerHTML=data.map(u=>`<tr class="border-t border-gray-700"><td class="p-3">${u.usuario_run}</td><td class="p-3">${u.usuario_nombres} ${u.usuario_apellido_paterno}</td><td class="p-3">${u.usuario_correo}</td><td class="p-3">${u.rol_nombre}</td><td class="p-3">${u.usuario_estado_cuenta}</td><td class="p-3"><button onclick="cambiar(${u.usuario_id},'${u.usuario_estado_cuenta==='activo'?'inactivo':'activo'}')" class="bg-gray-700 hover:bg-gray-600 rounded px-3 py-1">${u.usuario_estado_cuenta==='activo'?'Inactivar':'Activar'}</button></td></tr>`).join(''); }
-async function cambiar(id,estado){ try{ await api(`${API_URL}/api/admin/usuarios/${id}/estado`,{method:'PATCH',headers:jsonHeaders,body:JSON.stringify({estado})}); cargar(); }catch(e){setMensaje('mensaje',e.message,false);} }
-document.getElementById('form').addEventListener('submit',async e=>{ e.preventDefault(); const f=new FormData(e.target); const body=Object.fromEntries(f.entries()); body.rol_id=Number(body.rol_id); try{ await api(`${API_URL}/api/admin/usuarios`,{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)}); setMensaje('mensaje','Usuario creado en PostgreSQL'); e.target.reset(); await cargar(); }catch(err){setMensaje('mensaje',err.message,false);} });
-Promise.all([cargarRoles(),cargar()]).catch(e=>setMensaje('mensaje',e.message,false));
+    if (btnToggleAuditoria && auditoriaSection) {
+      btnToggleAuditoria.addEventListener('click', () => {
+        auditoriaSection.classList.toggle('hidden');
+        const visible = !auditoriaSection.classList.contains('hidden');
+        btnToggleAuditoria.textContent = visible ? 'Ocultar bitácora de auditoría' : 'Ver bitácora de auditoría';
+        if (visible) cargarAuditoria();
+      });
+    }
 
+    function actualizarVisibilidadPinCrear() {
+      const rolIdSel = Number(rolesSelect.value);
+      const rolObj = rolesLista.find(r => r.rol_id === rolIdSel);
+      const nombreRol = (rolObj?.rol_nombre || '').toLowerCase();
+      const esPos = ['caja', 'cajero', 'cocina'].includes(nombreRol);
+      if (esPos) {
+        pinFieldsCreate.classList.remove('hidden');
+      } else {
+        pinFieldsCreate.classList.add('hidden');
+        document.getElementById('inputPinCrear').value = '';
+        document.getElementById('inputPinConfirmCrear').value = '';
+      }
+    }
+
+    rolesSelect.addEventListener('change', actualizarVisibilidadPinCrear);
+
+    function etiquetaRolLegible(rol) {
+      const mapa = {
+        admin: 'Administrador',
+        operador_inventario: 'Operador de Inventario',
+        encargado_rrhh: 'Encargado de RRHH',
+        supervisor: 'Supervisor',
+        caja: 'Cajero (POS)',
+        cajero: 'Cajero (POS)',
+        cocina: 'Cocina (POS)'
+      };
+      return mapa[String(rol || '').toLowerCase()] || rol;
+    }
+
+    function renderBadgePin(u) {
+      if (!u.es_trabajador_pos) {
+        return '<span class="text-xs text-gray-500">No aplica (Oficina)</span>';
+      }
+      if (u.pin_bloqueado) {
+        return `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded bg-red-950 border border-red-600 text-red-200">
+                  🔒 PIN Bloqueado (${u.intentos_pin}/5 intentos)
+                </span>`;
+      }
+      if (u.tiene_pin) {
+        const intentosInfo = u.intentos_pin > 0 ? ` · ${u.intentos_pin}/5 intentos` : '';
+        return `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded bg-emerald-950/70 border border-emerald-700 text-emerald-200">
+                  ✓ PIN Activo${intentosInfo}
+                </span>`;
+      }
+      return `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded bg-amber-950/70 border border-amber-600 text-amber-200">
+                ⚠ Sin PIN asignado
+              </span>`;
+    }
+
+    async function cargarRoles() {
+      rolesLista = await api(`${API_URL}/api/admin/usuarios/roles`, { headers: authHeaders });
+      rolesSelect.innerHTML = rolesLista
+        .map(r => `<option value="${r.rol_id}">${etiquetaRolLegible(r.rol_nombre)} (${r.rol_nombre})</option>`)
+        .join('');
+      actualizarVisibilidadPinCrear();
+    }
+
+    async function cargar() {
+      usuariosLista = await api(`${API_URL}/api/admin/usuarios`, { headers: authHeaders });
+
+      const bloqueados = usuariosLista.filter(u => u.pin_bloqueado).length;
+      const badgeBloqueados = document.getElementById('contadorBloqueados');
+      if (bloqueados > 0) {
+        badgeBloqueados.textContent = `⚠ ${bloqueados} ${bloqueados === 1 ? 'trabajador con PIN bloqueado' : 'trabajadores con PIN bloqueado'}`;
+        badgeBloqueados.classList.remove('hidden');
+      } else {
+        badgeBloqueados.classList.add('hidden');
+      }
+
+      document.getElementById('tabla').innerHTML = usuariosLista.map(u => {
+        const filaClase = u.pin_bloqueado
+          ? 'border-t border-red-700/70 bg-red-950/30'
+          : 'border-t border-gray-700 hover:bg-gray-800/60';
+
+        const estadoBadge = u.usuario_estado_cuenta === 'activo'
+          ? '<span class="px-2 py-0.5 rounded text-xs bg-emerald-950/60 border border-emerald-700 text-emerald-200">activo</span>'
+          : '<span class="px-2 py-0.5 rounded text-xs bg-gray-900 border border-gray-600 text-gray-300">inactivo</span>';
+
+        const btnPin = u.es_trabajador_pos
+          ? `<button onclick="abrirModalPin(${u.usuario_id})" class="bg-amber-500/90 hover:bg-amber-500 text-gray-950 font-semibold rounded px-2.5 py-1 text-xs transition">
+               ${u.tiene_pin ? 'Restablecer PIN' : 'Asignar PIN'}
+             </button>`
+          : '';
+
+        const btnDesbloquear = (u.pin_bloqueado || Number(u.intentos_pin) > 0)
+          ? `<button onclick="desbloquear(${u.usuario_id})" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded px-2.5 py-1 text-xs transition">
+               Desbloquear
+             </button>`
+          : '';
+
+        const btnEstado = `<button onclick="cambiar(${u.usuario_id},'${u.usuario_estado_cuenta === 'activo' ? 'inactivo' : 'activo'}')" class="bg-gray-700 hover:bg-gray-600 rounded px-2.5 py-1 text-xs">
+                             ${u.usuario_estado_cuenta === 'activo' ? 'Inactivar' : 'Activar'}
+                           </button>`;
+
+        return `<tr class="${filaClase}">
+          <td class="p-3 font-mono text-xs">${u.usuario_run}</td>
+          <td class="p-3 font-medium text-white">${u.usuario_nombres} ${u.usuario_apellido_paterno} ${u.usuario_apellido_materno || ''}</td>
+          <td class="p-3 text-gray-300">${u.usuario_correo}</td>
+          <td class="p-3">${etiquetaRolLegible(u.rol_nombre)}</td>
+          <td class="p-3">${estadoBadge}</td>
+          <td class="p-3">${renderBadgePin(u)}</td>
+          <td class="p-3">
+            <div class="flex flex-wrap items-center gap-1.5">
+              ${btnDesbloquear}
+              ${btnPin}
+              ${btnEstado}
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function cambiar(id, estado) {
+      try {
+        await api(`${API_URL}/api/admin/usuarios/${id}/estado`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ estado })
+        });
+        setMensaje('mensaje', `Estado de cuenta actualizado a ${estado}`);
+        await cargar();
+        if (!auditoriaSection.classList.contains('hidden')) await cargarAuditoria();
+      } catch (e) {
+        setMensaje('mensaje', e.message, false);
+      }
+    }
+
+    // Subflujo CU original 86: Desbloquear cuenta de trabajador y reiniciar intentos
+    async function desbloquear(id) {
+      try {
+        const res = await api(`${API_URL}/api/admin/usuarios/${id}/desbloquear`, {
+          method: 'PATCH',
+          headers: jsonHeaders
+        });
+        setMensaje('mensaje', res.message || 'Cuenta desbloqueada exitosamente');
+        await cargar();
+        if (!auditoriaSection.classList.contains('hidden')) await cargarAuditoria();
+      } catch (e) {
+        setMensaje('mensaje', e.message, false);
+      }
+    }
+
+    // Subflujo CU original 85: Asignar o restablecer PIN de 4 dígitos
+    function abrirModalPin(id) {
+      const u = usuariosLista.find(x => x.usuario_id === id);
+      if (!u) return;
+      document.getElementById('pinUsuarioId').value = String(u.usuario_id);
+      document.getElementById('modalPinTitulo').textContent = `${u.tiene_pin ? 'Restablecer PIN' : 'Asignar PIN'} · ${u.usuario_nombres} ${u.usuario_apellido_paterno}`;
+      document.getElementById('nuevoPin').value = '';
+      document.getElementById('confirmarPin').value = '';
+      document.getElementById('modalPinError').classList.add('hidden');
+      document.getElementById('modalPin').classList.remove('hidden');
+      document.getElementById('nuevoPin').focus();
+    }
+
+    function cerrarModalPin() {
+      document.getElementById('modalPin').classList.add('hidden');
+    }
+
+    document.getElementById('formPin').addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = document.getElementById('pinUsuarioId').value;
+      const pin = document.getElementById('nuevoPin').value.trim();
+      const pin_confirmacion = document.getElementById('confirmarPin').value.trim();
+      const errBox = document.getElementById('modalPinError');
+
+      if (!/^\d{4}$/.test(pin)) {
+        errBox.textContent = 'El PIN debe contener exactamente 4 dígitos numéricos.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+      if (pin !== pin_confirmacion) {
+        errBox.textContent = 'El PIN y su confirmación no coinciden.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const res = await api(`${API_URL}/api/admin/usuarios/${id}/pin`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ pin, pin_confirmacion })
+        });
+        cerrarModalPin();
+        setMensaje('mensaje', res.message || 'PIN asignado correctamente');
+        await cargar();
+        if (!auditoriaSection.classList.contains('hidden')) await cargarAuditoria();
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.classList.remove('hidden');
+      }
+    });
+
+    async function cargarAuditoria() {
+      try {
+        const logs = await api(`${API_URL}/api/admin/usuarios/auditoria`, { headers: authHeaders });
+        document.getElementById('tablaAuditoria').innerHTML = logs.map(l => {
+          const afectado = l.afectado_nombres ? `${l.afectado_nombres} ${l.afectado_apellido || ''} (${l.afectado_correo})` : '-';
+          const actor = l.actor_nombres ? `${l.actor_nombres} ${l.actor_apellido || ''}` : 'Sistema / Anónimo';
+          const colorRes = l.resultado === 'exitoso'
+            ? 'text-emerald-300'
+            : (l.resultado === 'bloqueado' || l.resultado === 'denegado' ? 'text-red-300 font-semibold' : 'text-amber-300');
+          return `<tr class="border-t border-gray-700">
+            <td class="p-3 font-mono">${new Date(l.fecha_hora).toLocaleString('es-CL')}</td>
+            <td class="p-3 font-medium text-white">${l.accion}</td>
+            <td class="p-3">${l.modulo}</td>
+            <td class="p-3">${afectado}</td>
+            <td class="p-3">${actor}</td>
+            <td class="p-3 uppercase ${colorRes}">${l.resultado}</td>
+            <td class="p-3 text-gray-300">${l.detalle || '-'}</td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="7" class="p-3 text-gray-400">Sin eventos registrados</td></tr>';
+      } catch (e) {
+        setMensaje('mensaje', e.message, false);
+      }
+    }
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const body = Object.fromEntries(f.entries());
+      body.rol_id = Number(body.rol_id);
+      if (!body.pin) {
+        delete body.pin;
+        delete body.pin_confirmacion;
+      }
+      try {
+        await api(`${API_URL}/api/admin/usuarios`, {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify(body)
+        });
+        setMensaje('mensaje', 'Usuario creado exitosamente en PostgreSQL');
+        e.target.reset();
+        actualizarVisibilidadPinCrear();
+        await cargar();
+        if (!auditoriaSection.classList.contains('hidden')) await cargarAuditoria();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    Promise.all([cargarRoles(), cargar()]).catch(e => setMensaje('mensaje', e.message, false));
   </script>
 </body>
 </html>

@@ -3,35 +3,511 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KidZania - Dashboard</title>
+  <title>KidZania - Dashboard Ejecutivo e Informes (CU 33)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      aside, header, .no-print { display: none !important; }
+      main { margin-left: 0 !important; padding: 0 !important; }
+      body { background: #ffffff !important; color: #111827 !important; }
+    }
+  </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
   <main id="main" class="lg:ml-72 p-6">
     <div id="mensaje" class="hidden"></div>
-    <section id="cards" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"></section>
-<section class="mt-6 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-  <div class="p-4 border-b border-gray-700"><h3 class="font-semibold text-lg">Existencias por producto</h3></div>
-  <div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-900 text-gray-300"><tr><th class="p-3 text-left">Código</th><th class="p-3 text-left">Producto</th><th class="p-3 text-left">Categoría</th><th class="p-3 text-left">Stock</th><th class="p-3 text-left">Lotes</th><th class="p-3 text-left">Próximo vencimiento</th></tr></thead><tbody id="tabla"></tbody></table></div>
-</section>
+
+    <!-- Barra de Filtros de Indicadores por Período, Negocio y Puesto (Subflujo CU 88) -->
+    <section class="no-print bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <span class="text-[11px] uppercase tracking-wider font-bold text-amber-400">Módulo J · Dashboard Ejecutivo y Reportería (CU 33)</span>
+          <h3 class="text-sm font-semibold text-white">Filtro de Indicadores por Período, Tipo de Negocio y Puesto (Subflujo CU 88)</h3>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="btnExportarExcel" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2 rounded transition">
+            ⬇ Exportar Informe a Excel (.CSV - CU 76)
+          </button>
+          <button type="button" id="btnExportarPdf" class="bg-sky-700 hover:bg-sky-600 text-white text-xs font-semibold px-3.5 py-2 rounded transition">
+            🖨️ Exportar / Imprimir PDF (CU 76)
+          </button>
+        </div>
+      </div>
+
+      <form id="formFiltrosDashboard" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha desde</label>
+          <input id="dashFechaDesde" type="date" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha hasta</label>
+          <input id="dashFechaHasta" type="date" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Tipo de negocio</label>
+          <select id="dashTipoNegocio" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+            <option value="todos">Todos (Comida y Merch)</option>
+            <option value="comida">Comida y Bebidas</option>
+            <option value="merch">Merchandising</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Puesto operativo</label>
+          <select id="dashPuesto" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-xs">
+            <option value="todos">Todos los puestos</option>
+            <option value="puesto_comida">Puesto de Comida</option>
+            <option value="tienda_merch">Tienda Merchandising</option>
+          </select>
+        </div>
+        <div class="flex items-end gap-2">
+          <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded py-2 px-3 text-xs transition">
+            Aplicar (CU 88)
+          </button>
+          <button type="button" id="btnLimpiarDash" class="bg-gray-700 hover:bg-gray-600 text-gray-200 rounded py-2 px-3 text-xs transition">
+            Limpiar
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Tarjetas de Indicadores Ejecutivos (Subflujos CU 33 y CU 75) -->
+    <section id="cards" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6"></section>
+
+    <!-- Desglose de Ventas por Puesto y Línea de Negocio -->
+    <section class="grid gap-4 md:grid-cols-2 mb-6">
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3">Desglose de Ventas por Puesto y Negocio (CU 33 / CU 88)</h4>
+        <div id="desglosePuestos" class="space-y-2 text-xs"></div>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-sky-400 mb-3">Estado Operativo de Inventario, Salón y Alertas (CU 75)</h4>
+        <div id="desgloseOperativo" class="grid grid-cols-2 gap-2.5 text-xs"></div>
+      </div>
+    </section>
+
+    <!-- Centro de Informes Operativos Exportables (Subflujos CU 72, CU 73, CU 74 y CU 76) -->
+    <section class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden mb-6">
+      <div class="p-4 bg-gray-900/80 border-b border-gray-700 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2 no-print">
+          <button type="button" data-reporte="ventas" class="btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-amber-500 text-gray-950">
+            📊 Reporte de Ventas (CU 72)
+          </button>
+          <button type="button" data-reporte="mermas" class="btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700">
+            📉 Reporte de Mermas (CU 73)
+          </button>
+          <button type="button" data-reporte="vencimientos" class="btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700">
+            ⏰ Reporte de Vencimientos (CU 74)
+          </button>
+          <button type="button" data-reporte="existencias" class="btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700">
+            📦 Existencias de Inventario (CU 75)
+          </button>
+        </div>
+        <span id="repTimestamp" class="text-xs text-gray-400"></span>
+      </div>
+
+      <!-- Filtros específicos del reporte activo -->
+      <div class="no-print p-3.5 bg-gray-900/40 border-b border-gray-700/80 grid gap-3 sm:grid-cols-4 text-xs">
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Filtrar por Producto</label>
+          <select id="repProducto" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-xs">
+            <option value="">Todos los productos</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Filtrar por Categoría</label>
+          <select id="repCategoria" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-xs">
+            <option value="">Todas las categorías</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Cajero / Usuario Responsable</label>
+          <select id="repUsuario" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-xs">
+            <option value="">Todos los usuarios</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 mb-1">Horizonte Vencimiento (días - CU 74)</label>
+          <input id="repDiasVenc" type="number" min="0" max="365" placeholder="Umbral del sistema" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-xs">
+        </div>
+      </div>
+
+      <!-- KPIs del Reporte Seleccionado -->
+      <div class="p-4 border-b border-gray-700 bg-gray-800/60 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 id="repTitulo" class="font-bold text-base text-white">Reporte Operativo</h3>
+          <p id="repSubtituloFiltros" class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <div id="repKpis" class="flex flex-wrap items-center gap-3 text-xs"></div>
+      </div>
+
+      <!-- Tabla Dinámica del Reporte -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead id="repThead" class="bg-gray-900 text-gray-300 text-xs"></thead>
+          <tbody id="repTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Tabla Resumen de Existencias por Producto -->
+    <section class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex items-center justify-between">
+        <h3 class="font-semibold text-base">Resumen de Existencias por Producto y Alertas de Stock Crítico</h3>
+        <a href="v_lotes.html" class="no-print text-xs text-amber-400 hover:text-amber-300 underline">Ver consulta avanzada de existencias y lotes →</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900 text-gray-300 text-xs">
+            <tr>
+              <th class="p-3 text-left">Código</th>
+              <th class="p-3 text-left">Producto</th>
+              <th class="p-3 text-left">Categoría / Negocio</th>
+              <th class="p-3 text-left">Stock Disponible</th>
+              <th class="p-3 text-left">Nivel</th>
+              <th class="p-3 text-left">Lotes Activos</th>
+              <th class="p-3 text-left">Próximo Vencimiento</th>
+            </tr>
+          </thead>
+          <tbody id="tabla"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
+
   <script src="../js/app-common.js"></script>
   <script>
-    montarLayout('Dashboard', 'Resumen operativo conectado a PostgreSQL.');
-    
-async function cargar(){
-  try{
-    const data=await api(`${API_URL}/api/dashboard/resumen`,{headers:authHeaders});
-    const r=data.resumen;
-    const items=[
-      ['Productos activos',r.productos_activos],['Unidades activas',r.unidades_activas],['Proveedores activos',r.proveedores_activos],['Ubicaciones activas',r.ubicaciones_activas],
-      ['Lotes por vencer',r.lotes_proximos_vencer],['Lotes vencidos',r.lotes_vencidos],['Salidas del mes',formatoNumero(r.salidas_mes)]
-    ];
-    document.getElementById('cards').innerHTML=items.map(([k,v])=>`<div class="bg-gray-800 border border-gray-700 rounded-lg p-5"><div class="text-gray-400 text-sm">${k}</div><div class="text-3xl font-bold text-amber-400 mt-2">${v}</div></div>`).join('');
-    document.getElementById('tabla').innerHTML=(data.detalles||[]).map(p=>`<tr class="border-t border-gray-700"><td class="p-3">${p.producto_codigo||'-'}</td><td class="p-3 font-medium">${p.producto_nombre}</td><td class="p-3">${p.producto_categoria||'-'}</td><td class="p-3">${formatoNumero(p.producto_stock_actual)} ${p.unidad_medida_codigo||''}</td><td class="p-3">${p.lotes_registrados}</td><td class="p-3">${formatoFecha(p.proximo_vencimiento)}</td></tr>`).join('') || '<tr><td class="p-3 text-gray-400" colspan="6">Sin datos</td></tr>';
-  }catch(e){ setMensaje('mensaje',e.message,false); }
-}
-cargar();
+    montarLayout(
+      'Dashboard Ejecutivo e Informes',
+      'CU 33: Visualización ejecutiva de KPIs (CU 33/75), filtrado por período y puesto (CU 88), reportes de ventas (CU 72), mermas (CU 73), vencimientos (CU 74) y exportación en Excel/PDF (CU 76).'
+    );
+
+    let tipoReporteActivo = 'ventas';
+    let ultimoReporteData = null;
+    let ultimoDashboardData = null;
+
+    async function cargarSelectoresReporte() {
+      const [productos, categorias, responsables] = await Promise.all([
+        api('/api/productos', { headers: authHeaders }),
+        api('/api/productos/categorias', { headers: authHeaders }),
+        api('/api/lotes/responsables', { headers: authHeaders })
+      ]);
+
+      document.getElementById('repProducto').innerHTML =
+        '<option value="">Todos los productos</option>' +
+        productos.map(p => `<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre}</option>`).join('');
+
+      document.getElementById('repCategoria').innerHTML =
+        '<option value="">Todas las categorías</option>' +
+        categorias.map(c => `<option value="${c.categoria_id}">${c.categoria_nombre}</option>`).join('');
+
+      document.getElementById('repUsuario').innerHTML =
+        '<option value="">Todos los usuarios</option>' +
+        responsables.map(u => `<option value="${u.usuario_id}">${u.nombre_completo} (${u.rol_nombre})</option>`).join('');
+    }
+
+    function construirQueryComun() {
+      const params = new URLSearchParams();
+      const fDesde = document.getElementById('dashFechaDesde').value;
+      const fHasta = document.getElementById('dashFechaHasta').value;
+      const tipoNeg = document.getElementById('dashTipoNegocio').value;
+      const puesto = document.getElementById('dashPuesto').value;
+
+      if (fDesde) params.set('fecha_desde', fDesde);
+      if (fHasta) params.set('fecha_hasta', fHasta);
+      if (tipoNeg && tipoNeg !== 'todos') params.set('tipo_negocio', tipoNeg);
+      if (puesto && puesto !== 'todos') params.set('puesto', puesto);
+      return params;
+    }
+
+    function construirQueryReporte(formato = 'json') {
+      const params = construirQueryComun();
+      params.set('tipo_reporte', tipoReporteActivo);
+      params.set('formato', formato);
+
+      const prodId = document.getElementById('repProducto').value;
+      const catId = document.getElementById('repCategoria').value;
+      const usuId = document.getElementById('repUsuario').value;
+      const diasVenc = document.getElementById('repDiasVenc').value;
+
+      if (prodId) params.set('producto_id', prodId);
+      if (catId) params.set('categoria_id', catId);
+      if (usuId) params.set('usuario_id', usuId);
+      if (diasVenc !== '') params.set('dias_vencimiento', diasVenc);
+
+      return params;
+    }
+
+    async function cargarDashboard() {
+      const params = construirQueryComun();
+      const data = await api(`/api/dashboard/resumen?${params.toString()}`, { headers: authHeaders });
+      ultimoDashboardData = data;
+      const r = data.resumen;
+
+      const items = [
+        ['Ventas del Período ($)', `$${formatoNumero(r.ventas_periodo_monto)}`, `${r.cantidad_ventas} venta(s) · Ticket prom: $${formatoNumero(r.ticket_promedio)}`, 'text-emerald-400'],
+        ['Ventas Comida vs Merch', `$${formatoNumero(r.ventas_comida_monto)} / $${formatoNumero(r.ventas_merch_monto)}`, `Comida: ${formatoNumero(r.ventas_comida_unidades)} u. · Merch: ${formatoNumero(r.ventas_merch_unidades)} u.`, 'text-amber-400'],
+        ['Mermas Acumuladas ($)', `$${formatoNumero(r.mermas_periodo_costo)}`, `${r.mermas_periodo_registros} reg. (${formatoNumero(r.mermas_periodo_unidades)} u. perdidas)`, 'text-red-400'],
+        ['Alertas Stock y Vencimiento', `${r.productos_stock_critico} críticos`, `${r.lotes_proximos_vencer} lotes por vencer · ${r.lotes_vencidos} vencidos`, 'text-orange-400']
+      ];
+
+      document.getElementById('cards').innerHTML = items.map(([k, v, sub, color]) => `
+        <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
+          <div class="text-gray-400 text-xs font-medium">${k}</div>
+          <div class="text-2xl font-bold ${color} mt-1.5">${v}</div>
+          <div class="text-[11px] text-gray-400 mt-1">${sub}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('desglosePuestos').innerHTML = (data.ventas_por_puesto || []).map(p => `
+        <div class="flex items-center justify-between bg-gray-900 px-3.5 py-2.5 rounded-lg border border-gray-700">
+          <div>
+            <div class="font-semibold text-white">${p.puesto}</div>
+            <div class="text-[11px] text-gray-400">Línea: ${p.tipo_negocio.toUpperCase()} · ${p.transacciones} transacción(es) · ${formatoNumero(p.unidades)} unidades</div>
+          </div>
+          <div class="text-sm font-bold text-emerald-400">$${formatoNumero(p.monto_total)}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('desgloseOperativo').innerHTML = `
+        <div class="bg-gray-900 p-2.5 rounded border border-gray-700">
+          <span class="text-gray-400 block">Productos Activos</span>
+          <strong class="text-white text-sm">${r.productos_activos}</strong>
+        </div>
+        <div class="bg-gray-900 p-2.5 rounded border border-gray-700">
+          <span class="text-gray-400 block">Proveedores / Ubicaciones</span>
+          <strong class="text-white text-sm">${r.proveedores_activos} prov. / ${r.ubicaciones_activas} ubic.</strong>
+        </div>
+        <div class="bg-gray-900 p-2.5 rounded border border-gray-700">
+          <span class="text-gray-400 block">Salidas Acumuladas Mes</span>
+          <strong class="text-amber-300 text-sm">${formatoNumero(r.salidas_mes)} u.</strong>
+        </div>
+        <div class="bg-gray-900 p-2.5 rounded border border-gray-700">
+          <span class="text-gray-400 block">Mesas Ocupadas / Activas</span>
+          <strong class="text-sky-300 text-sm">${r.mesas_ocupadas} / ${r.mesas_activas}</strong>
+        </div>
+      `;
+
+      document.getElementById('tabla').innerHTML = (data.detalles || []).map(p => `
+        <tr class="border-t border-gray-700 hover:bg-gray-800/50">
+          <td class="p-3 font-mono text-xs text-amber-300">${p.producto_codigo || '-'}</td>
+          <td class="p-3 font-medium text-xs">${p.producto_nombre}</td>
+          <td class="p-3 text-xs">${p.producto_categoria || '-'} <span class="text-gray-400 uppercase">(${p.producto_tipo_negocio || 'comida'})</span></td>
+          <td class="p-3 text-xs font-semibold">${formatoNumero(p.producto_stock_actual)} ${p.unidad_medida_codigo || ''}</td>
+          <td class="p-3 text-xs">
+            <span class="px-2 py-0.5 rounded text-[11px] font-semibold ${p.stock_critico ? 'bg-red-900/70 text-red-200 border border-red-700' : 'bg-emerald-900/60 text-emerald-300'}">
+              ${p.stock_critico ? 'CRÍTICO' : 'NORMAL'}
+            </span>
+          </td>
+          <td class="p-3 text-xs">${p.lotes_registrados}</td>
+          <td class="p-3 text-xs">${formatoFecha(p.proximo_vencimiento)}</td>
+        </tr>
+      `).join('') || '<tr><td class="p-4 text-center text-gray-400" colspan="7">Sin datos para los filtros seleccionados</td></tr>';
+    }
+
+    async function cargarReporte() {
+      const params = construirQueryReporte('json');
+      const data = await api(`/api/dashboard/reportes?${params.toString()}`, { headers: authHeaders });
+      ultimoReporteData = data;
+
+      document.getElementById('repTitulo').textContent = data.titulo;
+      document.getElementById('repTimestamp').textContent = `Generado: ${new Date(data.generado_en).toLocaleString('es-CL')}`;
+
+      const f = data.filtros_aplicados || {};
+      const descFiltros = [
+        f.fecha_desde ? `Desde: ${f.fecha_desde}` : null,
+        f.fecha_hasta ? `Hasta: ${f.fecha_hasta}` : null,
+        f.tipo_negocio && f.tipo_negocio !== 'todos' ? `Negocio: ${f.tipo_negocio}` : null,
+        f.puesto && f.puesto !== 'todos' ? `Puesto: ${f.puesto}` : null
+      ].filter(Boolean);
+      document.getElementById('repSubtituloFiltros').textContent =
+        descFiltros.length > 0 ? `Filtros aplicados: ${descFiltros.join(' · ')}` : 'Período completo · Todos los puestos y líneas de negocio';
+
+      const kpiEntries = Object.entries(data.kpis || {});
+      document.getElementById('repKpis').innerHTML = kpiEntries.map(([k, v]) => {
+        const esMonto = k.includes('monto') || k.includes('costo') || k.includes('valor') || k.includes('ticket');
+        const label = k.replace(/_/g, ' ').toUpperCase();
+        return `
+          <div class="bg-gray-900 border border-gray-700 px-3 py-1.5 rounded-lg">
+            <span class="text-[10px] text-gray-400 block">${label}</span>
+            <strong class="text-amber-300 text-xs">${esMonto ? '$' + formatoNumero(v) : formatoNumero(v)}</strong>
+          </div>
+        `;
+      }).join('');
+
+      const cols = data.columnas || [];
+      const filas = data.filas || [];
+
+      document.getElementById('repThead').innerHTML = `
+        <tr>
+          ${cols.map(c => `<th class="p-3 text-left">${c.label}</th>`).join('')}
+        </tr>
+      `;
+
+      if (filas.length === 0) {
+        document.getElementById('repTbody').innerHTML = `
+          <tr>
+            <td colspan="${cols.length || 1}" class="p-6 text-center text-gray-400">
+              No se encontraron registros para este informe con los filtros aplicados.
+            </td>
+          </tr>
+        `;
+      } else {
+        document.getElementById('repTbody').innerHTML = filas.map(row => `
+          <tr class="border-t border-gray-700 hover:bg-gray-800/50 text-xs">
+            ${cols.map(c => {
+              const val = row[c.key];
+              const esMoneda = c.label.includes('($)');
+              return `<td class="p-3">${esMoneda ? '$' + formatoNumero(val) : (val ?? '-')}</td>`;
+            }).join('')}
+          </tr>
+        `).join('');
+      }
+    }
+
+    async function actualizarTodo() {
+      const fDesde = document.getElementById('dashFechaDesde').value;
+      const fHasta = document.getElementById('dashFechaHasta').value;
+      if (fDesde && fHasta && fHasta < fDesde) {
+        setMensaje('mensaje', 'El rango de fechas es inválido: la fecha final no puede ser menor que la fecha inicial (CU 88)', false);
+        return;
+      }
+      document.getElementById('mensaje').classList.add('hidden');
+      await Promise.all([cargarDashboard(), cargarReporte()]);
+    }
+
+    // Pestañas de selección de reporte (CU 72, CU 73, CU 74, CU 75)
+    document.querySelectorAll('.btn-tab-rep').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tipoReporteActivo = btn.getAttribute('data-reporte');
+        document.querySelectorAll('.btn-tab-rep').forEach(b => {
+          if (b.getAttribute('data-reporte') === tipoReporteActivo) {
+            b.className = 'btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-amber-500 text-gray-950';
+          } else {
+            b.className = 'btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700';
+          }
+        });
+        cargarReporte().catch(e => setMensaje('mensaje', e.message, false));
+      });
+    });
+
+    ['repProducto', 'repCategoria', 'repUsuario', 'repDiasVenc'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        cargarReporte().catch(e => setMensaje('mensaje', e.message, false));
+      });
+    });
+
+    document.getElementById('formFiltrosDashboard').addEventListener('submit', e => {
+      e.preventDefault();
+      actualizarTodo().catch(err => setMensaje('mensaje', err.message, false));
+    });
+
+    document.getElementById('btnLimpiarDash').addEventListener('click', () => {
+      document.getElementById('formFiltrosDashboard').reset();
+      document.getElementById('repProducto').value = '';
+      document.getElementById('repCategoria').value = '';
+      document.getElementById('repUsuario').value = '';
+      document.getElementById('repDiasVenc').value = '';
+      actualizarTodo().catch(err => setMensaje('mensaje', err.message, false));
+    });
+
+    // Subflujo CU 76: Exportar Informe a Excel (.CSV con BOM UTF-8) desde el backend respetando filtros activos
+    document.getElementById('btnExportarExcel').addEventListener('click', async () => {
+      try {
+        const params = construirQueryReporte('csv');
+        const response = await fetch(buildApiUrl(`/api/dashboard/reportes?${params.toString()}`), {
+          headers: authHeaders
+        });
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.message || 'Error al exportar el informe en formato Excel (.CSV)');
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ParkFlow_Reporte_${tipoReporteActivo}_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setMensaje('mensaje', `Informe de ${tipoReporteActivo.toUpperCase()} exportado a Excel (.CSV) correctamente (CU 76)`);
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    // Subflujo CU 76: Exportar / Imprimir Informe estructurado en PDF respetando filtros activos
+    document.getElementById('btnExportarPdf').addEventListener('click', () => {
+      if (!ultimoReporteData) return;
+      const cols = ultimoReporteData.columnas || [];
+      const filas = ultimoReporteData.filas || [];
+      const r = ultimoDashboardData?.resumen || {};
+
+      const win = window.open('', '_blank', 'width=1024,height=768');
+      if (!win) {
+        window.print();
+        return;
+      }
+
+      const htmlTabla = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <title>${ultimoReporteData.titulo} - KidZania Santiago</title>
+          <style>
+            body { font-family: Arial, sans-serif; color: #111827; margin: 24px; font-size: 12px; }
+            h1 { margin: 0; font-size: 18px; color: #b45309; }
+            h2 { margin: 4px 0 12px; font-size: 14px; color: #1f2937; }
+            .meta { font-size: 11px; color: #4b5563; margin-bottom: 14px; }
+            .kpis { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+            .kpi { border: 1px solid #d1d5db; border-radius: 6px; padding: 8px 12px; background: #f9fafb; }
+            .kpi span { display: block; font-size: 10px; color: #6b7280; text-transform: uppercase; }
+            .kpi strong { font-size: 13px; color: #111827; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+            th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; font-size: 11px; }
+            th { background: #f3f4f6; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>ParkFlow · KidZania Santiago (Grupo 19)</h1>
+          <h2>${ultimoReporteData.titulo}</h2>
+          <div class="meta">
+            Generado el: ${new Date(ultimoReporteData.generado_en).toLocaleString('es-CL')} ·
+            ${document.getElementById('repSubtituloFiltros').textContent}
+          </div>
+          <div class="kpis">
+            <div class="kpi"><span>Ventas Período</span><strong>$${formatoNumero(r.ventas_periodo_monto || 0)}</strong></div>
+            <div class="kpi"><span>Ventas Comida / Merch</span><strong>$${formatoNumero(r.ventas_comida_monto || 0)} / $${formatoNumero(r.ventas_merch_monto || 0)}</strong></div>
+            <div class="kpi"><span>Mermas Período</span><strong>$${formatoNumero(r.mermas_periodo_costo || 0)}</strong></div>
+            <div class="kpi"><span>Stock Crítico / Por Vencer</span><strong>${r.productos_stock_critico || 0} / ${r.lotes_proximos_vencer || 0}</strong></div>
+          </div>
+          <table>
+            <thead>
+              <tr>${cols.map(c => `<th>${c.label}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${filas.length > 0 ? filas.map(row => `
+                <tr>
+                  ${cols.map(c => {
+                    const val = row[c.key];
+                    const esMoneda = c.label.includes('($)');
+                    return `<td>${esMoneda ? '$' + formatoNumero(val) : (val ?? '-')}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('') : `<tr><td colspan="${cols.length}">Sin registros para los filtros seleccionados</td></tr>`}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() { window.print(); };
+          <\/script>
+        </body>
+        </html>
+      `;
+      win.document.open();
+      win.document.write(htmlTabla);
+      win.document.close();
+    });
+
+    Promise.all([cargarSelectoresReporte(), actualizarTodo()]).catch(e => setMensaje('mensaje', e.message, false));
   </script>
 </body>
 </html>

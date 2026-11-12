@@ -2,10 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const { initDatabase } = require('./config/initDb');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Inicializar y migrar esquema de base de datos al iniciar la aplicación
+initDatabase();
 
 // Directorios de frontend
 const frontendDir = path.join(__dirname, '../frontend');

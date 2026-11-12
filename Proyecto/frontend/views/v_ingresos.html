@@ -1,24 +1,248 @@
 <!DOCTYPE html>
 <html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>KidZania - Ingresos de stock</title><script src="https://cdn.tailwindcss.com"></script></head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KidZania - Ingresos y Recepción de Mercadería (CU 10)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
-  <main id="main" class="lg:ml-72 p-6"><div id="mensaje" class="hidden"></div>
+  <main id="main" class="lg:ml-72 p-6">
+    <div id="mensaje" class="hidden"></div>
+
     <div class="mb-4">
-      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">Agregar nuevo ingreso</button>
-    </div><section id="formSection" class="hidden bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6"><h3 class="font-semibold text-lg mb-4">Registrar ingreso de producto</h3><p class="text-sm text-gray-400 mb-4">El ingreso crea el lote, asocia proveedor y actualiza el stock en una transacción.</p><form id="form" class="grid gap-4 md:grid-cols-3"><select name="producto_id" id="productos" required class="bg-gray-700 rounded p-2 border border-gray-600"></select><input name="cantidad_ingresada" type="number" min="0.01" step="0.01" required placeholder="Cantidad" class="bg-gray-700 rounded p-2 border border-gray-600"><input name="lote_codigo" required placeholder="Código de lote" class="bg-gray-700 rounded p-2 border border-gray-600"><select name="proveedor_id" id="proveedores" required class="bg-gray-700 rounded p-2 border border-gray-600"></select><select name="ubicacion_id" id="ubicaciones" class="bg-gray-700 rounded p-2 border border-gray-600"><option value="">Sin ubicación</option></select><input name="fecha_recepcion" type="date" required class="bg-gray-700 rounded p-2 border border-gray-600"><input name="fecha_vencimiento" type="date" required class="bg-gray-700 rounded p-2 border border-gray-600"><input name="observacion" placeholder="Observación" class="md:col-span-2 bg-gray-700 rounded p-2 border border-gray-600"><button class="bg-amber-500 text-gray-950 font-semibold rounded p-2">Registrar ingreso</button></form></section><section class="bg-gray-800 rounded-lg border border-gray-700 p-5"><h3 class="font-semibold text-lg mb-3">Validación aplicada</h3><ul class="list-disc pl-5 text-sm text-gray-300 space-y-1"><li>El producto debe estar activo.</li><li>El proveedor debe estar activo.</li><li>La fecha de vencimiento debe ser posterior a la fecha de ingreso.</li><li>El stock del producto aumenta solo si la transacción completa termina correctamente.</li></ul></section></main>
+      <button id="btnAgregar" type="button" class="bg-amber-500 text-gray-950 font-semibold rounded px-4 py-2 hover:bg-amber-600 transition">
+        Registrar nuevo ingreso de mercadería
+      </button>
+    </div>
+
+    <!-- Comprobante de ingreso exitoso (Subflujo CU 39) -->
+    <section id="comprobanteSection" class="hidden bg-emerald-950/30 border border-emerald-600/60 rounded-xl p-5 mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <span class="text-xs uppercase tracking-wider font-bold text-emerald-400">Comprobante de Ingreso de Mercadería (CU 39)</span>
+          <h4 id="compTitulo" class="text-lg font-bold text-white mt-0.5"></h4>
+        </div>
+        <button type="button" onclick="document.getElementById('comprobanteSection').classList.add('hidden')" class="text-xs text-gray-400 hover:text-white">✕ Cerrar</button>
+      </div>
+      <div id="compDetalle" class="grid gap-3 md:grid-cols-4 text-xs bg-gray-900/80 p-4 rounded-lg border border-gray-800"></div>
+    </section>
+
+    <section id="formSection" class="bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6">
+      <h3 class="font-semibold text-lg mb-1">Registrar recepción e ingreso de inventario (CU 10)</h3>
+      <p class="text-xs text-gray-400 mb-4">
+        Registra en una transacción atómica el documento de respaldo (CU 39), lote (CU 9), validación de fechas (CU 10), costo unitario (CU 40), responsable de recepción (CU 48) y aumento de stock (CU 11).
+      </p>
+
+      <form id="form" class="grid gap-4 md:grid-cols-3">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Escanear / buscar código de producto (CU 39)</label>
+          <input id="inputCodigoScan" placeholder="Escanee o escriba código..." class="w-full bg-gray-900 rounded p-2 border border-gray-700 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Producto activo *</label>
+          <select name="producto_id" id="productos" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Proveedor activo *</label>
+          <select name="proveedor_id" id="proveedores" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">N° Documento de respaldo (Guía / Factura) *</label>
+          <input name="documento_respaldo" required placeholder="Ej: GD-88912" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Código de lote *</label>
+          <input name="lote_codigo" required placeholder="Ej: LOTE-2026-050" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Ubicación de almacenamiento</label>
+          <select name="ubicacion_id" id="ubicaciones" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+            <option value="">Sin ubicación</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Cantidad recibida (&gt; 0) *</label>
+          <input name="cantidad_ingresada" id="inputCantidad" type="number" min="0.01" step="0.01" required placeholder="Cantidad" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Costo unitario del lote ($) (CU 40) *</label>
+          <input name="costo_unitario" id="inputCostoUnitario" type="number" min="0.01" step="0.01" required placeholder="Costo unitario > 0" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Costo total ingreso</label>
+          <input id="inputCostoTotalCalculado" readonly value="$0" class="w-full bg-gray-900 text-amber-300 font-semibold rounded p-2 border border-gray-700 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha de ingreso (AAAA-MM-DD) *</label>
+          <input name="fecha_recepcion" id="fecha_recepcion" type="date" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Fecha de vencimiento (&gt; ingreso) (CU 10) *</label>
+          <input name="fecha_vencimiento" id="fecha_vencimiento" type="date" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Responsable de recepción física (CU 48) *</label>
+          <select name="responsable_recepcion_id" id="responsables" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Estado de recepción *</label>
+          <select name="estado_recepcion" required class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+            <option value="conforme">Conforme</option>
+            <option value="con_observaciones">Con observaciones</option>
+            <option value="parcial">Recepción parcial</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-gray-400 mb-1">Observaciones de recepción</label>
+          <input name="observacion" placeholder="Observaciones sobre estado físico, temperatura o transporte" class="w-full bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+        </div>
+
+        <button class="md:col-span-3 bg-amber-500 hover:bg-amber-600 text-gray-950 font-semibold rounded p-2.5 transition">
+          Confirmar recepción e ingreso de stock
+        </button>
+      </form>
+    </section>
+
+    <section class="bg-gray-800 rounded-lg border border-gray-700 p-5">
+      <h3 class="font-semibold text-lg mb-3">Reglas de negocio validadas (CU 10)</h3>
+      <ul class="list-disc pl-5 text-sm text-gray-300 space-y-1">
+        <li><strong>CU 9 y CU 11:</strong> El producto y el proveedor deben encontrarse activos; la recepción crea el lote y aumenta el stock en una sola transacción.</li>
+        <li><strong>CU 10:</strong> La fecha de vencimiento debe ser estrictamente posterior a la fecha de ingreso (formato ISO 8601 `AAAA-MM-DD`).</li>
+        <li><strong>CU 39:</strong> Se registra el número de documento de respaldo y se emite el comprobante de ingreso.</li>
+        <li><strong>CU 40:</strong> El costo unitario del lote debe ser numérico y mayor que cero, valorizando el ingreso.</li>
+        <li><strong>CU 48:</strong> Se verifica que el responsable de recepción exista y esté habilitado, quedando vinculado al lote y al movimiento.</li>
+      </ul>
+    </section>
+  </main>
+
   <script src="../js/app-common.js"></script>
-  <script>montarLayout('Ingresos de stock', 'UR 4.2: producto, cantidad, lote, proveedor y fecha.');
+  <script>
+    montarLayout('Ingresos de stock y Recepción de Mercadería', 'CU 10: Recepción por producto, lote, proveedor, documento de respaldo, fechas, cantidad, costo unitario y responsable.');
+
     const formSection = document.getElementById('formSection');
     const btnAgregar = document.getElementById('btnAgregar');
+    let productosActivos = [];
+
     if (btnAgregar && formSection) {
       btnAgregar.addEventListener('click', () => {
         formSection.classList.toggle('hidden');
-        btnAgregar.textContent = formSection.classList.contains('hidden') ? 'Agregar nuevo ingreso' : 'Ocultar formulario';
+        btnAgregar.textContent = formSection.classList.contains('hidden')
+          ? 'Registrar nuevo ingreso de mercadería'
+          : 'Ocultar formulario';
       });
     }
 
-async function cargarSelects(){ const [productos,proveedores,ubicaciones]=await Promise.all([api('/api/productos',{headers:authHeaders}),api('/api/proveedores',{headers:authHeaders}),api('/api/ubicaciones',{headers:authHeaders})]); document.getElementById('productos').innerHTML=productos.filter(p=>p.producto_estado==='activo').map(p=>`<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre} (${p.unidad_medida_codigo})</option>`).join(''); document.getElementById('proveedores').innerHTML=proveedores.filter(p=>p.proveedor_estado==='activo').map(p=>`<option value="${p.proveedor_id}">${p.proveedor_nombre}</option>`).join(''); document.getElementById('ubicaciones').innerHTML='<option value="">Sin ubicación</option>'+ubicaciones.filter(u=>u.ubicacion_estado==='activo').map(u=>`<option value="${u.ubicacion_id}">${u.ubicacion_codigo} - ${u.ubicacion_nombre}</option>`).join(''); }
-document.getElementById('form').addEventListener('submit',async e=>{ e.preventDefault(); const body=Object.fromEntries(new FormData(e.target).entries()); body.producto_id=Number(body.producto_id); body.proveedor_id=Number(body.proveedor_id); body.ubicacion_id=body.ubicacion_id?Number(body.ubicacion_id):null; body.cantidad_ingresada=Number(body.cantidad_ingresada); try{ await api('/api/movimientos/ingresos',{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)}); setMensaje('mensaje','Ingreso registrado en PostgreSQL y stock actualizado'); e.target.reset(); await cargarSelects(); }catch(err){setMensaje('mensaje',err.message,false);} });
-cargarSelects().catch(e=>setMensaje('mensaje',e.message,false));
-</script>
-</body></html>
+    const hoyIso = new Date().toISOString().slice(0, 10);
+    document.getElementById('fecha_recepcion').value = hoyIso;
+
+    function actualizarCostoTotalUI() {
+      const cant = Number(document.getElementById('inputCantidad').value || 0);
+      const costo = Number(document.getElementById('inputCostoUnitario').value || 0);
+      const total = cant > 0 && costo > 0 ? cant * costo : 0;
+      document.getElementById('inputCostoTotalCalculado').value = `$${formatoNumero(total)}`;
+    }
+
+    document.getElementById('inputCantidad').addEventListener('input', actualizarCostoTotalUI);
+    document.getElementById('inputCostoUnitario').addEventListener('input', actualizarCostoTotalUI);
+
+    document.getElementById('inputCodigoScan').addEventListener('input', e => {
+      const q = e.target.value.trim().toLowerCase();
+      const filtrados = !q
+        ? productosActivos
+        : productosActivos.filter(p =>
+            p.producto_codigo.toLowerCase().includes(q) ||
+            p.producto_nombre.toLowerCase().includes(q)
+          );
+      document.getElementById('productos').innerHTML = filtrados
+        .map(p => `<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre} (${p.unidad_medida_codigo})</option>`)
+        .join('');
+    });
+
+    async function cargarSelects() {
+      const [productos, proveedores, ubicaciones, responsables] = await Promise.all([
+        api('/api/productos', { headers: authHeaders }),
+        api('/api/proveedores', { headers: authHeaders }),
+        api('/api/ubicaciones', { headers: authHeaders }),
+        api('/api/lotes/responsables', { headers: authHeaders })
+      ]);
+
+      productosActivos = productos.filter(p => p.producto_estado === 'activo');
+      document.getElementById('productos').innerHTML = productosActivos
+        .map(p => `<option value="${p.producto_id}">${p.producto_codigo} - ${p.producto_nombre} (${p.unidad_medida_codigo})</option>`)
+        .join('');
+
+      document.getElementById('proveedores').innerHTML = proveedores
+        .filter(p => p.proveedor_estado === 'activo')
+        .map(p => `<option value="${p.proveedor_id}">${p.proveedor_nombre}</option>`)
+        .join('');
+
+      document.getElementById('ubicaciones').innerHTML =
+        '<option value="">Sin ubicación</option>' +
+        ubicaciones
+          .filter(u => u.ubicacion_estado === 'activo')
+          .map(u => `<option value="${u.ubicacion_id}">${u.ubicacion_codigo} - ${u.ubicacion_nombre}</option>`)
+          .join('');
+
+      document.getElementById('responsables').innerHTML = responsables
+        .map(r => `<option value="${r.usuario_id}">${r.nombre_completo} (${r.rol_nombre})</option>`)
+        .join('');
+    }
+
+    function mostrarComprobante(c) {
+      if (!c) return;
+      document.getElementById('compTitulo').textContent =
+        `Comprobante #${c.movimiento_id} · Lote ${c.lote_codigo} (${c.producto_nombre})`;
+      document.getElementById('compDetalle').innerHTML = `
+        <div><span class="text-gray-400 block">Documento Respaldo</span><strong class="text-amber-300">${c.documento_respaldo}</strong></div>
+        <div><span class="text-gray-400 block">Proveedor</span><strong class="text-white">${c.proveedor_nombre}</strong></div>
+        <div><span class="text-gray-400 block">Responsable Recepción</span><strong class="text-sky-300">${c.responsable_recepcion}</strong></div>
+        <div><span class="text-gray-400 block">Estado Recepción</span><strong class="text-emerald-300">${c.estado_recepcion}</strong></div>
+        <div><span class="text-gray-400 block">Cantidad Ingresada</span><strong class="text-white">${formatoNumero(c.cantidad_ingresada)}</strong></div>
+        <div><span class="text-gray-400 block">Costo Unitario / Total</span><strong class="text-amber-300">$${formatoNumero(c.costo_unitario)} / $${formatoNumero(c.costo_total)}</strong></div>
+        <div><span class="text-gray-400 block">Vigencia Lote</span><strong class="text-white">${c.fecha_recepcion} → ${c.fecha_vencimiento}</strong></div>
+        <div><span class="text-gray-400 block">Nuevo Stock Producto</span><strong class="text-emerald-400">${formatoNumero(c.stock_resultante)}</strong></div>
+      `;
+      document.getElementById('comprobanteSection').classList.remove('hidden');
+    }
+
+    document.getElementById('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target).entries());
+      body.producto_id = Number(body.producto_id);
+      body.proveedor_id = Number(body.proveedor_id);
+      body.ubicacion_id = body.ubicacion_id ? Number(body.ubicacion_id) : null;
+      body.cantidad_ingresada = Number(body.cantidad_ingresada);
+      body.costo_unitario = Number(body.costo_unitario);
+      body.responsable_recepcion_id = Number(body.responsable_recepcion_id);
+
+      if (body.fecha_vencimiento <= body.fecha_recepcion) {
+        setMensaje('mensaje', 'Inconsistencia de fechas: la fecha de vencimiento debe ser posterior a la fecha de ingreso (CU 10)', false);
+        return;
+      }
+
+      try {
+        const resp = await api('/api/movimientos/ingresos', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify(body)
+        });
+        setMensaje('mensaje', resp.message || 'Ingreso registrado y stock actualizado');
+        mostrarComprobante(resp.comprobante);
+        e.target.reset();
+        document.getElementById('fecha_recepcion').value = hoyIso;
+        actualizarCostoTotalUI();
+        await cargarSelects();
+      } catch (err) {
+        setMensaje('mensaje', err.message, false);
+      }
+    });
+
+    cargarSelects().catch(e => setMensaje('mensaje', e.message, false));
+  </script>
+</body>
+</html>

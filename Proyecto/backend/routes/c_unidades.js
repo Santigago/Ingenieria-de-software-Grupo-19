@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { obtenerUnidades, crearUnidad, cambiarEstadoUnidad } = require('../controllers/c_unidadMedidaController');
-const { verificarToken, esInventario } = require('../middleware/authMiddleware');
+const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
-router.get('/', verificarToken, esInventario, obtenerUnidades);
-router.post('/', verificarToken, esInventario, crearUnidad);
-router.patch('/:id/estado', verificarToken, esInventario, cambiarEstadoUnidad);
+router.get('/', verificarToken, requerirPermiso('unidades', 'ver'), obtenerUnidades);
+router.post('/', verificarToken, requerirPermiso('unidades', 'crear'), crearUnidad);
+router.patch('/:id/estado', verificarToken, requerirPermiso('unidades', 'inactivar'), cambiarEstadoUnidad);
 
 module.exports = router;
