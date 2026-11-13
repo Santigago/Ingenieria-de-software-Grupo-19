@@ -215,19 +215,19 @@
 
         if (cantidad <= 0) {
           panel.className = 'md:col-span-3 p-3 rounded-lg border border-gray-700 bg-gray-900 text-xs text-gray-300';
-          panel.innerHTML = `📊 <strong>Stock disponible actual (CU 44):</strong> ${formatoNumero(disp.stock_disponible)} unidades en ${disp.lote_codigo ? 'lote ' + disp.lote_codigo : 'producto'}. Ingrese la cantidad a retirar.`;
+          panel.innerHTML = ` <strong>Stock disponible actual (CU 44):</strong> ${formatoNumero(disp.stock_disponible)} unidades en ${disp.lote_codigo ? 'lote ' + disp.lote_codigo : 'producto'}. Ingrese la cantidad a retirar.`;
           bloqueExcepcion.classList.add('hidden');
           return;
         }
 
         if (disp.suficiente) {
           panel.className = 'md:col-span-3 p-3 rounded-lg border border-emerald-600/60 bg-emerald-950/30 text-xs text-emerald-200';
-          panel.innerHTML = `✅ <strong>Stock suficiente verificado en tiempo real (CU 44):</strong> Disponible ${formatoNumero(disp.stock_disponible)} · Solicitado ${formatoNumero(disp.cantidad_solicitada)} · Saldo restante: <strong>${formatoNumero(disp.diferencia)}</strong>.`;
+          panel.innerHTML = ` <strong>Stock suficiente verificado en tiempo real (CU 44):</strong> Disponible ${formatoNumero(disp.stock_disponible)} · Solicitado ${formatoNumero(disp.cantidad_solicitada)} · Saldo restante: <strong>${formatoNumero(disp.diferencia)}</strong>.`;
           bloqueExcepcion.classList.add('hidden');
           document.getElementById('chkExcepcion').checked = false;
         } else {
           panel.className = 'md:col-span-3 p-3 rounded-lg border border-red-600/70 bg-red-950/40 text-xs text-red-200';
-          panel.innerHTML = `⛔ <strong>Stock insuficiente detectado (CU 44):</strong> Disponible ${formatoNumero(disp.stock_disponible)}, pero solicita retirar ${formatoNumero(disp.cantidad_solicitada)}. La operación será bloqueada${disp.puede_autorizar_excepcion ? ' salvo que active la autorización excepcional de regularización.' : '.'}`;
+          panel.innerHTML = ` <strong>Stock insuficiente detectado (CU 44):</strong> Disponible ${formatoNumero(disp.stock_disponible)}, pero solicita retirar ${formatoNumero(disp.cantidad_solicitada)}. La operación será bloqueada${disp.puede_autorizar_excepcion ? ' salvo que active la autorización excepcional de regularización.' : '.'}`;
           if (disp.puede_autorizar_excepcion) {
             bloqueExcepcion.classList.remove('hidden');
           } else {

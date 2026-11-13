@@ -6,7 +6,7 @@ Este directorio contiene la documentación técnica, arquitectónica y de trazab
 
 ## 📂 Archivos Maestros de Contexto para Entregables
 
-### 1. [Contexto_Incremento_1_Casos_1_al_23.md](file:///home/saico/Projects/IDS/IDS_Grupo_19/Documentos/Incremento_1/Entregables/Contexto_Incremento_1_Casos_1_al_23.md)
+### 1. [Documento 0](./Grupo%2019%20-%20Documento%200%20-%20KidZania.docx) · [Informe Incremento 1](./Grupo%2019%20-%20Incremento%201%20-%20KidZania.docx) · [Contexto Incremento 1](./Contexto_Incremento_1_Casos_1_al_23.md)
 - **Alcance:** Casos de Uso Consolidados **CU 1 al CU 23** (cubriendo **59 Casos de Uso Originales de Documento 0**).
 - **Módulos Cubiertos:**
   - Autenticación, Roles RBAC y Kiosco PIN (CU 1 al 4).
@@ -20,7 +20,7 @@ Este directorio contiene la documentación técnica, arquitectónica y de trazab
 
 ---
 
-### 2. [Contexto_Incremento_2_Casos_24_al_35.md](file:///home/saico/Projects/IDS/IDS_Grupo_19/Documentos/Incremento_2/Entregables/Contexto_Incremento_2_Casos_24_al_35.md)
+### 2. [Informe Incremento 2](./Grupo%2019%20-%20Incremento%202%20-%20KidZania.docx) · [Contexto Incremento 2](./Contexto_Incremento_2_Casos_24_al_35.md)
 - **Alcance:** Casos de Uso Consolidados **CU 24 al CU 35** (cubriendo **30 Casos de Uso Originales de Documento 0**).
 - **Módulos Cubiertos:**
   - Cancelación de Pedidos e Ítems con Reversión de Stock (CU 24).
@@ -40,7 +40,7 @@ Este directorio contiene la documentación técnica, arquitectónica y de trazab
 
 | Entregable | Casos Consolidados | Casos Originales Doc 0 | Porcentaje de Cobertura | Estado en la Aplicación |
 |---|---|---|---|---|
-| **Incremento 1** | CU 1 al CU 23 (23 CUs) | 59 Casos Originales | 66.3% de Documento 0 | **100% Implementado y Verificado** |
-| **Incremento 2** | CU 24 al CU 35 (12 CUs) | 30 Casos Originales | 33.7% de Documento 0 | **En Proceso / Vistas y Flujos Core Listos** |
+| **Incremento 1** | CU 1 al CU 23 (23 CUs) | 59 Casos Originales | 66.3% de Documento 0 | **Implementado; el informe requiere reconciliar cifras y evidencias** |
+| **Incremento 2** | CU 24 al CU 35 (12 CUs) | 30 Casos Originales | 33.7% de Documento 0 | **Implementado en el repositorio; falta cerrar verificación integral** |
 | **TOTAL SISTEMA** | **35 Casos Consolidados** | **89 Casos Originales** | **100% de Documento 0** | **ParkFlow KidZania Santiago** |
 

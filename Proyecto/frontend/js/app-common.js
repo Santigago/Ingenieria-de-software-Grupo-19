@@ -31,9 +31,10 @@ const CONFIG_ROLES = {
             'v_mermas.html',
             'v_movimientos.html',
             'v_salon.html',
-            'v_pos.html'
+            'v_pos.html',
+            'v_cocina.html'
         ],
-        modulos_escritura: ['usuarios', 'unidades', 'proveedores', 'ubicaciones', 'productos', 'lotes', 'movimientos', 'mermas', 'mesas', 'puestos', 'cajas']
+        modulos_escritura: ['usuarios', 'unidades', 'proveedores', 'ubicaciones', 'productos', 'lotes', 'movimientos', 'mermas', 'mesas', 'puestos', 'cajas', 'cocina']
     },
     operador_inventario: {
         etiqueta: 'Operador de Inventario',
@@ -62,7 +63,8 @@ const CONFIG_ROLES = {
             'v_lotes.html',
             'v_mermas.html',
             'v_movimientos.html',
-            'v_salon.html'
+            'v_salon.html',
+            'v_cocina.html'
         ],
         modulos_escritura: []
     },
@@ -79,15 +81,15 @@ const CONFIG_ROLES = {
         etiqueta: 'Cajero POS',
         pagina_inicio: 'v_pos.html',
         solo_lectura: false,
-        vistas: ['v_pos.html'],
-        modulos_escritura: ['pos', 'mesas', 'cajas']
+        vistas: ['v_pos.html', 'v_cocina.html'],
+        modulos_escritura: ['pos', 'mesas', 'cajas', 'cocina']
     },
     cocina: {
-        etiqueta: 'Cocina POS',
-        pagina_inicio: 'v_pos.html',
+        etiqueta: 'Cocina KDS',
+        pagina_inicio: 'v_cocina.html',
         solo_lectura: false,
-        vistas: ['v_pos.html', 'v_mermas.html'],
-        modulos_escritura: ['pos', 'mermas', 'movimientos']
+        vistas: ['v_cocina.html', 'v_pos.html', 'v_mermas.html'],
+        modulos_escritura: ['pos', 'mermas', 'movimientos', 'cocina']
     },
     colaborador: {
         etiqueta: 'Colaborador POS',
@@ -226,6 +228,8 @@ const ITEMS_MENU = [
     { href: 'v_mermas.html', texto: 'Mermas y desperdicios' },
     { href: 'v_movimientos.html', texto: 'Historial movimientos' },
     { href: 'v_salon.html', texto: 'Puestos de venta y Salón' },
+    { href: 'v_cocina.html', texto: 'Cocina KDS (Comandas)' },
+    { href: 'v_asistencia.html', texto: 'RRHH y Asistencia' },
     { href: 'v_pos.html', texto: 'Vista Cajero (POS)' }
 ];
 
@@ -239,7 +243,7 @@ function navHtml(titulo) {
     return `
     <aside class="w-72 min-h-screen bg-gray-950 border-r border-gray-800 p-5 fixed left-0 top-0 hidden lg:block">
         <h1 class="text-2xl font-bold text-amber-500">KidZania</h1>
-        <p class="text-xs text-gray-400 mt-1">Panel de Administración · Grupo 19</p>
+        <p class="text-xs text-gray-400 mt-1">Panel de Administración</p>
         <div class="mt-5 p-3 bg-gray-900 rounded border border-gray-800 text-sm text-gray-300">
             <div class="font-semibold text-white">${usuarioNombre}</div>
             <div class="uppercase text-xs text-amber-400 mt-1">${cfgRol.etiqueta}</div>
@@ -249,8 +253,8 @@ function navHtml(titulo) {
             ${enlacesPermitidos}
         </nav>
         <div class="mt-8 pt-4 border-t border-gray-800 space-y-2">
-            <a href="v_pos_login.html" class="block text-center text-xs text-amber-400 hover:text-amber-300 bg-gray-900 border border-gray-700 px-3 py-2 rounded">
-                🖥️ Abrir Terminal POS
+            <a href="v_pos_login.html" class="block text-center text-xs text-amber-400 hover:text-amber-300 bg-gray-900 border border-gray-700 px-3 py-2 rounded font-medium">
+                Terminal POS
             </a>
             <button onclick="cerrarSesion('v_login.html')" class="w-full bg-red-600 hover:bg-red-700 text-white rounded px-3 py-2 text-sm">Cerrar sesión</button>
         </div>
@@ -277,7 +281,7 @@ function montarLayout(titulo, subtitulo = '') {
     if (main) {
         const avisoLectura = cfgRol.solo_lectura
             ? `<div class="mb-4 p-3 rounded border border-blue-700/60 bg-blue-950/40 text-blue-200 text-xs">
-                 🔒 <strong>Perfil ${cfgRol.etiqueta}:</strong> cuenta con permisos de revisión, control y consulta de inventario y movimientos. Las acciones de creación, edición o baja están restringidas según Documento 0 (CU 2).
+                 <strong>Perfil ${cfgRol.etiqueta}:</strong> cuenta con permisos de revisión, control y consulta de inventario y movimientos. Las acciones de creación, edición o baja están restringidas.
                </div>`
             : '';
 
@@ -287,7 +291,6 @@ function montarLayout(titulo, subtitulo = '') {
         );
     }
 
-    // Si el rol actual es de solo lectura (ej. Supervisor), ocultar controles de alta/modificación en la vista
     if (cfgRol.solo_lectura) {
         const btnAgregar = document.getElementById('btnAgregar');
         const formSection = document.getElementById('formSection');
@@ -295,3 +298,154 @@ function montarLayout(titulo, subtitulo = '') {
         if (formSection) formSection.classList.add('hidden');
     }
 }
+
+// =========================================================================
+// Sistema Global de Ocultamiento / Visualización de Especificaciones (CU / RF)
+// =========================================================================
+function initCuRfToggle() {
+    if (!document.getElementById('estilo-cu-rf')) {
+        const style = document.createElement('style');
+        style.id = 'estilo-cu-rf';
+        style.textContent = `
+            .cu-ref, .cu-tag, .cu-badge, [data-cu-ref], .cu-ref-block {
+                display: none !important;
+            }
+            body.mostrar-cu-rf .cu-ref,
+            body.mostrar-cu-rf .cu-tag,
+            body.mostrar-cu-rf .cu-badge,
+            body.mostrar-cu-rf [data-cu-ref] {
+                display: inline-block !important;
+            }
+            body.mostrar-cu-rf .cu-ref-block {
+                display: block !important;
+            }
+            body.mostrar-cu-rf .cu-ref-flex {
+                display: flex !important;
+            }
+            body.mostrar-cu-rf .cu-ref,
+            body.mostrar-cu-rf .cu-tag,
+            body.mostrar-cu-rf .cu-badge {
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-size: 0.72rem;
+                padding: 1px 4px;
+                border-radius: 4px;
+                background-color: rgba(245, 158, 11, 0.12);
+                color: #fbbf24;
+                border: 1px solid rgba(245, 158, 11, 0.3);
+                margin: 0 2px;
+                vertical-align: middle;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const mostrarInicial = localStorage.getItem('mostrar_cu_rf') === 'true';
+    if (mostrarInicial) {
+        document.body.classList.add('mostrar-cu-rf');
+    } else {
+        document.body.classList.remove('mostrar-cu-rf');
+    }
+
+    if (!document.getElementById('btnToggleCuRf')) {
+        const btn = document.createElement('button');
+        btn.id = 'btnToggleCuRf';
+        btn.type = 'button';
+        btn.title = 'Alternar visualización de especificaciones técnicas (CU / RF). Atajo: Ctrl+Shift+U';
+        btn.className = 'fixed bottom-2 right-2 z-50 px-2 py-0.5 text-[10px] font-mono rounded border transition select-none cursor-pointer ' +
+            (mostrarInicial ? 'bg-amber-950/90 text-amber-300 border-amber-600/70 shadow-lg' : 'bg-slate-950/70 text-slate-500 border-slate-800 opacity-25 hover:opacity-100');
+        btn.textContent = mostrarInicial ? 'CU/RF: ON' : 'CU/RF';
+        btn.onclick = window.toggleCuRf;
+        document.body.appendChild(btn);
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey && e.shiftKey && (e.key === 'U' || e.key === 'u')) || (e.altKey && (e.key === 'U' || e.key === 'u'))) {
+            e.preventDefault();
+            window.toggleCuRf();
+        }
+    });
+
+    escanearYEnvolverCuRf(document.body);
+
+    // Observar mutaciones dinámicas del DOM para ocultar / envolver automáticamente nuevo contenido
+    let debouncedScanTimeout = null;
+    const observer = new MutationObserver(() => {
+        if (debouncedScanTimeout) clearTimeout(debouncedScanTimeout);
+        debouncedScanTimeout = setTimeout(() => {
+            escanearYEnvolverCuRf(document.body);
+        }, 120);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+window.toggleCuRf = function() {
+    const estadoActual = document.body.classList.contains('mostrar-cu-rf');
+    const nuevoEstado = !estadoActual;
+    document.body.classList.toggle('mostrar-cu-rf', nuevoEstado);
+    localStorage.setItem('mostrar_cu_rf', nuevoEstado ? 'true' : 'false');
+
+    const btn = document.getElementById('btnToggleCuRf');
+    if (btn) {
+        btn.className = 'fixed bottom-2 right-2 z-50 px-2 py-0.5 text-[10px] font-mono rounded border transition select-none cursor-pointer ' +
+            (nuevoEstado ? 'bg-amber-950/90 text-amber-300 border-amber-600/70 shadow-lg' : 'bg-slate-950/70 text-slate-500 border-slate-800 opacity-25 hover:opacity-100');
+        btn.textContent = nuevoEstado ? 'CU/RF: ON' : 'CU/RF';
+    }
+};
+
+function escanearYEnvolverCuRf(raiz = document.body) {
+    if (!raiz) return;
+
+    // Identificar badges / elementos que son exclusivamente etiquetas de especificación
+    const badges = raiz.querySelectorAll('span, div, p, label, small, code');
+    for (const el of badges) {
+        if (el.children.length === 0 && !el.closest('#btnToggleCuRf')) {
+            const txt = el.textContent.trim();
+            if (/^(?:CU\s*\d+|Módulo\s+[A-Z]\s*·\s*.*\(CU\s*\d+\)|Requerimiento\s+(?:RF|UR)\s*\d+)/i.test(txt)) {
+                el.classList.add('cu-ref-block');
+            }
+        }
+    }
+
+    const walker = document.createTreeWalker(
+        raiz,
+        NodeFilter.SHOW_TEXT,
+        {
+            acceptNode(node) {
+                const parent = node.parentElement;
+                if (!parent) return NodeFilter.FILTER_REJECT;
+                const tag = parent.tagName;
+                if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TITLE' || tag === 'TEXTAREA' || tag === 'INPUT') {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                if (parent.closest('.cu-ref, .cu-tag, .cu-badge, .cu-ref-block, [data-cu-ref], #btnToggleCuRf')) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                if (/\b(?:CU|RF|UR|Subflujo)\b/i.test(node.nodeValue)) {
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+                return NodeFilter.FILTER_REJECT;
+            }
+        }
+    );
+
+    const regex = /(\s*\((?:Subflujo\s+)?(?:CU|RF|UR)[^)]*\)|\b(?:Subflujo\s+)?CU\s+\d+(?:\s*(?:al|a)\s*\d+)?(?:\s*[:·-]\s*)?)/gi;
+    const nodos = [];
+    while (walker.nextNode()) {
+        nodos.push(walker.currentNode);
+    }
+
+    for (const node of nodos) {
+        if (!regex.test(node.nodeValue)) continue;
+        regex.lastIndex = 0;
+        const span = document.createElement('span');
+        span.innerHTML = node.nodeValue.replace(regex, '<span class="cu-ref">$1</span>');
+        node.parentNode.replaceChild(span, node);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCuRfToggle);
+} else {
+    initCuRfToggle();
+}
+

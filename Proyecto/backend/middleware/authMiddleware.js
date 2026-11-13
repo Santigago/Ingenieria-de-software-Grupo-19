@@ -28,7 +28,9 @@ const MATRIZ_PERMISOS = {
             'v_mermas.html',
             'v_movimientos.html',
             'v_salon.html',
-            'v_pos.html'
+            'v_pos.html',
+            'v_cocina.html',
+            'v_asistencia.html'
         ],
         modulos: {
             dashboard: ['ver', 'exportar'],
@@ -43,7 +45,13 @@ const MATRIZ_PERMISOS = {
             mesas: ['ver', 'editar'],
             puestos: ['ver', 'crear', 'editar', 'inactivar'],
             cajas: ['ver', 'abrir', 'cerrar'],
-            pos: ['ver', 'operar']
+            pos: ['ver', 'operar'],
+            boletas: ['ver', 'reimprimir'],
+            sap: ['ver', 'sincronizar'],
+            promociones: ['ver', 'crear', 'editar', 'inactivar'],
+            cocina: ['ver', 'preparar', 'marcar_listo', 'entregar', 'incidencias', 'metricas'],
+            pedidos: ['ver', 'crear', 'editar', 'cancelar', 'entregar'],
+            rrhh: ['ver', 'crear', 'editar', 'marcar', 'validar', 'cumplimiento']
         }
     },
     operador_inventario: {
@@ -87,7 +95,9 @@ const MATRIZ_PERMISOS = {
             'v_lotes.html',
             'v_mermas.html',
             'v_movimientos.html',
-            'v_salon.html'
+            'v_salon.html',
+            'v_cocina.html',
+            'v_asistencia.html'
         ],
         modulos: {
             dashboard: [],
@@ -102,14 +112,21 @@ const MATRIZ_PERMISOS = {
             mesas: ['ver'],
             puestos: ['ver'],
             cajas: ['ver'],
-            pos: []
+            pos: [],
+            boletas: ['ver', 'reimprimir'],
+            sap: ['ver'],
+            promociones: ['ver'],
+            cocina: ['ver', 'incidencias', 'metricas'],
+            pedidos: ['ver', 'entregar', 'cancelar'],
+            rrhh: ['ver', 'marcar', 'cumplimiento']
         }
     },
     encargado_rrhh: {
         etiqueta: 'Encargado de RRHH',
         canal: 'admin_web',
-        pagina_inicio: 'v_usuarios.html',
+        pagina_inicio: 'v_asistencia.html',
         vistas_permitidas: [
+            'v_asistencia.html',
             'v_usuarios.html'
         ],
         modulos: {
@@ -124,14 +141,17 @@ const MATRIZ_PERMISOS = {
             mesas: [],
             puestos: [],
             cajas: [],
-            pos: []
+            pos: [],
+            cocina: [],
+            pedidos: [],
+            rrhh: ['ver', 'crear', 'editar', 'marcar', 'validar', 'cumplimiento']
         }
     },
     caja: {
         etiqueta: 'Cajero',
         canal: 'pos_touch',
         pagina_inicio: 'v_pos.html',
-        vistas_permitidas: ['v_pos.html'],
+        vistas_permitidas: ['v_pos.html', 'v_cocina.html'],
         modulos: {
             dashboard: [],
             usuarios: [],
@@ -144,14 +164,19 @@ const MATRIZ_PERMISOS = {
             mesas: ['ver', 'editar'],
             puestos: ['ver'],
             cajas: ['ver', 'abrir', 'cerrar'],
-            pos: ['ver', 'operar']
+            pos: ['ver', 'operar'],
+            boletas: ['ver', 'reimprimir'],
+            promociones: ['ver'],
+            cocina: ['ver', 'entregar'],
+            pedidos: ['ver', 'crear', 'cancelar', 'entregar'],
+            rrhh: ['ver', 'marcar']
         }
     },
     cocina: {
         etiqueta: 'Cocina',
         canal: 'pos_touch',
-        pagina_inicio: 'v_pos.html',
-        vistas_permitidas: ['v_pos.html', 'v_mermas.html'],
+        pagina_inicio: 'v_cocina.html',
+        vistas_permitidas: ['v_cocina.html', 'v_pos.html', 'v_mermas.html'],
         modulos: {
             dashboard: [],
             usuarios: [],
@@ -165,7 +190,10 @@ const MATRIZ_PERMISOS = {
             mesas: ['ver'],
             puestos: ['ver'],
             cajas: ['ver'],
-            pos: ['ver', 'operar']
+            pos: ['ver', 'operar'],
+            cocina: ['ver', 'preparar', 'marcar_listo', 'incidencias', 'metricas'],
+            pedidos: ['ver', 'preparar', 'marcar_listo', 'incidencias', 'cancelar'],
+            rrhh: ['ver', 'marcar']
         }
     },
     colaborador: {
@@ -191,7 +219,9 @@ const MATRIZ_PERMISOS = {
             mesas: ['ver', 'editar'],
             puestos: ['ver'],
             cajas: ['ver', 'abrir', 'cerrar'],
-            pos: ['ver', 'operar']
+            pos: ['ver', 'operar'],
+            boletas: ['ver', 'reimprimir'],
+            promociones: ['ver']
         }
     }
 };
@@ -305,6 +335,7 @@ module.exports = {
     verificarToken,
     requerirRoles,
     requerirPermiso,
+    exigirPermiso: requerirPermiso,
     esAdmin,
     esGestionUsuarios,
     esInventario,

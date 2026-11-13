@@ -74,7 +74,7 @@
         <!-- Botones y Seguridad -->
         <div class="mt-8 pt-6 border-t border-slate-800/80 space-y-3">
             <p class="text-[11px] text-slate-400 leading-tight">
-                🔒 Por seguridad (CU 4 / UR 8.6), tras <strong>5 intentos fallidos consecutivos</strong> de PIN la cuenta se bloqueará automáticamente y solo podrá ser desbloqueada por un Administrador o Encargado de RRHH.
+                Por seguridad (CU 4 / UR 8.6), tras <strong>5 intentos fallidos consecutivos</strong> de PIN la cuenta se bloqueará automáticamente y solo podrá ser desbloqueada por un Administrador o Encargado de RRHH.
             </p>
             <a href="v_login.html" 
                class="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-semibold border border-slate-700 transition">
@@ -112,7 +112,7 @@
         </div>
 
         <div class="mt-8 pt-4 border-t border-slate-900 text-center text-xs text-slate-600">
-            KidZania Santiago · Módulo POS de Turnos y Cobro · Grupo 19
+            KidZania Santiago · Módulo POS de Turnos y Cobro
         </div>
     </main>
 
@@ -172,6 +172,7 @@
         </div>
     </div>
 
+    <script src="/js/app-common.js"></script>
     <script>
         let cajeros = [];
         let cajeroSeleccionado = null;
@@ -295,7 +296,7 @@
 
             if (cajero.pin_bloqueado || cajero.usuario_estado_cuenta === 'bloqueado') {
                 pinAlert.className = 'w-full text-center text-xs py-2.5 px-3 rounded-lg bg-rose-950/90 border border-rose-600 text-rose-200 mb-4';
-                pinAlert.textContent = '🔒 Cuenta bloqueada por alcanzar 5 intentos fallidos de PIN. Solicite el desbloqueo al Administrador o Encargado de RRHH.';
+                pinAlert.textContent = 'Cuenta bloqueada por alcanzar 5 intentos fallidos de PIN. Solicite el desbloqueo al Administrador o Encargado de RRHH.';
                 pinAlert.classList.remove('hidden');
                 btnIngresar.disabled = true;
                 btnIngresar.classList.add('opacity-50', 'cursor-not-allowed');

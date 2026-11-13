@@ -39,7 +39,7 @@
         <!-- Campos opcionales de PIN cuando el rol es Cajero o Cocina -->
         <div id="pinFieldsCreate" class="hidden md:col-span-2 grid gap-4 md:grid-cols-2 p-3 rounded bg-gray-900/70 border border-amber-500/40">
           <div class="md:col-span-2 text-xs text-amber-300 font-medium">
-            🔑 Trabajador de punto de venta (Cajero / Cocina): puede asignar un PIN numérico de 4 dígitos ahora o desde el listado.
+            Trabajador de punto de venta (Cajero / Cocina): puede asignar un PIN numérico de 4 dígitos ahora o desde el listado.
           </div>
           <input name="pin" id="inputPinCrear" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="PIN de 4 dígitos (ej: 1234)" class="bg-gray-700 rounded p-2 border border-gray-600">
           <input name="pin_confirmacion" id="inputPinConfirmCrear" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="Confirmar PIN de 4 dígitos" class="bg-gray-700 rounded p-2 border border-gray-600">
@@ -203,17 +203,17 @@
       }
       if (u.pin_bloqueado) {
         return `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded bg-red-950 border border-red-600 text-red-200">
-                  🔒 PIN Bloqueado (${u.intentos_pin}/5 intentos)
+                  PIN Bloqueado (${u.intentos_pin}/5 intentos)
                 </span>`;
       }
       if (u.tiene_pin) {
         const intentosInfo = u.intentos_pin > 0 ? ` · ${u.intentos_pin}/5 intentos` : '';
         return `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded bg-emerald-950/70 border border-emerald-700 text-emerald-200">
-                  ✓ PIN Activo${intentosInfo}
+                  PIN Activo${intentosInfo}
                 </span>`;
       }
       return `<span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded bg-amber-950/70 border border-amber-600 text-amber-200">
-                ⚠ Sin PIN asignado
+                Sin PIN asignado
               </span>`;
     }
 
@@ -231,7 +231,7 @@
       const bloqueados = usuariosLista.filter(u => u.pin_bloqueado).length;
       const badgeBloqueados = document.getElementById('contadorBloqueados');
       if (bloqueados > 0) {
-        badgeBloqueados.textContent = `⚠ ${bloqueados} ${bloqueados === 1 ? 'trabajador con PIN bloqueado' : 'trabajadores con PIN bloqueado'}`;
+        badgeBloqueados.textContent = `${bloqueados} ${bloqueados === 1 ? 'trabajador con PIN bloqueado' : 'trabajadores con PIN bloqueado'}`;
         badgeBloqueados.classList.remove('hidden');
       } else {
         badgeBloqueados.classList.add('hidden');

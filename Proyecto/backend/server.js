@@ -43,6 +43,12 @@ app.use('/api/proveedores', require('./routes/c_proveedores'));
 app.use('/api/movimientos', require('./routes/c_movimientos'));
 app.use('/api/unidades', require('./routes/c_unidades'));
 app.use('/api/ubicaciones', require('./routes/c_ubicaciones'));
+app.use('/api/boletas', require('./routes/c_boletas'));
+app.use('/api/sap', require('./routes/c_sap'));
+app.use('/api/promociones', require('./routes/c_promociones'));
+app.use('/api/cocina', require('./routes/c_cocina'));
+app.use('/api/pedidos', require('./routes/c_pedidos'));
+app.use('/api/rrhh', require('./routes/c_rrhh'));
 
 app.get('/api/health', (req, res) => {
     res.json({ ok: true, message: 'API operativa - Grupo 19 Demo' });

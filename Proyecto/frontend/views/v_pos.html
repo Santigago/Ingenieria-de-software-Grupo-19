@@ -65,6 +65,12 @@
                 <span>Cerrar Caja / Arqueo (CU 26)</span>
             </button>
 
+            <!-- Acceso a Cocina KDS (CU 29) -->
+            <a href="v_cocina.html"
+               class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-700 transition flex items-center gap-1">
+                Cocina KDS
+            </a>
+
             <!-- Acceso rápido a Login de Oficina -->
             <button onclick="irALoginOficina()"
                     class="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-700 transition">
@@ -86,11 +92,11 @@
         <!-- =============================================================== -->
         <!-- VISTA 1: APERTURA DE CAJA EN PUESTO DE VENTA (CU 25 / CU 78)     -->
         <!-- =============================================================== -->
-        <section id="vistaAperturaCaja" class="hidden space-y-6">
+        <section id="vistaAperturaCaja" class="space-y-6">
             <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl">
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-800 pb-5">
                     <div>
-                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-950/70 border border-amber-700/50 text-amber-300 mb-2">
+                        <span class="cu-ref-block inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-950/70 border border-amber-700/50 text-amber-300 mb-2">
                             CU 25 (CU Original 78) · Paso Obligatorio Previo a la Venta (UR 8.7)
                         </span>
                         <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Apertura de Caja en Puesto de Venta</h2>
@@ -166,7 +172,7 @@
                             </div>
 
                             <div class="p-3 rounded-xl bg-amber-950/30 border border-amber-800/50 text-[11px] text-amber-200 leading-relaxed">
-                                🔒 <strong>Regla UR 8.7:</strong> No se permite registrar ventas sin una caja abierta, ni abrir más de una caja por cajero o por puesto simultáneamente.
+                                <strong>Regla UR 8.7:</strong> No se permite registrar ventas sin una caja abierta, ni abrir más de una caja por cajero o por puesto simultáneamente.
                             </div>
 
                             <button type="submit"
@@ -297,6 +303,27 @@
                                        oninput="recalcularTotalVentaPos()"
                                        class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-right font-mono text-amber-300">
                             </div>
+                            <!-- CU 22: Código de Promoción y Descuento Comercial (Subflujos CU 31, CU 65, CU 66) -->
+                            <div class="pt-1.5 pb-1 border-t border-slate-900">
+                                <label class="block text-[11px] text-slate-400 mb-1 flex items-center justify-between">
+                                    <span>Cupón / Promoción (CU 22):</span>
+                                    <span id="badgePromoAplicada" class="text-[10px] text-emerald-400 font-bold hidden">APLICADA</span>
+                                </label>
+                                <div class="flex gap-1.5">
+                                    <input id="inputCodigoPromocion" type="text" placeholder="Ej: PROMO-KIDZ10, PROMO-MERCH20"
+                                           class="flex-1 bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs font-mono uppercase text-amber-300">
+                                    <button type="button" onclick="aplicarCodigoPromocionPos()"
+                                            class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1 rounded text-xs transition">
+                                        Aplicar
+                                    </button>
+                                    <button type="button" id="btnQuitarPromo" onclick="quitarCodigoPromocionPos()"
+                                            class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs hidden">
+                                        ✕
+                                    </button>
+                                </div>
+                                <div id="mensajePromoPos" class="text-[10px] mt-1 hidden font-mono"></div>
+                            </div>
+
                             <div class="flex justify-between text-slate-400">
                                 <span>Monto Neto / IVA (19% incl.):</span>
                                 <span class="font-mono text-slate-300">Neto <span id="carritoNetoTxt">$0</span> · IVA <span id="carritoIvaTxt">$0</span></span>
@@ -311,7 +338,7 @@
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
                                 <label class="text-xs font-bold uppercase tracking-wider text-slate-300">Modalidad de Pago (CU 23)</label>
-                                <span class="text-[10px] text-rose-400 font-semibold">🚫 KidZos no admitidos (Sección I.5)</span>
+                                <span class="text-[10px] text-rose-400 font-semibold">KidZos no admitidos (Sección I.5)</span>
                             </div>
                             <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
                                 <button type="button" id="btnModoPagoUnico" onclick="cambiarModoPagoPos('unico')"
@@ -510,7 +537,7 @@
             <!-- Paso B: Comprobante Oficial de Arqueo una vez cerrada la caja (CU 79 Paso 7) -->
             <div id="contenidoComprobanteArqueo" class="hidden space-y-4 text-sm">
                 <div class="p-4 rounded-xl bg-emerald-950/50 border border-emerald-700/60 text-emerald-200">
-                    <div class="font-bold text-base">✅ Caja Cerrada y Arqueo Registrado Exitosamente</div>
+                    <div class="font-bold text-base">Caja Cerrada y Arqueo Registrado Exitosamente</div>
                     <p id="compMensajeResultado" class="text-xs mt-1"></p>
                 </div>
 
@@ -533,7 +560,7 @@
 
     <!-- Footer Kiosco -->
     <footer class="bg-slate-950 border-t border-slate-900 px-6 py-3 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-        <div>KidZania Santiago · Sistema de Gestión Operativa ParkFlow · Grupo 19</div>
+        <div>KidZania Santiago</div>
         <div class="font-mono text-slate-600 mt-1 sm:mt-0">Terminal POS · CU 21, CU 23, CU 25, CU 26 y CU 32</div>
     </footer>
 
@@ -554,10 +581,14 @@
                 <!-- Se inyecta dinámicamente -->
             </div>
 
-            <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+            <div class="flex flex-wrap justify-end gap-2.5 pt-4 border-t border-slate-800">
                 <button type="button" onclick="cerrarModalBoletaPos()"
-                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
+                        class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">
                     Cerrar
+                </button>
+                <button type="button" id="btnReimprimirBoletaPos" onclick="ejecutarReimpresionBoletaPos()"
+                        class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold transition flex items-center gap-1.5">
+                    Reimprimir Boleta (CU 87)
                 </button>
                 <button type="button" onclick="window.print()"
                         class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
@@ -628,6 +659,8 @@
                 renderizarVistaPos();
             } catch (error) {
                 setMensaje('mensajePos', error.message || 'No se pudo consultar el estado de la caja.', false);
+                // Asegurar que la pantalla no quede en blanco y se muestre la interfaz de apertura
+                renderizarVistaPos();
             }
         }
 
@@ -696,7 +729,23 @@
             const lista = estadoPos.puestos.filter(p => filtroTipo === 'todos' || p.puesto_tipo_negocio === filtroTipo);
 
             if (!lista.length) {
-                grid.innerHTML = '<div class="col-span-full text-slate-400 text-sm p-6 text-center bg-slate-950 rounded-xl border border-slate-800">No hay puestos de venta registrados.</div>';
+                grid.innerHTML = `
+                    <div class="col-span-full p-8 text-center bg-slate-950 rounded-2xl border border-slate-800 space-y-3">
+                        <div class="text-3xl"></div>
+                        <div class="text-base font-bold text-slate-200">No hay puestos de venta registrados en la base de datos</div>
+                        <p class="text-xs text-slate-400 max-w-md mx-auto">
+                            Para inicializar los 7 puestos oficiales de KidZania (Cafetería Vita, Restaurante La Plaza, Al Paso, Dulcería, etc.) y su catálogo gastronómico/merch, ejecute en su terminal:
+                        </p>
+                        <code class="inline-block bg-slate-900 border border-slate-700 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-mono select-all">
+                            node migrar_y_sembrar.js
+                        </code>
+                        <div class="pt-2">
+                            <button onclick="cargarEstadoCaja()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition">
+                                Reintentar Carga
+                            </button>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
@@ -726,7 +775,7 @@
                         </div>
                         <div class="mt-2 flex items-center justify-between text-xs">
                             <span class="px-2 py-0.5 rounded font-semibold ${esComida ? 'bg-orange-950/70 text-orange-300' : 'bg-purple-950/70 text-purple-300'}">
-                                ${esComida ? '🍔 Comida' : '🛍️ Merch'}
+                                ${esComida ? 'Comida' : 'Merchandising'}
                             </span>
                             <span class="text-slate-400">${p.puesto_ubicacion || 'KidZania'}</span>
                         </div>
@@ -1092,19 +1141,19 @@
 
             if (saldo === 0) {
                 pnl.className = 'p-2.5 rounded-xl border bg-emerald-950/40 border-emerald-600/60 flex items-center justify-between text-xs';
-                lbl.textContent = '✅ Total completamente cubierto:';
+                lbl.textContent = 'Total completamente cubierto:';
                 lbl.className = 'font-semibold text-emerald-300';
                 monto.textContent = `$${formatoNumero(suma)}`;
                 monto.className = 'font-mono font-extrabold text-emerald-400';
             } else if (saldo > 0) {
                 pnl.className = 'p-2.5 rounded-xl border bg-amber-950/40 border-amber-600/60 flex items-center justify-between text-xs';
-                lbl.textContent = '⚠️ Falta cubrir para completar el total:';
+                lbl.textContent = 'Falta cubrir para completar el total:';
                 lbl.className = 'font-semibold text-amber-300';
                 monto.textContent = `$${formatoNumero(saldo)}`;
                 monto.className = 'font-mono font-extrabold text-amber-400';
             } else {
                 pnl.className = 'p-2.5 rounded-xl border bg-rose-950/40 border-rose-600/60 flex items-center justify-between text-xs';
-                lbl.textContent = '🚨 La suma excede el total de la venta:';
+                lbl.textContent = 'La suma excede el total de la venta:';
                 lbl.className = 'font-semibold text-rose-300';
                 monto.textContent = `+$${formatoNumero(Math.abs(saldo))}`;
                 monto.className = 'font-mono font-extrabold text-rose-400';
@@ -1146,7 +1195,8 @@
                     precio_unitario: it.precio_unitario,
                     descuento_linea: it.descuento_linea || 0
                 })),
-                descuento_total: descGlobal
+                descuento_total: descGlobal,
+                codigo_promocion: estadoPos.promocionActiva?.promocion_codigo || null
             };
 
             if (estadoPos.modoPago === 'combinado') {
@@ -1179,20 +1229,101 @@
                     body: JSON.stringify(payload)
                 });
 
-                setMensaje('mensajePos', resp.message || 'Venta registrada con éxito.');
+                let mensajeExito = resp.message || 'Venta registrada con éxito.';
+                if (resp.comanda?.comanda_generada) {
+                    mensajeExito += `  Comanda digital ${resp.comanda.numero_pedido} enviada a Cocina (KDS).`;
+                }
+                setMensaje('mensajePos', mensajeExito);
                 vaciarCarritoPos();
                 await cargarEstadoCaja();
 
                 // Mostrar Comprobante / Boleta Electrónica Oficial (CU 83)
-                mostrarBoletaVenta(resp.venta, resp.detalles, resp.pagos, resp.insumos_descontados);
+                mostrarBoletaVenta(resp.venta, resp.detalles, resp.pagos, resp.insumos_descontados, resp.boleta, resp.sap, resp.comanda);
             } catch (error) {
                 setMensaje('mensajePos', error.message || 'Error al registrar la venta.', false);
             }
         }
 
-        function mostrarBoletaVenta(venta, detalles = [], pagos = [], insumos = []) {
-            document.getElementById('boletaFolioTitulo').textContent = `Boleta #${venta.folio_boleta || venta.venta_id}`;
+        async function aplicarCodigoPromocionPos() {
+            const input = document.getElementById('inputCodigoPromocion');
+            const msg = document.getElementById('mensajePromoPos');
+            const badge = document.getElementById('badgePromoAplicada');
+            const btnQuitar = document.getElementById('btnQuitarPromo');
+            const codigo = input.value.trim();
+
+            if (!codigo) {
+                msg.textContent = 'Ingrese un código de promoción (ej: PROMO-KIDZ10, PROMO-MERCH20).';
+                msg.className = 'text-[10px] mt-1 text-rose-400 font-mono';
+                msg.classList.remove('hidden');
+                return;
+            }
+
+            if (!estadoPos.carrito.length) {
+                msg.textContent = 'Agregue productos al carrito antes de aplicar una promoción.';
+                msg.className = 'text-[10px] mt-1 text-amber-400 font-mono';
+                msg.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const resp = await api(`${API_URL}/api/promociones/validar-codigo`, {
+                    method: 'POST',
+                    headers: jsonHeaders,
+                    body: JSON.stringify({
+                        codigo_promocion: codigo,
+                        items: estadoPos.carrito.map(it => ({
+                            producto_id: it.producto_id,
+                            cantidad: it.cantidad,
+                            precio_unitario: it.precio_unitario
+                        }))
+                    })
+                });
+
+                if (resp.valida) {
+                    estadoPos.promocionActiva = resp.promocion;
+                    document.getElementById('ventaDescuentoTotal').value = resp.calculo.monto_descuento;
+                    msg.textContent = `✓ ${resp.mensaje}`;
+                    msg.className = 'text-[10px] mt-1 text-emerald-400 font-mono font-semibold';
+                    msg.classList.remove('hidden');
+                    badge.classList.remove('hidden');
+                    btnQuitar.classList.remove('hidden');
+                    input.disabled = true;
+                    recalcularTotalVentaPos();
+                }
+            } catch (error) {
+                msg.textContent = `✕ ${error.message || 'Error al validar la promoción'}`;
+                msg.className = 'text-[10px] mt-1 text-rose-400 font-mono';
+                msg.classList.remove('hidden');
+            }
+        }
+
+        function quitarCodigoPromocionPos() {
+            estadoPos.promocionActiva = null;
+            const input = document.getElementById('inputCodigoPromocion');
+            const msg = document.getElementById('mensajePromoPos');
+            const badge = document.getElementById('badgePromoAplicada');
+            const btnQuitar = document.getElementById('btnQuitarPromo');
+
+            input.value = '';
+            input.disabled = false;
+            msg.classList.add('hidden');
+            badge.classList.add('hidden');
+            btnQuitar.classList.add('hidden');
+            document.getElementById('ventaDescuentoTotal').value = 0;
+            recalcularTotalVentaPos();
+        }
+
+        function mostrarBoletaVenta(venta, detalles = [], pagos = [], insumos = [], boletaExtra = null, sapExtra = null, comandaExtra = null) {
+            estadoPos.folioBoletaActiva = venta.folio_boleta || ('BOL-' + venta.venta_id);
+            document.getElementById('boletaFolioTitulo').textContent = `Boleta #${estadoPos.folioBoletaActiva}`;
             const c = estadoPos.caja_abierta || {};
+
+            const comandaBadge = comandaExtra?.comanda_generada ? `
+                <div class="bg-amber-950/60 text-amber-300 border border-amber-600/60 rounded-lg p-2 text-center text-xs font-semibold mb-2">
+                    Comanda Cocina KDS: <span class="font-mono font-bold">${comandaExtra.numero_pedido}</span>
+                    <div class="text-[10px] text-gray-400 mt-0.5">Estado: ${comandaExtra.estado_pedido} · ${comandaExtra.total_items} ítem(s) en cola</div>
+                </div>
+            ` : '';
 
             let detallesHtml = (detalles || []).map(d => `
                 <div class="flex justify-between py-0.5">
@@ -1218,27 +1349,49 @@
                 `;
             }
 
+            const vecesImpresa = Number(boletaExtra?.veces_impresa || 1);
+            const esCopia = vecesImpresa > 1;
+            const rotuloCopia = esCopia ? `<div class="bg-amber-950/80 text-amber-300 border border-amber-600/80 rounded-lg p-2 text-center text-xs font-bold tracking-wider mb-2"> COPIA REIMPRESIÓN (N° ${vecesImpresa})</div>` : '';
+
+            const estadoSapBadge = (venta.estado_sap === 'sincronizado' || sapExtra)
+                ? `<span class="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/80 border border-emerald-700/60 px-2 py-0.5 rounded-full font-mono"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block mr-0.5"></span>SAP B1: ${venta.doc_entry_sap || sapExtra?.doc_entry || 'Sincronizado'}</span>`
+                : `<span class="inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-950/80 border border-amber-700/60 px-2 py-0.5 rounded-full font-mono"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block mr-0.5"></span>SAP B1: Pendiente</span>`;
+
+            const promoHtml = venta.codigo_promocion ? `
+                <div class="flex justify-between text-emerald-400 text-[11px]">
+                    <span>Promoción (${venta.codigo_promocion}):</span>
+                    <span>-$${formatoNumero(venta.descuento_total || 0)}</span>
+                </div>
+            ` : '';
+
             document.getElementById('contenidoBoletaPos').innerHTML = `
+                ${rotuloCopia}
+                ${comandaBadge}
                 <div class="text-center border-b border-dashed border-slate-700 pb-2">
-                    <div class="font-extrabold text-sm text-white">KIDZANIA SANTIAGO S.A.</div>
-                    <div class="text-slate-400">RUT: 76.123.456-7 · Giro: Parque Temático y Retail</div>
-                    <div class="text-slate-400">Av. Presidente Riesco 5330, Las Condes</div>
+                    <div class="font-extrabold text-sm text-white">KIDZANIA SANTIAGO SPA</div>
+                    <div class="text-slate-400">RUT: 76.123.456-7 · Giro: Retail y Gastronomía Parque</div>
+                    <div class="text-slate-400">Av. Presidente Riesco 5330, Las Condes, Santiago</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Res. Exenta SII N° 80 de 2014</div>
                 </div>
                 <div class="text-slate-300 space-y-0.5">
-                    <div><strong>Folio:</strong> ${venta.folio_boleta || ('BOL-' + venta.venta_id)}</div>
+                    <div class="flex items-center justify-between">
+                        <strong>Folio: ${estadoPos.folioBoletaActiva}</strong>
+                        ${estadoSapBadge}
+                    </div>
                     <div><strong>Puesto:</strong> ${c.puesto_nombre || 'POS'} (${(c.puesto_tipo_negocio || '').toUpperCase()})</div>
                     <div><strong>Cajero:</strong> ${posUser} (Caja #${c.caja_id || '-'})</div>
                     <div><strong>Fecha/Hora:</strong> ${new Date(venta.fecha_venta || Date.now()).toLocaleString('es-CL')}</div>
                 </div>
                 <div class="border-t border-b border-dashed border-slate-700 py-2 space-y-1">
-                    <div class="font-bold text-slate-400 text-[11px]">ÍTEMS / PRODUCTOS</div>
+                    <div class="font-bold text-slate-400 text-[11px]">DETALLE DE ARTÍCULOS</div>
                     ${detallesHtml || `<div class="flex justify-between"><span>Venta de Productos</span><span>$${formatoNumero(venta.total_venta)}</span></div>`}
                 </div>
                 <div class="space-y-1">
                     <div class="flex justify-between text-slate-400"><span>Monto Neto:</span><span>$${formatoNumero(venta.neto || Math.round(venta.total_venta / 1.19))}</span></div>
                     <div class="flex justify-between text-slate-400"><span>IVA (19%):</span><span>$${formatoNumero(venta.iva || Math.max(venta.total_venta - Math.round(venta.total_venta / 1.19), 0))}</span></div>
+                    ${promoHtml}
                     <div class="flex justify-between text-base font-extrabold text-white pt-1 border-t border-slate-800">
-                        <span>TOTAL PAGADO:</span>
+                        <span>TOTAL A PAGAR:</span>
                         <span class="text-emerald-400">$${formatoNumero(venta.total_venta)}</span>
                     </div>
                 </div>
@@ -1247,12 +1400,36 @@
                     ${pagosHtml}
                 </div>
                 ${insumosHtml}
-                <div class="text-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
-                    Documento tributario electrónico sincronizable con ERP SAP KidZania. ¡Gracias por su compra!
+                <div class="pt-3 border-t border-slate-800 flex flex-col items-center gap-1.5 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Timbre Electrónico DTE (Res. SII 80)</div>
+                    <div class="font-mono text-[9px] text-slate-500 break-all text-center select-all">
+                        ${boletaExtra?.sello_digital || 'SII-TED-76123456-7-BOL-' + (venta.folio_boleta || '001') + '-SHA256'}
+                    </div>
+                    <div class="text-[9px] text-slate-500">Verifique documento tributario en www.sii.cl</div>
                 </div>
             `;
 
             document.getElementById('modalBoletaPos').classList.remove('hidden');
+        }
+
+        async function ejecutarReimpresionBoletaPos() {
+            if (!estadoPos.folioBoletaActiva) return;
+
+            try {
+                const resp = await api(`${API_URL}/api/boletas/${estadoPos.folioBoletaActiva}/reimprimir`, {
+                    method: 'POST',
+                    headers: jsonHeaders,
+                    body: JSON.stringify({ motivo: 'Reimpresión solicitada por cliente en puesto' })
+                });
+
+                setMensaje('mensajePos', `Boleta ${estadoPos.folioBoletaActiva} reimpresa correctamente (Copia N° ${resp.boleta.veces_impresa}) (CU 87).`);
+                
+                // Recargar datos actualizados de la boleta
+                const bResp = await api(`${API_URL}/api/boletas/${estadoPos.folioBoletaActiva}`, { headers: authHeaders });
+                mostrarBoletaVenta(bResp.boleta, bResp.items, bResp.pagos, [], bResp.boleta, { doc_entry: bResp.boleta.doc_entry_sap });
+            } catch (error) {
+                setMensaje('mensajePos', error.message || 'Error al reimprimir boleta', false);
+            }
         }
 
         function cerrarModalBoletaPos() {
@@ -1354,19 +1531,19 @@
 
             if (Math.abs(dif) < 0.01) {
                 panel.className = 'p-3.5 rounded-xl border bg-emerald-950/40 border-emerald-600/60 flex items-center justify-between';
-                lblEstado.textContent = '✅ CAJA CUADRADA (El efectivo contado coincide con el esperado)';
+                lblEstado.textContent = 'CAJA CUADRADA (El efectivo contado coincide con el esperado)';
                 lblEstado.className = 'text-sm font-bold text-emerald-300 mt-0.5';
                 lblMonto.textContent = '$0';
                 lblMonto.className = 'text-xl font-mono font-extrabold text-emerald-400';
             } else if (dif > 0) {
                 panel.className = 'p-3.5 rounded-xl border bg-amber-950/40 border-amber-600/60 flex items-center justify-between';
-                lblEstado.textContent = '⚠️ SOBRANTE DE CAJA (Efectivo contado supera al esperado)';
+                lblEstado.textContent = 'SOBRANTE DE CAJA (Efectivo contado supera al esperado)';
                 lblEstado.className = 'text-sm font-bold text-amber-300 mt-0.5';
                 lblMonto.textContent = `+$${formatoNumero(dif)}`;
                 lblMonto.className = 'text-xl font-mono font-extrabold text-amber-400';
             } else {
                 panel.className = 'p-3.5 rounded-xl border bg-rose-950/40 border-rose-600/60 flex items-center justify-between';
-                lblEstado.textContent = '🚨 FALTANTE DE CAJA (Efectivo contado es menor al esperado)';
+                lblEstado.textContent = 'FALTANTE DE CAJA (Efectivo contado es menor al esperado)';
                 lblEstado.className = 'text-sm font-bold text-rose-300 mt-0.5';
                 lblMonto.textContent = `-$${formatoNumero(Math.abs(dif))}`;
                 lblMonto.className = 'text-xl font-mono font-extrabold text-rose-400';

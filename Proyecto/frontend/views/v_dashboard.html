@@ -26,10 +26,10 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <button type="button" id="btnExportarExcel" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2 rounded transition">
-            ⬇ Exportar Informe a Excel (.CSV - CU 76)
+            Exportar Informe a Excel (.CSV - CU 76)
           </button>
           <button type="button" id="btnExportarPdf" class="bg-sky-700 hover:bg-sky-600 text-white text-xs font-semibold px-3.5 py-2 rounded transition">
-            🖨️ Exportar / Imprimir PDF (CU 76)
+            Exportar / Imprimir PDF (CU 76)
           </button>
         </div>
       </div>
@@ -90,16 +90,16 @@
       <div class="p-4 bg-gray-900/80 border-b border-gray-700 flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2 no-print">
           <button type="button" data-reporte="ventas" class="btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-amber-500 text-gray-950">
-            📊 Reporte de Ventas (CU 72)
+            Reporte de Ventas (CU 72)
           </button>
           <button type="button" data-reporte="mermas" class="btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700">
-            📉 Reporte de Mermas (CU 73)
+            Reporte de Mermas (CU 73)
           </button>
           <button type="button" data-reporte="vencimientos" class="btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700">
-            ⏰ Reporte de Vencimientos (CU 74)
+            Reporte de Vencimientos (CU 74)
           </button>
           <button type="button" data-reporte="existencias" class="btn-tab-rep px-3.5 py-1.5 rounded text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700">
-            📦 Existencias de Inventario (CU 75)
+            Existencias de Inventario (CU 75)
           </button>
         </div>
         <span id="repTimestamp" class="text-xs text-gray-400"></span>
@@ -425,7 +425,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ParkFlow_Reporte_${tipoReporteActivo}_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `KidZania_Reporte_${tipoReporteActivo}_${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         setMensaje('mensaje', `Informe de ${tipoReporteActivo.toUpperCase()} exportado a Excel (.CSV) correctamente (CU 76)`);
@@ -468,7 +468,7 @@
           </style>
         </head>
         <body>
-          <h1>ParkFlow · KidZania Santiago (Grupo 19)</h1>
+          <h1>KidZania Santiago</h1>
           <h2>${ultimoReporteData.titulo}</h2>
           <div class="meta">
             Generado el: ${new Date(ultimoReporteData.generado_en).toLocaleString('es-CL')} ·

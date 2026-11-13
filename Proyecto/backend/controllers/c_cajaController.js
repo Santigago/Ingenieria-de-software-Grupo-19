@@ -1,14 +1,19 @@
 const db = require('../config/db');
 const { registrarAuditoria } = require('../config/initDb');
 const { descontarInsumosRecetaPorVenta } = require('./c_productoController');
+const { emitirBoletaElectronicaParaVenta } = require('./c_boletaController');
+const { sincronizarVentaConSAP } = require('./c_sapController');
 
 const TIPOS_NEGOCIO_PERMITIDOS = ['comida', 'merch'];
 const ESTADOS_PUESTO_PERMITIDOS = ['activo', 'inactivo'];
 const METODOS_PAGO_PERMITIDOS = ['efectivo', 'tarjeta_debito', 'tarjeta_credito', 'transferencia'];
 
-// =============================================================================
-// Helper: Calcular resumen de ventas y efectivo esperado de una sesión de caja
-// =============================================================================
+const badRequest = (message) => {
+    const error = new Error(message);
+    error.codigoHttp = 400;
+    return error;
+};
+
 const calcularTotalesTurnoCaja = async (dbClient, cajaId, fondoInicial = 0, fallbackRow = null) => {
     const { rows } = await dbClient.query(`
         SELECT
@@ -32,7 +37,7 @@ const calcularTotalesTurnoCaja = async (dbClient, cajaId, fondoInicial = 0, fall
     let totalTransferencia = Number(agg.total_transferencia || 0);
 
     if (cantidadVentas === 0 && fallbackRow && Number(fallbackRow.total_ventas_cantidad || 0) > 0) {
-        cantidadVentas = Number(fallbackRow.total_ventas_cantidad || 0);
+        cantidadVentas = Number(fallbackRow.total_ventas_cantidad);
         totalVentasMonto = Number(fallbackRow.total_ventas_monto || 0);
         totalEfectivo = Number(fallbackRow.total_efectivo || 0);
         totalDebito = Number(fallbackRow.total_tarjeta_debito || 0);
@@ -57,9 +62,6 @@ const calcularTotalesTurnoCaja = async (dbClient, cajaId, fondoInicial = 0, fall
     };
 };
 
-// =============================================================================
-// CU 32 (Subflujo CU 82): Administrar puestos de venta (Comida y Merch)
-// =============================================================================
 const obtenerPuestosVenta = async (req, res) => {
     const { tipo_negocio, estado, q } = req.query;
 
@@ -110,12 +112,11 @@ const obtenerPuestosVenta = async (req, res) => {
         const filtrados = puestosFormateados.filter(p => {
             if (tipo_negocio && tipo_negocio !== 'todos' && p.puesto_tipo_negocio !== tipo_negocio) return false;
             if (estado && estado !== 'todos' && p.puesto_estado !== estado) return false;
-            if (q && String(q).trim() !== '') {
-                const term = String(q).trim().toLowerCase();
-                const match =
-                    String(p.puesto_nombre || '').toLowerCase().includes(term) ||
-                    String(p.puesto_codigo || '').toLowerCase().includes(term) ||
-                    String(p.puesto_ubicacion || '').toLowerCase().includes(term);
+            if (q && q.trim()) {
+                const term = q.trim().toLowerCase();
+                const match = (p.puesto_nombre || '').toLowerCase().includes(term) ||
+                              (p.puesto_codigo || '').toLowerCase().includes(term) ||
+                              (p.puesto_ubicacion || '').toLowerCase().includes(term);
                 if (!match) return false;
             }
             return true;
@@ -151,15 +152,15 @@ const crearPuestoVenta = async (req, res) => {
         estado = 'activo'
     } = req.body;
 
-    if (!nombre || !String(nombre).trim() || !tipo_negocio) {
+    if (!nombre || !nombre.trim() || !tipo_negocio) {
         return res.status(400).json({
             message: 'Debe ingresar el nombre del puesto y seleccionar su tipo de negocio (comida o merch) (CU 82)'
         });
     }
 
-    const nomLimpio = String(nombre).trim();
-    const tipoLimpio = String(tipo_negocio).trim().toLowerCase();
-    const estLimpio = String(estado || 'activo').trim().toLowerCase();
+    const nomLimpio = nombre.trim();
+    const tipoLimpio = tipo_negocio.trim().toLowerCase();
+    const estLimpio = (estado || 'activo').trim().toLowerCase();
 
     if (!TIPOS_NEGOCIO_PERMITIDOS.includes(tipoLimpio)) {
         return res.status(400).json({
@@ -171,9 +172,8 @@ const crearPuestoVenta = async (req, res) => {
     }
 
     try {
-        // Subflujo CU 82 Paso 6.1: Validar que el nombre sea único
         const { rows: dupNombre } = await db.query(
-            'SELECT puesto_id, puesto_nombre FROM public.puesto_venta WHERE LOWER(TRIM(puesto_nombre)) = LOWER($1)',
+            'SELECT puesto_id FROM public.puesto_venta WHERE LOWER(TRIM(puesto_nombre)) = LOWER($1)',
             [nomLimpio]
         );
         if (dupNombre.length > 0) {
@@ -182,7 +182,7 @@ const crearPuestoVenta = async (req, res) => {
             });
         }
 
-        let codFinal = codigo ? String(codigo).trim().toUpperCase() : '';
+        let codFinal = codigo ? codigo.trim().toUpperCase() : '';
         if (!codFinal) {
             const prefijo = tipoLimpio === 'comida' ? 'PUESTO-COM' : 'PUESTO-MER';
             const { rows: countRows } = await db.query(
@@ -212,8 +212,8 @@ const crearPuestoVenta = async (req, res) => {
             codFinal,
             nomLimpio,
             tipoLimpio,
-            ubicacion ? String(ubicacion).trim() : null,
-            descripcion ? String(descripcion).trim() : null,
+            ubicacion?.trim() || null,
+            descripcion?.trim() || null,
             estLimpio
         ]);
 
@@ -247,14 +247,14 @@ const actualizarPuestoVenta = async (req, res) => {
         estado
     } = req.body;
 
-    if (!nombre || !String(nombre).trim() || !tipo_negocio) {
+    if (!nombre || !nombre.trim() || !tipo_negocio) {
         return res.status(400).json({
             message: 'Debe indicar el nombre y el tipo de negocio del puesto para actualizarlo (CU 82)'
         });
     }
 
-    const nomLimpio = String(nombre).trim();
-    const tipoLimpio = String(tipo_negocio).trim().toLowerCase();
+    const nomLimpio = nombre.trim();
+    const tipoLimpio = tipo_negocio.trim().toLowerCase();
     if (!TIPOS_NEGOCIO_PERMITIDOS.includes(tipoLimpio)) {
         return res.status(400).json({ message: 'El tipo de negocio debe ser "comida" o "merch"' });
     }
@@ -271,10 +271,9 @@ const actualizarPuestoVenta = async (req, res) => {
             return res.status(404).json({ message: 'Puesto de venta no encontrado' });
         }
         const actual = actualRows[0];
-        const estFinal = estado ? String(estado).trim().toLowerCase() : actual.puesto_estado;
-        const codFinal = codigo ? String(codigo).trim().toUpperCase() : actual.puesto_codigo;
+        const estFinal = estado ? estado.trim().toLowerCase() : actual.puesto_estado;
+        const codFinal = codigo ? codigo.trim().toUpperCase() : actual.puesto_codigo;
 
-        // Subflujo CU 82 Paso 6.1: Validar que el nombre sea único
         const { rows: dupNombre } = await db.query(
             'SELECT puesto_id FROM public.puesto_venta WHERE LOWER(TRIM(puesto_nombre)) = LOWER($1) AND puesto_id <> $2',
             [nomLimpio, id]
@@ -295,7 +294,6 @@ const actualizarPuestoVenta = async (req, res) => {
             });
         }
 
-        // Subflujo CU 82 Paso 6.2: Impedir inactivar (o cambiar tipo de negocio) de un puesto con una caja abierta
         const { rows: cajaAbiertaRows } = await db.query(
             "SELECT caja_id, cajero_id FROM public.caja_sesion WHERE puesto_id = $1 AND estado = 'abierta' LIMIT 1",
             [id]
@@ -314,8 +312,8 @@ const actualizarPuestoVenta = async (req, res) => {
             }
         }
 
-        const ubiFinal = ubicacion !== undefined ? (ubicacion ? String(ubicacion).trim() : null) : actual.puesto_ubicacion;
-        const descFinal = descripcion !== undefined ? (descripcion ? String(descripcion).trim() : null) : actual.puesto_descripcion;
+        const ubiFinal = ubicacion !== undefined ? (ubicacion?.trim() || null) : actual.puesto_ubicacion;
+        const descFinal = descripcion !== undefined ? (descripcion?.trim() || null) : actual.puesto_descripcion;
 
         const { rows } = await db.query(`
             UPDATE public.puesto_venta
@@ -368,7 +366,6 @@ const cambiarEstadoPuestoVenta = async (req, res) => {
         }
         const puesto = actualRows[0];
 
-        // Subflujo CU 82 Paso 6.2: Impedir inactivar un puesto con una caja abierta
         if (estLimpio === 'inactivo') {
             const { rows: cajaAbiertaRows } = await db.query(
                 "SELECT caja_id, cajero_id FROM public.caja_sesion WHERE puesto_id = $1 AND estado = 'abierta' LIMIT 1",
@@ -428,9 +425,6 @@ const eliminarPuestoVenta = async (req, res) => {
     }
 };
 
-// =============================================================================
-// CU 25 (Subflujo CU 78): Abrir caja en puesto de venta declarando fondo inicial
-// =============================================================================
 const obtenerCatalogoPorTipoNegocio = async (dbClient, tipoNegocio) => {
     const { rows } = await dbClient.query(`
         SELECT
@@ -459,27 +453,31 @@ const obtenerCatalogoPorTipoNegocio = async (dbClient, tipoNegocio) => {
 };
 
 const obtenerEstadoCajaActual = async (req, res) => {
-    const cajeroId = req.query.cajero_id ? Number(req.query.cajero_id) : Number(req.user?.id);
+    const rawId = req.query.cajero_id || req.user?.id || req.user?.usuario_id;
+    const cajeroId = rawId && !Number.isNaN(Number(rawId)) ? Number(rawId) : null;
 
     try {
-        // 1. Verificar si el cajero autenticado tiene una caja abierta actualmente
-        const { rows: cajaRows } = await db.query(`
-            SELECT
-                c.*,
-                pv.puesto_codigo,
-                pv.puesto_nombre,
-                pv.puesto_tipo_negocio,
-                pv.puesto_ubicacion,
-                pv.puesto_estado,
-                TRIM(CONCAT(u.usuario_nombres, ' ', u.usuario_apellido_paterno)) AS cajero_nombre
-            FROM public.caja_sesion c
-            JOIN public.puesto_venta pv ON pv.puesto_id = c.puesto_id
-            JOIN public.usuario u ON u.usuario_id = c.cajero_id
-            WHERE c.cajero_id = $1
-              AND c.estado = 'abierta'
-            ORDER BY c.fecha_apertura DESC
-            LIMIT 1
-        `, [cajeroId]);
+        let cajaRows = [];
+        if (cajeroId) {
+            const { rows } = await db.query(`
+                SELECT
+                    c.*,
+                    pv.puesto_codigo,
+                    pv.puesto_nombre,
+                    pv.puesto_tipo_negocio,
+                    pv.puesto_ubicacion,
+                    pv.puesto_estado,
+                    TRIM(CONCAT(u.usuario_nombres, ' ', u.usuario_apellido_paterno)) AS cajero_nombre
+                FROM public.caja_sesion c
+                JOIN public.puesto_venta pv ON pv.puesto_id = c.puesto_id
+                JOIN public.usuario u ON u.usuario_id = c.cajero_id
+                WHERE c.cajero_id = $1
+                  AND c.estado = 'abierta'
+                ORDER BY c.fecha_apertura DESC
+                LIMIT 1
+            `, [cajeroId]);
+            cajaRows = rows;
+        }
 
         let cajaAbierta = null;
         let resumenTurno = null;
@@ -529,7 +527,6 @@ const obtenerEstadoCajaActual = async (req, res) => {
             };
         }
 
-        // 2. Obtener listado de puestos de venta indicando cuáles están disponibles u ocupados (CU 78 Paso 2)
         const { rows: puestosRows } = await db.query(`
             SELECT
                 pv.puesto_id,
@@ -593,9 +590,8 @@ const abrirCaja = async (req, res) => {
         });
     }
 
-    // Subflujo CU 78 Paso 6: Validar que el monto del fondo inicial sea válido
     const fondoNum = Number(fondo_inicial);
-    if (fondo_inicial === undefined || fondo_inicial === null || String(fondo_inicial).trim() === '' || !Number.isFinite(fondoNum) || fondoNum < 0) {
+    if (isNaN(fondoNum) || fondoNum < 0 || String(fondo_inicial ?? '').trim() === '') {
         return res.status(400).json({
             message: 'El fondo inicial declarado es obligatorio y debe ser un monto numérico mayor o igual a cero (CU 25 / CU 78)'
         });
@@ -605,7 +601,6 @@ const abrirCaja = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1. Precondición CU 78: El cajero no debe tener otra caja abierta simultáneamente
         const { rows: cajaCajeroRows } = await client.query(`
             SELECT c.caja_id, c.puesto_id, pv.puesto_nombre
             FROM public.caja_sesion c
@@ -623,7 +618,6 @@ const abrirCaja = async (req, res) => {
             });
         }
 
-        // 2. Subflujo CU 78 Paso 4: Validar que el puesto exista, esté activo y sin caja abierta
         const { rows: puestoRows } = await client.query(
             'SELECT * FROM public.puesto_venta WHERE puesto_id = $1 FOR UPDATE',
             [puesto_id]
@@ -659,9 +653,8 @@ const abrirCaja = async (req, res) => {
         }
 
         const fondoRedondeado = Number(fondoNum.toFixed(2));
-        const obsLimpia = observacion_apertura ? String(observacion_apertura).trim() : null;
+        const obsLimpia = observacion_apertura?.trim() || null;
 
-        // 3. Subflujo CU 78 Paso 8.1: Registrar puesto, cajero, fecha, hora y fondo inicial
         const { rows: nuevaCajaRows } = await client.query(`
             INSERT INTO public.caja_sesion
             (
@@ -714,9 +707,6 @@ const abrirCaja = async (req, res) => {
     }
 };
 
-// =============================================================================
-// CU 26 (Subflujo CU 79): Cerrar caja y realizar arqueo
-// =============================================================================
 const obtenerResumenCierreCaja = async (req, res) => {
     const cajaIdParam = req.params.id || req.query.caja_id;
     const cajeroId = Number(req.user?.id);
@@ -773,9 +763,8 @@ const cerrarCajaConArqueo = async (req, res) => {
         observacion_cierre = null
     } = req.body;
 
-    // Subflujo CU 79 Paso 4: Validar el efectivo contado ingresado por el cajero
     const contadoNum = Number(efectivo_contado);
-    if (efectivo_contado === undefined || efectivo_contado === null || String(efectivo_contado).trim() === '' || !Number.isFinite(contadoNum) || contadoNum < 0) {
+    if (isNaN(contadoNum) || contadoNum < 0 || String(efectivo_contado ?? '').trim() === '') {
         return res.status(400).json({
             message: 'Debe ingresar el monto de efectivo contado físicamente en la caja (mayor o igual a cero) para realizar el arqueo (CU 26 / CU 79)'
         });
@@ -828,7 +817,6 @@ const cerrarCajaConArqueo = async (req, res) => {
             });
         }
 
-        // Subflujo CU 79 Pasos 2, 3 y 5: Calcular totales por medio de pago, efectivo esperado y diferencia del arqueo
         const resumen = await calcularTotalesTurnoCaja(client, caja.caja_id, caja.fondo_inicial, caja);
         const efectivoContadoRedondeado = Number(contadoNum.toFixed(2));
         const efectivoEsperado = resumen.efectivo_esperado;
@@ -844,9 +832,8 @@ const cerrarCajaConArqueo = async (req, res) => {
             descripcionResultado = `Faltante de efectivo detectado (-$${Math.abs(diferenciaArqueo)})`;
         }
 
-        const obsCierreLimpia = observacion_cierre ? String(observacion_cierre).trim() : null;
+        const obsCierreLimpia = observacion_cierre?.trim() || null;
 
-        // Subflujo CU 79 Paso 7.1 y 7.2: Registrar el arqueo con fecha, hora, montos y diferencia y cerrar la caja
         const { rows: cerradaRows } = await client.query(`
             UPDATE public.caja_sesion
             SET estado = 'cerrada',
@@ -936,11 +923,8 @@ const cerrarCajaConArqueo = async (req, res) => {
     }
 };
 
-// =============================================================================
-// CU 21 (Subflujo CU 64): Calcular automáticamente el total de una venta en curso
-// =============================================================================
 const calcularTotalVentaPos = async (req, res) => {
-    const { items = [], descuento_global = 0 } = req.body;
+    const { items = [], descuento_global = 0, codigo_promocion = null } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({
@@ -956,7 +940,7 @@ const calcularTotalVentaPos = async (req, res) => {
         for (const item of items) {
             const prodId = Number(item.producto_id);
             const cant = Number(item.cantidad || 1);
-            if (!prodId || !Number.isFinite(cant) || cant <= 0) {
+            if (!prodId || isNaN(cant) || cant <= 0) {
                 return res.status(400).json({
                     message: 'Cada ítem de la venta debe indicar un producto válido y una cantidad mayor a cero (CU 64)'
                 });
@@ -971,6 +955,7 @@ const calcularTotalVentaPos = async (req, res) => {
                     p.producto_tipo_negocio,
                     p.producto_estado,
                     p.producto_stock_actual,
+                    p.categoria_id,
                     u.unidad_medida_codigo
                 FROM public.producto p
                 LEFT JOIN public.unidad_medida_personalizada u ON u.unidad_medida_id = p.producto_unidad_medida_id
@@ -995,6 +980,7 @@ const calcularTotalVentaPos = async (req, res) => {
                 producto_nombre: prod.producto_nombre,
                 producto_tipo_negocio: prod.producto_tipo_negocio || 'comida',
                 producto_estado: prod.producto_estado,
+                categoria_id: prod.categoria_id,
                 stock_disponible: Number(prod.producto_stock_actual || 0),
                 stock_suficiente: Number(prod.producto_stock_actual || 0) >= cant,
                 unidad_medida_codigo: prod.unidad_medida_codigo || 'UN',
@@ -1006,8 +992,51 @@ const calcularTotalVentaPos = async (req, res) => {
             });
         }
 
+        let descuentoPromocion = 0;
+        let promoAplicada = null;
+
+        if (codigo_promocion && codigo_promocion.trim()) {
+            const codPromo = codigo_promocion.trim().toUpperCase();
+            const { rows: promoRows } = await db.query(
+                'SELECT * FROM public.promocion WHERE UPPER(promocion_codigo) = $1',
+                [codPromo]
+            );
+
+            if (promoRows.length > 0) {
+                const pr = promoRows[0];
+                const ahora = new Date();
+                const esVigente = pr.estado === 'activo'
+                    && (!pr.fecha_inicio || new Date(pr.fecha_inicio) <= ahora)
+                    && (!pr.fecha_fin || new Date(pr.fecha_fin) >= ahora);
+
+                if (esVigente) {
+                    if (!pr.es_acumulable && (descuentoLineas > 0 || Number(descuento_global || 0) > 0)) {
+                        return res.status(400).json({
+                            message: `La promoción "${pr.promocion_nombre}" NO es acumulable con otros descuentos aplicados en la venta (Subflujo CU 66)`
+                        });
+                    }
+
+                    if (subtotalBruto >= Number(pr.monto_minimo_compra || 0)) {
+                        if (pr.tipo_descuento === 'porcentaje') {
+                            descuentoPromocion = Math.round((subtotalBruto * Number(pr.valor_descuento)) / 100);
+                        } else if (pr.tipo_descuento === 'monto_fijo') {
+                            descuentoPromocion = Math.min(Math.round(Number(pr.valor_descuento)), subtotalBruto);
+                        }
+                        promoAplicada = {
+                            promocion_id: pr.promocion_id,
+                            codigo: pr.promocion_codigo,
+                            nombre: pr.promocion_nombre,
+                            tipo: pr.tipo_descuento,
+                            valor: Number(pr.valor_descuento),
+                            monto_descuento: descuentoPromocion
+                        };
+                    }
+                }
+            }
+        }
+
         const descGlobalNum = Math.max(Math.round(Number(descuento_global || 0)), 0);
-        const descuentoTotal = Math.min(descuentoLineas + descGlobalNum, subtotalBruto);
+        const descuentoTotal = Math.min(descuentoLineas + descGlobalNum + descuentoPromocion, subtotalBruto);
         const totalVenta = Math.max(Math.round(subtotalBruto - descuentoTotal), 0);
         const neto = Math.round(totalVenta / 1.19);
         const iva = Math.max(totalVenta - neto, 0);
@@ -1018,6 +1047,9 @@ const calcularTotalVentaPos = async (req, res) => {
                 cantidad_lineas: itemsCalculados.length,
                 unidades_totales: itemsCalculados.reduce((acc, i) => acc + i.cantidad, 0),
                 subtotal: subtotalBruto,
+                descuento_lineas: descuentoLineas,
+                descuento_promocion: descuentoPromocion,
+                promocion_aplicada: promoAplicada,
                 descuento_total: descuentoTotal,
                 neto,
                 iva,
@@ -1029,25 +1061,16 @@ const calcularTotalVentaPos = async (req, res) => {
     }
 };
 
-// =============================================================================
-// CU 21 (Subflujos CU 28, 29, 30, 64) y CU 23 (Subflujos CU 32 y 63):
-// Registrar venta multi-ítem o individual, validar/descontar inventario y registrar pago único o combinado
-// =============================================================================
 const normalizarPagosVenta = ({ metodo_pago, pagos, totalVenta, monto_recibido, codigo_autorizacion }) => {
     const metodoPrincipal = String(metodo_pago || 'efectivo').trim().toLowerCase();
 
     if (metodoPrincipal === 'kidzos' || (Array.isArray(pagos) && pagos.some(p => String(p.metodo_pago || '').trim().toLowerCase() === 'kidzos'))) {
-        const err = new Error('Los KidZos (moneda ficticia del parque) no se aceptan como medio de pago en los puestos de venta (Sección I.5 / CU 32)');
-        err.codigoHttp = 400;
-        throw err;
+        throw badRequest('Los KidZos (moneda ficticia del parque) no se aceptan como medio de pago en los puestos de venta (Sección I.5 / CU 32)');
     }
 
-    // Caso 1: Pago combinado (Subflujo CU 63)
     if (metodoPrincipal === 'combinado' || (Array.isArray(pagos) && pagos.length > 1)) {
         if (!Array.isArray(pagos) || pagos.length < 2) {
-            const err = new Error('Para registrar un pago combinado debe indicar al menos dos tramos o medios de pago con sus montos respectivos (CU 63)');
-            err.codigoHttp = 400;
-            throw err;
+            throw badRequest('Para registrar un pago combinado debe indicar al menos dos tramos o medios de pago con sus montos respectivos (CU 63)');
         }
 
         const tramosNormalizados = [];
@@ -1063,22 +1086,16 @@ const normalizarPagosVenta = ({ metodo_pago, pagos, totalVenta, monto_recibido, 
         for (const tramo of pagos) {
             const m = String(tramo.metodo_pago || '').trim().toLowerCase();
             if (!METODOS_PAGO_PERMITIDOS.includes(m)) {
-                const err = new Error(`Medio de pago "${tramo.metodo_pago}" no válido en pago combinado. Permitidos: ${METODOS_PAGO_PERMITIDOS.join(', ')} (CU 63)`);
-                err.codigoHttp = 400;
-                throw err;
+                throw badRequest(`Medio de pago "${tramo.metodo_pago}" no válido en pago combinado. Permitidos: ${METODOS_PAGO_PERMITIDOS.join(', ')} (CU 63)`);
             }
             const montoTramo = Math.round(Number(tramo.monto || 0));
-            if (!Number.isFinite(montoTramo) || montoTramo <= 0) {
-                const err = new Error('Cada medio de pago dentro de un pago combinado debe tener un monto mayor a cero (CU 63)');
-                err.codigoHttp = 400;
-                throw err;
+            if (isNaN(montoTramo) || montoTramo <= 0) {
+                throw badRequest('Cada medio de pago dentro de un pago combinado debe tener un monto mayor a cero (CU 63)');
             }
 
             sumaMontos += montoTramo;
             if (sumaMontos > totalVenta) {
-                const err = new Error(`La suma de los montos del pago combinado ($${sumaMontos}) supera el total de la venta ($${totalVenta}) (CU 63 Paso 6)`);
-                err.codigoHttp = 400;
-                throw err;
+                throw badRequest(`La suma de los montos del pago combinado ($${sumaMontos}) supera el total de la venta ($${totalVenta}) (CU 63 Paso 6)`);
             }
 
             let recibidoTramo = montoTramo;
@@ -1087,10 +1104,8 @@ const normalizarPagosVenta = ({ metodo_pago, pagos, totalVenta, monto_recibido, 
                 mEfectivo += montoTramo;
                 if (tramo.monto_recibido !== undefined && tramo.monto_recibido !== null && String(tramo.monto_recibido).trim() !== '') {
                     recibidoTramo = Math.round(Number(tramo.monto_recibido));
-                    if (!Number.isFinite(recibidoTramo) || recibidoTramo < montoTramo) {
-                        const err = new Error(`El efectivo recibido ($${recibidoTramo}) es inferior al tramo en efectivo declarado ($${montoTramo}) (CU 32 / CU 63)`);
-                        err.codigoHttp = 400;
-                        throw err;
+                    if (isNaN(recibidoTramo) || recibidoTramo < montoTramo) {
+                        throw badRequest(`El efectivo recibido ($${recibidoTramo}) es inferior al tramo en efectivo declarado ($${montoTramo}) (CU 32 / CU 63)`);
                     }
                     vueltoTramo = recibidoTramo - montoTramo;
                 }
@@ -1117,9 +1132,7 @@ const normalizarPagosVenta = ({ metodo_pago, pagos, totalVenta, monto_recibido, 
         }
 
         if (Math.abs(sumaMontos - totalVenta) >= 1) {
-            const err = new Error(`La suma de los pagos combinados ($${sumaMontos}) debe ser exactamente igual al total de la venta ($${totalVenta}). Saldo pendiente: $${totalVenta - sumaMontos} (CU 63 Paso 8)`);
-            err.codigoHttp = 400;
-            throw err;
+            throw badRequest(`La suma de los pagos combinados ($${sumaMontos}) debe ser exactamente igual al total de la venta ($${totalVenta}). Saldo pendiente: $${totalVenta - sumaMontos} (CU 63 Paso 8)`);
         }
 
         return {
@@ -1135,14 +1148,11 @@ const normalizarPagosVenta = ({ metodo_pago, pagos, totalVenta, monto_recibido, 
         };
     }
 
-    // Caso 2: Pago único (Subflujo CU 32)
     const tramoUnico = (Array.isArray(pagos) && pagos.length === 1) ? pagos[0] : null;
     const metodoUnico = tramoUnico ? String(tramoUnico.metodo_pago || metodoPrincipal).trim().toLowerCase() : metodoPrincipal;
 
     if (!METODOS_PAGO_PERMITIDOS.includes(metodoUnico)) {
-        const err = new Error(`Método de pago no válido. Métodos permitidos: ${METODOS_PAGO_PERMITIDOS.join(', ')} (CU 32)`);
-        err.codigoHttp = 400;
-        throw err;
+        throw badRequest(`Método de pago no válido. Métodos permitidos: ${METODOS_PAGO_PERMITIDOS.join(', ')} (CU 32)`);
     }
 
     const recibidoRaw = tramoUnico?.monto_recibido !== undefined ? tramoUnico.monto_recibido : monto_recibido;
@@ -1155,10 +1165,8 @@ const normalizarPagosVenta = ({ metodo_pago, pagos, totalVenta, monto_recibido, 
 
     if (metodoUnico === 'efectivo' && recibidoRaw !== null && recibidoRaw !== undefined && String(recibidoRaw).trim() !== '') {
         montoRecibidoNum = Math.round(Number(recibidoRaw));
-        if (!Number.isFinite(montoRecibidoNum) || montoRecibidoNum < totalVenta) {
-            const err = new Error(`El monto recibido en efectivo ($${montoRecibidoNum}) no puede ser inferior al total de la venta ($${totalVenta}) (CU 32 Paso 6.1)`);
-            err.codigoHttp = 400;
-            throw err;
+        if (isNaN(montoRecibidoNum) || montoRecibidoNum < totalVenta) {
+            throw badRequest(`El monto recibido en efectivo ($${montoRecibidoNum}) no puede ser inferior al total de la venta ($${totalVenta}) (CU 32 Paso 6.1)`);
         }
         vueltoNum = montoRecibidoNum - totalVenta;
     }
@@ -1188,6 +1196,7 @@ const registrarVentaTurnoCaja = async (req, res) => {
         producto_id,
         cantidad = 1,
         descuento_global = 0,
+        codigo_promocion = null,
         metodo_pago = 'efectivo',
         pagos = null,
         monto_recibido = null,
@@ -1195,7 +1204,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
         observacion = null
     } = req.body;
 
-    // Normalizar carrito de ítems (admite arreglo `items` multi-producto o `producto_id` individual)
     const listaItemsEntrada = Array.isArray(items) && items.length > 0
         ? items
         : (producto_id ? [{ producto_id, cantidad, descuento_linea: 0 }] : []);
@@ -1206,10 +1214,9 @@ const registrarVentaTurnoCaja = async (req, res) => {
         });
     }
 
-    // Agrupar o validar cantidades por ítem
     for (const item of listaItemsEntrada) {
         const c = Number(item.cantidad);
-        if (!item.producto_id || !Number.isFinite(c) || c <= 0) {
+        if (!item.producto_id || isNaN(c) || c <= 0) {
             return res.status(400).json({
                 message: 'Cada producto de la venta debe tener una cantidad numérica mayor a cero (CU 28)'
             });
@@ -1220,7 +1227,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // 1. Subflujo CU 28 Paso 6.1 y UR 8.7: Validar caja abierta del cajero
         const { rows: cajaRows } = await client.query(`
             SELECT c.*, pv.puesto_nombre, pv.puesto_codigo, pv.puesto_tipo_negocio
             FROM public.caja_sesion c
@@ -1240,7 +1246,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
         }
         const caja = cajaRows[0];
 
-        // 2. Subflujos CU 29, CU 30 y CU 64: Validar cada producto contra el inventario y el tipo de negocio del puesto, y calcular totales
         const cantidadesAcumuladasPorProducto = new Map();
         for (const item of listaItemsEntrada) {
             const pid = Number(item.producto_id);
@@ -1286,7 +1291,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
             productosMap.set(pid, producto);
         }
 
-        // Calcular subtotales, descuentos, neto, IVA y total (Subflujo CU 64)
         let subtotalVenta = 0;
         let descuentoLineas = 0;
         const lineasPreparadas = [];
@@ -1311,13 +1315,49 @@ const registrarVentaTurnoCaja = async (req, res) => {
             });
         }
 
+        let descuentoPromocion = 0;
+        let codigoPromoAplicado = null;
+
+        if (codigo_promocion && codigo_promocion.trim()) {
+            const codPromo = codigo_promocion.trim().toUpperCase();
+            const { rows: promoRows } = await client.query(
+                'SELECT * FROM public.promocion WHERE UPPER(promocion_codigo) = $1',
+                [codPromo]
+            );
+
+            if (promoRows.length > 0) {
+                const pr = promoRows[0];
+                const ahora = new Date();
+                const esVigente = pr.estado === 'activo'
+                    && (!pr.fecha_inicio || new Date(pr.fecha_inicio) <= ahora)
+                    && (!pr.fecha_fin || new Date(pr.fecha_fin) >= ahora);
+
+                if (esVigente) {
+                    if (!pr.es_acumulable && (descuentoLineas > 0 || Number(descuento_global || 0) > 0)) {
+                        await client.query('ROLLBACK');
+                        return res.status(400).json({
+                            message: `La promoción "${pr.promocion_nombre}" NO es acumulable con otros descuentos en la venta (Subflujo CU 66)`
+                        });
+                    }
+
+                    if (subtotalVenta >= Number(pr.monto_minimo_compra || 0)) {
+                        if (pr.tipo_descuento === 'porcentaje') {
+                            descuentoPromocion = Math.round((subtotalVenta * Number(pr.valor_descuento)) / 100);
+                        } else if (pr.tipo_descuento === 'monto_fijo') {
+                            descuentoPromocion = Math.min(Math.round(Number(pr.valor_descuento)), subtotalVenta);
+                        }
+                        codigoPromoAplicado = pr.promocion_codigo;
+                    }
+                }
+            }
+        }
+
         const descGlobalNum = Math.max(Math.round(Number(descuento_global || 0)), 0);
-        const descuentoTotal = Math.min(descuentoLineas + descGlobalNum, subtotalVenta);
+        const descuentoTotal = Math.min(descuentoLineas + descGlobalNum + descuentoPromocion, subtotalVenta);
         const totalVenta = Math.max(Math.round(subtotalVenta - descuentoTotal), 0);
         const netoVenta = Math.round(totalVenta / 1.19);
         const ivaVenta = Math.max(totalVenta - netoVenta, 0);
 
-        // 3. Validar y normalizar el pago único o combinado (CU 23: Subflujos CU 32 y CU 63)
         const infoPago = normalizarPagosVenta({
             metodo_pago,
             pagos,
@@ -1331,7 +1371,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
             .map(l => `${l.producto.producto_nombre} x${l.cantidad}`)
             .join(', ');
 
-        // 4. Insertar cabecera de la venta en public.venta_pos (CU 28 Paso 6.2)
         const { rows: ventaRows } = await client.query(`
             INSERT INTO public.venta_pos
             (
@@ -1352,9 +1391,10 @@ const registrarVentaTurnoCaja = async (req, res) => {
                 monto_recibido,
                 vuelto,
                 codigo_autorizacion,
+                codigo_promocion,
                 observacion
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
             RETURNING *
         `, [
             folioBoleta,
@@ -1374,7 +1414,8 @@ const registrarVentaTurnoCaja = async (req, res) => {
             infoPago.monto_recibido,
             infoPago.vuelto,
             infoPago.codigo_autorizacion,
-            observacion ? String(observacion).trim() : resumenTextoProductos
+            codigoPromoAplicado,
+            observacion ? observacion.trim() : resumenTextoProductos
         ]);
 
         const ventaCreada = ventaRows[0];
@@ -1382,7 +1423,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
         const insumosRecetaDescontados = [];
         let algunaRecetaAplicada = false;
 
-        // 5. Subflujo CU 30: Descontar stock por cada ítem, registrar movimiento y detalle de venta
         for (const linea of lineasPreparadas) {
             const { producto, cantidad: cantLinea, precio_unitario: precioU, descuento_linea: descL, subtotal_linea: subL } = linea;
 
@@ -1435,7 +1475,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
             ]);
             if (detRows[0]) detallesInsertados.push(detRows[0]);
 
-            // Si es producto de comida y tiene receta, descontar automáticamente sus insumos (CU 19 / CU 27)
             const resultadoReceta = await descontarInsumosRecetaPorVenta(client, {
                 productoId: producto.producto_id,
                 cantidadVendida: cantLinea,
@@ -1449,7 +1488,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
             }
         }
 
-        // 6. Insertar desglose de pagos en public.venta_pos_pago (CU 23: Subflujos CU 32 y CU 63)
         const pagosInsertados = [];
         for (const tramo of infoPago.pagos_detalle) {
             const { rows: pRows } = await client.query(`
@@ -1468,7 +1506,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
             if (pRows[0]) pagosInsertados.push(pRows[0]);
         }
 
-        // 7. Actualizar acumulados en la sesión de caja abierta
         await client.query(`
             UPDATE public.caja_sesion
             SET total_ventas_cantidad = total_ventas_cantidad + 1,
@@ -1492,6 +1529,40 @@ const registrarVentaTurnoCaja = async (req, res) => {
 
         await client.query('COMMIT');
 
+        let boletaEmitida = null;
+        try {
+            boletaEmitida = await emitirBoletaElectronicaParaVenta(db, ventaCreada, lineasPreparadas);
+        } catch (errBoleta) {
+            console.warn('Aviso al emitir boleta electrónica:', errBoleta.message);
+        }
+
+        let sapSincronizacion = null;
+        try {
+            sapSincronizacion = await sincronizarVentaConSAP(db, ventaCreada.venta_id);
+        } catch (errSap) {
+            console.warn('Aviso al sincronizar venta con SAP B1:', errSap.message);
+        }
+
+        let comandaDigital = null;
+        try {
+            const { enrutarYGenerarComanda } = require('./c_cocinaController');
+            comandaDigital = await enrutarYGenerarComanda({
+                venta_id: ventaCreada.venta_id,
+                puesto_id: caja.puesto_id,
+                cajero_id: caja.cajero_id,
+                items: lineasPreparadas.map(l => ({
+                    producto_id: l.producto.producto_id,
+                    producto_codigo: l.producto.producto_codigo,
+                    producto_nombre: l.producto.producto_nombre,
+                    cantidad: l.cantidad,
+                    requiere_cocina: l.producto.requiere_cocina,
+                    nota_preparacion: l.observacion || null
+                }))
+            });
+        } catch (errComanda) {
+            console.warn('Aviso al enrutar comanda digital de cocina:', errComanda.message);
+        }
+
         await registrarAuditoria({
             usuario_id: caja.cajero_id,
             actor_usuario_id: req.user?.id || caja.cajero_id,
@@ -1511,10 +1582,15 @@ const registrarVentaTurnoCaja = async (req, res) => {
                 neto: Number(ventaCreada.neto || netoVenta),
                 iva: Number(ventaCreada.iva || ivaVenta),
                 total_venta: Number(ventaCreada.total_venta || totalVenta),
-                vuelto: infoPago.vuelto
+                vuelto: infoPago.vuelto,
+                estado_sap: sapSincronizacion ? 'sincronizado' : 'pendiente',
+                doc_entry_sap: sapSincronizacion?.doc_entry || null
             },
             detalles: detallesInsertados,
             pagos: pagosInsertados,
+            boleta: boletaEmitida,
+            sap: sapSincronizacion,
+            comanda: comandaDigital,
             vuelto: infoPago.vuelto,
             receta_aplicada: algunaRecetaAplicada,
             insumos_descontados: insumosRecetaDescontados,
@@ -1529,9 +1605,6 @@ const registrarVentaTurnoCaja = async (req, res) => {
     }
 };
 
-// =============================================================================
-// CU 34 (Subflujo CU 89): Monitorear cajas abiertas en tiempo real
-// =============================================================================
 const obtenerMonitoreoCajasAbiertas = async (req, res) => {
     try {
         const { rows } = await db.query(`
@@ -1595,9 +1668,6 @@ const obtenerMonitoreoCajasAbiertas = async (req, res) => {
     }
 };
 
-// =============================================================================
-// CU 34 (Subflujo CU 83): Consultar historial de ventas y detalle con boleta y estado SAP
-// =============================================================================
 const obtenerHistorialVentas = async (req, res) => {
     const {
         fecha_desde,
@@ -1636,7 +1706,7 @@ const obtenerHistorialVentas = async (req, res) => {
         condiciones.push(`vp.puesto_id = $${params.length}`);
     }
     if (tipo_negocio && tipo_negocio !== 'todos') {
-        params.push(String(tipo_negocio).trim().toLowerCase());
+        params.push(tipo_negocio.trim().toLowerCase());
         condiciones.push(`pv.puesto_tipo_negocio = $${params.length}`);
     }
     if (cajero_id && cajero_id !== 'todos') {
@@ -1644,15 +1714,15 @@ const obtenerHistorialVentas = async (req, res) => {
         condiciones.push(`vp.cajero_id = $${params.length}`);
     }
     if (metodo_pago && metodo_pago !== 'todos') {
-        params.push(String(metodo_pago).trim().toLowerCase());
+        params.push(metodo_pago.trim().toLowerCase());
         condiciones.push(`vp.metodo_pago = $${params.length}`);
     }
     if (estado_sap && estado_sap !== 'todos') {
-        params.push(String(estado_sap).trim().toLowerCase());
+        params.push(estado_sap.trim().toLowerCase());
         condiciones.push(`vp.estado_sap = $${params.length}`);
     }
-    if (q && String(q).trim() !== '') {
-        params.push(`%${String(q).trim().toLowerCase()}%`);
+    if (q && q.trim()) {
+        params.push(`%${q.trim().toLowerCase()}%`);
         condiciones.push(`(LOWER(COALESCE(vp.folio_boleta, '')) LIKE $${params.length} OR LOWER(COALESCE(vp.observacion, '')) LIKE $${params.length} OR LOWER(pv.puesto_nombre) LIKE $${params.length})`);
     }
 
@@ -1840,9 +1910,6 @@ const obtenerDetalleVenta = async (req, res) => {
     }
 };
 
-// =============================================================================
-// CU 34 (Subflujo CU 84): Consultar arqueos de caja destacando diferencias
-// =============================================================================
 const obtenerArqueosCaja = async (req, res) => {
     const {
         fecha_desde,
@@ -1885,7 +1952,7 @@ const obtenerArqueosCaja = async (req, res) => {
     if (solo_diferencias === 'true' || estado_arqueo === 'con_diferencia') {
         condiciones.push(`c.estado_arqueo IN ('sobrante', 'faltante')`);
     } else if (estado_arqueo && estado_arqueo !== 'todos') {
-        params.push(String(estado_arqueo).trim().toLowerCase());
+        params.push(estado_arqueo.trim().toLowerCase());
         condiciones.push(`c.estado_arqueo = $${params.length}`);
     }
 
@@ -2024,9 +2091,6 @@ const obtenerDetalleArqueoCaja = async (req, res) => {
     }
 };
 
-// =============================================================================
-// Historial general de sesiones de caja (compatibilidad con vista de puestos)
-// =============================================================================
 const obtenerHistorialCajas = async (req, res) => {
     const {
         estado,
@@ -2041,7 +2105,7 @@ const obtenerHistorialCajas = async (req, res) => {
     const condiciones = [];
 
     if (estado && estado !== 'todos') {
-        params.push(String(estado).trim().toLowerCase());
+        params.push(estado.trim().toLowerCase());
         condiciones.push(`c.estado = $${params.length}`);
     }
     if (puesto_id) {
@@ -2053,7 +2117,7 @@ const obtenerHistorialCajas = async (req, res) => {
         condiciones.push(`c.cajero_id = $${params.length}`);
     }
     if (estado_arqueo && estado_arqueo !== 'todos') {
-        params.push(String(estado_arqueo).trim().toLowerCase());
+        params.push(estado_arqueo.trim().toLowerCase());
         condiciones.push(`c.estado_arqueo = $${params.length}`);
     }
     if (fecha_desde) {
@@ -2131,4 +2195,3 @@ module.exports = {
     obtenerDetalleArqueoCaja,
     obtenerHistorialCajas
 };
-

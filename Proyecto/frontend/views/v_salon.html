@@ -498,10 +498,18 @@
           <button onclick="cerrarModalDetalleVenta()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
         </div>
         <div id="modalVentaContenido" class="space-y-4 text-xs font-mono"></div>
-        <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+        <div class="flex flex-wrap justify-end gap-2.5 pt-3 border-t border-gray-800">
           <button type="button" onclick="cerrarModalDetalleVenta()"
-                  class="px-4 py-2 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs">
+                  class="px-3.5 py-2 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs">
             Cerrar
+          </button>
+          <button type="button" id="btnReimprimirSalon" onclick="reimprimirBoletaSalon()"
+                  class="px-3.5 py-2 rounded bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs flex items-center gap-1 transition">
+            Reimprimir Boleta (CU 87)
+          </button>
+          <button type="button" id="btnSyncSapSalon" onclick="reintentarSapSalon()"
+                  class="px-3.5 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-1 transition">
+            Sincronizar SAP (CU 81)
           </button>
         </div>
       </div>
@@ -669,7 +677,7 @@
                   </span>
                 </div>
               </div>
-              <p class="text-xs text-gray-400 mt-2">📍 ${p.puesto_ubicacion || 'Recinto KidZania Santiago'}</p>
+              <p class="text-xs text-gray-400 mt-2">${p.puesto_ubicacion || 'Recinto KidZania Santiago'}</p>
               <p class="text-xs text-gray-300 mt-1 line-clamp-2">${p.puesto_descripcion || 'Sin descripción adicional.'}</p>
               ${estadoCajaHtml}
             </div>
@@ -1192,11 +1200,15 @@
             <div class="text-amber-400 font-semibold">${b.emisor_giro}</div>
           </div>
           <div class="space-y-1 text-gray-300">
-            <div><strong>Folio Boleta:</strong> ${b.folio_boleta}</div>
+            <div class="flex justify-between items-center">
+              <strong>Folio Boleta: ${b.folio_boleta}</strong>
+              <span class="text-[10px] px-2 py-0.5 rounded font-mono ${b.estado_sap === 'sincronizado' ? 'bg-emerald-950 text-emerald-400 border border-emerald-700' : 'bg-amber-950 text-amber-400 border border-amber-700'}">
+                SAP: ${b.estado_sap.toUpperCase()}
+              </span>
+            </div>
             <div><strong>Puesto de Venta:</strong> ${b.puesto_nombre} (${b.puesto_tipo_negocio.toUpperCase()})</div>
             <div><strong>Cajero:</strong> ${b.cajero_nombre} (Caja #${b.caja_id})</div>
             <div><strong>Fecha Emisión:</strong> ${new Date(b.fecha_emision).toLocaleString('es-CL')}</div>
-            <div><strong>Estado SAP:</strong> <span class="uppercase font-bold ${b.estado_sap === 'sincronizado' ? 'text-emerald-400' : 'text-amber-400'}">${b.estado_sap}</span></div>
           </div>
           <div class="border-t border-b border-dashed border-gray-700 py-2 space-y-1">
             <div class="font-bold text-gray-400 text-[11px]">ÍTEMS DE LA VENTA</div>
@@ -1225,8 +1237,39 @@
             `).join('')}
           </div>
         `;
+        window._ventaModalActiva = { ventaId, folio: b.folio_boleta };
       } catch (error) {
         cont.innerHTML = `<div class="text-rose-400 p-4">${error.message || 'Error al cargar boleta.'}</div>`;
+      }
+    }
+
+    async function reimprimirBoletaSalon() {
+      if (!window._ventaModalActiva?.folio) return;
+      try {
+        const resp = await api(`${API_URL}/api/boletas/${window._ventaModalActiva.folio}/reimprimir`, {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({ motivo: 'Reimpresión desde Panel de Salón y Auditoría' })
+        });
+        alert(`Boleta ${window._ventaModalActiva.folio} reimpresa exitosamente (Copia N° ${resp.boleta.veces_impresa}) (CU 87).`);
+        await abrirModalDetalleVenta(window._ventaModalActiva.ventaId);
+      } catch (err) {
+        alert(err.message || 'Error al reimprimir boleta');
+      }
+    }
+
+    async function reintentarSapSalon() {
+      if (!window._ventaModalActiva?.ventaId) return;
+      try {
+        const resp = await api(`${API_URL}/api/sap/sincronizar-venta/${window._ventaModalActiva.ventaId}`, {
+          method: 'POST',
+          headers: authHeaders
+        });
+        alert(`Sincronización completada con SAP B1. DocEntry: ${resp.doc_entry} (CU 81).`);
+        await abrirModalDetalleVenta(window._ventaModalActiva.ventaId);
+        await cargarHistorialVentasPos();
+      } catch (err) {
+        alert(err.message || 'Error al sincronizar con SAP');
       }
     }
 

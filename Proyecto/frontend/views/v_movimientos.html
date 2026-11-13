@@ -19,7 +19,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" id="btnToggleOperacionesCU12" class="bg-amber-500 hover:bg-amber-600 text-gray-950 text-xs font-semibold px-3.5 py-2 rounded transition">
-            📋 Conteo Físico, Ajustes y Transferencias (CU 12)
+            Conteo Físico, Ajustes y Transferencias (CU 12)
           </button>
           <button type="button" id="btnExportarCsv" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2 rounded transition">
             ⬇ Exportar Historial Filtrado (.CSV)
@@ -499,7 +499,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ParkFlow_Historial_Movimientos_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `KidZania_Historial_Movimientos_${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     });

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KidZania - Recursos Humanos y Control de Asistencia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <main id="main" class="lg:ml-72 p-6">
+    <div id="mensaje" class="hidden"></div>
+
+    <!-- Pestañas de Navegación del Módulo N: Asistencia y Turnos -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-gray-800 pb-4">
+      <div class="flex flex-wrap gap-2">
+        <button id="tabBtnReloj" onclick="cambiarTab('reloj')"
+                class="px-4 py-2 rounded-lg text-sm font-semibold bg-amber-500 text-gray-950 transition">
+          Reloj Control (CU 67)
+        </button>
+        <button id="tabBtnTurnos" onclick="cambiarTab('turnos')"
+                class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">
+          Planificación de Turnos (CU 70)
+        </button>
+        <button id="tabBtnHistorial" onclick="cambiarTab('historial')"
+                class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">
+          Historial y Auditoría (CU 68)
+        </button>
+        <button id="tabBtnCumplimiento" onclick="cambiarTab('cumplimiento')"
+                class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition">
+          Control Cumplimiento y Alertas (CU 69/71)
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="cargarDatosActuales()"
+                class="bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+          Actualizar
+        </button>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 1: RELOJ CONTROL / MARCAJE DE ASISTENCIA (CU 67)             -->
+    <!-- =================================================================== -->
+    <div id="seccionReloj" class="space-y-6">
+      <div class="bg-gray-950 border border-gray-800 rounded-2xl p-6 sm:p-10 shadow-2xl max-w-2xl mx-auto text-center space-y-6">
+        <div>
+          <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-950/70 border border-amber-700/50 text-amber-300 mb-2">
+            CU 35 · Subflujo CU 67: Registrando Asistencia
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Reloj Control de Personal</h2>
+          <p class="text-gray-400 text-xs sm:text-sm mt-1">
+            Registro de entrada y salida laboral con verificación de turno programado y cálculo automático de puntualidad.
+          </p>
+        </div>
+
+        <!-- Reloj digital interactivo -->
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-inner">
+          <div id="relojGrande" class="text-4xl sm:text-6xl font-mono font-black text-amber-400 tracking-wider">--:--:--</div>
+          <div id="fechaHoyGrande" class="text-xs sm:text-sm text-gray-400 mt-2 font-medium">Jueves, 12 de Noviembre de 2026</div>
+        </div>
+
+        <!-- Selector de Trabajador -->
+        <div class="text-left space-y-2">
+          <label class="block text-xs font-semibold text-gray-300 uppercase">Colaborador / Trabajador</label>
+          <select id="selectUsuarioMarcaje" onchange="verificarTurnoHoyColaborador()"
+                  class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-amber-500">
+            <option value="">Cargando colaboradores...</option>
+          </select>
+          <div id="infoTurnoHoy" class="p-3 bg-gray-900/60 border border-gray-800 rounded-xl text-xs text-gray-300">
+            Seleccione un colaborador para consultar su turno de hoy.
+          </div>
+        </div>
+
+        <!-- Botones de Marcaje -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <button onclick="ejecutarMarcaje('entrada')"
+                  class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold py-4 px-6 rounded-xl text-base flex items-center justify-center gap-2 shadow-lg transition">
+            Marcar Entrada
+          </button>
+          <button onclick="ejecutarMarcaje('salida')"
+                  class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold py-4 px-6 rounded-xl text-base flex items-center justify-center gap-2 shadow-lg transition">
+            Marcar Salida
+          </button>
+        </div>
+
+        <div id="resultadoMarcaje" class="hidden p-4 rounded-xl text-sm font-semibold border"></div>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 2: PLANIFICACIÓN DE TURNOS (CU 70)                          -->
+    <!-- =================================================================== -->
+    <div id="seccionTurnos" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-gray-950 border border-gray-800 p-4 rounded-xl">
+        <div>
+          <h3 class="text-lg font-bold text-amber-400">Planificación de Turnos (CU 70)</h3>
+          <p class="text-xs text-gray-400">Definición de turnos laborales con validación anti-solapamiento (CU 69)</p>
+        </div>
+        <button onclick="abrirModalCrearTurno()"
+                class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-4 py-2 rounded-lg text-xs transition">
+          + Asignar Nuevo Turno
+        </button>
+      </div>
+
+      <!-- Tabla de Turnos -->
+      <div class="bg-gray-950 border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+        <table class="w-full text-left text-sm text-gray-300">
+          <thead class="bg-gray-900 text-gray-400 uppercase text-xs">
+            <tr>
+              <th class="p-3">Fecha</th>
+              <th class="p-3">Colaborador</th>
+              <th class="p-3">Cargo / Rol</th>
+              <th class="p-3">Puesto Asignado</th>
+              <th class="p-3">Horario Programado</th>
+              <th class="p-3">Tolerancia</th>
+              <th class="p-3">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyTurnos" class="divide-y divide-gray-800">
+            <tr><td colspan="7" class="p-4 text-center text-gray-500">Cargando turnos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 3: HISTORIAL Y AUDITORÍA DE ASISTENCIA (CU 68)               -->
+    <!-- =================================================================== -->
+    <div id="seccionHistorial" class="hidden space-y-6">
+      <!-- Filtros -->
+      <div class="bg-gray-950 border border-gray-800 p-4 rounded-xl flex flex-wrap gap-4 items-center">
+        <div>
+          <label class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Fecha Desde</label>
+          <input type="date" id="filtroFechaDesde"
+                 class="bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-gray-200">
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Fecha Hasta</label>
+          <input type="date" id="filtroFechaHasta"
+                 class="bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-gray-200">
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-400 uppercase font-semibold mb-1">Estado</label>
+          <select id="filtroEstadoAsistencia"
+                  class="bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5 text-xs text-gray-200">
+            <option value="">Todos los Estados</option>
+            <option value="presente">Puntual (Presente)</option>
+            <option value="atraso">Con Atraso</option>
+            <option value="inconsistente">Inconsistente</option>
+          </select>
+        </div>
+        <button onclick="cargarHistorialAsistencias()"
+                class="self-end bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-4 py-2 rounded-lg text-xs transition">
+          Aplicar Filtros
+        </button>
+      </div>
+
+      <!-- Tabla de Historial -->
+      <div class="bg-gray-950 border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+        <table class="w-full text-left text-sm text-gray-300">
+          <thead class="bg-gray-900 text-gray-400 uppercase text-xs">
+            <tr>
+              <th class="p-3">Fecha</th>
+              <th class="p-3">Colaborador</th>
+              <th class="p-3">Cargo</th>
+              <th class="p-3">Turno Programado</th>
+              <th class="p-3">Hora Entrada</th>
+              <th class="p-3">Hora Salida</th>
+              <th class="p-3">Atraso</th>
+              <th class="p-3">Estado</th>
+              <th class="p-3">Observaciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyHistorial" class="divide-y divide-gray-800">
+            <tr><td colspan="9" class="p-4 text-center text-gray-500">Cargando registros...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- PESTAÑA 4: CONTROL DE CUMPLIMIENTO E INCONSISTENCIAS (CU 69/71)     -->
+    <!-- =================================================================== -->
+    <div id="seccionCumplimiento" class="hidden space-y-6">
+      <!-- KPIs Cumplimiento Laboral (CU 71) -->
+      <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider">Cumplimiento Turnos</div>
+          <div id="kpiCumplimiento" class="text-3xl font-extrabold text-teal-400 mt-1">100%</div>
+          <div class="text-[11px] text-gray-400 mt-1"><span id="kpiAsistencias">0</span> de <span id="kpiTotalTurnos">0</span> cumplidos</div>
+        </div>
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider">Puntualidad General</div>
+          <div id="kpiPuntualidad" class="text-3xl font-extrabold text-emerald-400 mt-1">100%</div>
+          <div class="text-[11px] text-gray-400 mt-1"><span id="kpiPuntuales">0</span> entradas a tiempo</div>
+        </div>
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider">Total Atrasos</div>
+          <div id="kpiTotalAtrasos" class="text-3xl font-extrabold text-amber-400 mt-1">0</div>
+          <div class="text-[11px] text-amber-400 mt-1"><span id="kpiMinutosAtraso">0</span> min acumulados</div>
+        </div>
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider">Inconsistencias y Ausencias</div>
+          <div id="kpiInconsistencias" class="text-3xl font-extrabold text-rose-400 mt-1">0</div>
+          <div class="text-[11px] text-rose-400 mt-1">Alertas detectadas (CU 69)</div>
+        </div>
+      </section>
+
+      <!-- Panel de Inconsistencias Activas (CU 69) -->
+      <div class="bg-gray-950 border border-rose-900/40 rounded-xl p-5 shadow-lg space-y-3">
+        <h4 class="text-sm font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+          Inconsistencias y Alertas Operativas de Asistencia (CU 69)
+        </h4>
+        <div id="listaInconsistencias" class="space-y-2 text-xs">
+          <div class="text-gray-500">Analizando registros de asistencia...</div>
+        </div>
+      </div>
+
+      <!-- Resumen de Cumplimiento por Trabajador (CU 71) -->
+      <div class="bg-gray-950 border border-gray-800 rounded-xl overflow-hidden shadow-lg">
+        <div class="p-4 border-b border-gray-800">
+          <h4 class="text-sm font-bold text-gray-200">Desempeño y Cumplimiento por Colaborador</h4>
+        </div>
+        <table class="w-full text-left text-sm text-gray-300">
+          <thead class="bg-gray-900 text-gray-400 uppercase text-xs">
+            <tr>
+              <th class="p-3">Colaborador</th>
+              <th class="p-3">Cargo</th>
+              <th class="p-3 text-center">Turnos Asignados</th>
+              <th class="p-3 text-center">Asistencias</th>
+              <th class="p-3 text-center">Atrasos</th>
+              <th class="p-3 text-center">Minutos Atraso</th>
+              <th class="p-3 text-center">Ausencias</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyCumplimientoTrabajadores" class="divide-y divide-gray-800">
+            <!-- Render dinámico -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- MODAL: ASIGNAR NUEVO TURNO PLANIFICADO (CU 70)                       -->
+    <!-- =================================================================== -->
+    <div id="modalTurno" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-lg p-6 space-y-4">
+        <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+          <h3 class="text-lg font-bold text-amber-400">Asignar Turno Planificado (CU 70)</h3>
+          <button onclick="cerrarModalCrearTurno()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+        </div>
+
+        <form id="formCrearTurno" onsubmit="guardarTurno(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Colaborador / Trabajador</label>
+            <select id="turnoUsuarioId" required
+                    class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-amber-500">
+              <!-- Carga dinámica -->
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Puesto de Venta Asignado (Opcional)</label>
+            <select id="turnoPuestoId"
+                    class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-amber-500">
+              <option value="">Sin puesto específico</option>
+              <option value="1">Cafetería Vita (COM-01)</option>
+              <option value="2">Restaurante La Plaza (COM-02)</option>
+              <option value="3">Al Paso (COM-03)</option>
+              <option value="4">Dulcería (COM-04)</option>
+              <option value="5">Candy Corner (MER-01)</option>
+              <option value="6">BKidZanian (MER-02)</option>
+              <option value="7">National Store (MER-03)</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Fecha</label>
+              <input type="date" id="turnoFecha" required
+                     class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2 text-sm text-gray-200">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Hora Inicio</label>
+              <input type="time" id="turnoHoraInicio" value="09:00" required
+                     class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2 text-sm text-gray-200">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Hora Fin</label>
+              <input type="time" id="turnoHoraFin" value="17:00" required
+                     class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2 text-sm text-gray-200">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Tolerancia (Minutos)</label>
+            <input type="number" id="turnoTolerancia" value="15" min="0" max="60" required
+                   class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Observaciones</label>
+            <input type="text" id="turnoObservaciones" placeholder="Ej: Refuerzo temporada alta"
+                   class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200">
+          </div>
+
+          <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+            <button type="button" onclick="cerrarModalCrearTurno()"
+                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition">
+              Cancelar
+            </button>
+            <button type="submit"
+                    class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold rounded-lg text-sm transition">
+              Guardar Turno
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="../js/app-common.js"></script>
+  <script>
+    let pestanaActual = 'reloj';
+    let listaUsuarios = [];
+
+    // Reloj digital en vivo
+    function actualizarReloj() {
+      const el = document.getElementById('relojGrande');
+      if (el) {
+        const ahora = new Date();
+        el.textContent = ahora.toLocaleTimeString('es-CL');
+      }
+    }
+    setInterval(actualizarReloj, 1000);
+    actualizarReloj();
+
+    // Fecha actual formateada
+    const hoy = new Date();
+    document.getElementById('fechaHoyGrande').textContent = hoy.toLocaleDateString('es-CL', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    document.getElementById('turnoFecha').value = hoy.toISOString().slice(0, 10);
+
+    function cambiarTab(tab) {
+      pestanaActual = tab;
+      const tabs = ['reloj', 'turnos', 'historial', 'cumplimiento'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const sec = document.getElementById(`seccion${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (btn) {
+          btn.className = t === tab
+            ? 'px-4 py-2 rounded-lg text-sm font-semibold bg-amber-500 text-gray-950 transition'
+            : 'px-4 py-2 rounded-lg text-sm font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition';
+        }
+        if (sec) {
+          sec.classList.toggle('hidden', t !== tab);
+        }
+      });
+
+      cargarDatosActuales();
+    }
+
+    async function cargarDatosActuales() {
+      if (pestanaActual === 'reloj') {
+        await cargarUsuariosMarcaje();
+      } else if (pestanaActual === 'turnos') {
+        await cargarTurnos();
+      } else if (pestanaActual === 'historial') {
+        await cargarHistorialAsistencias();
+      } else if (pestanaActual === 'cumplimiento') {
+        await Promise.all([cargarCumplimiento(), cargarInconsistencias()]);
+      }
+    }
+
+    async function cargarUsuariosMarcaje() {
+      try {
+        const data = await api('/api/admin/usuarios', { headers: authHeaders });
+        listaUsuarios = Array.isArray(data) ? data : (data.usuarios || []);
+        
+        const selMarcaje = document.getElementById('selectUsuarioMarcaje');
+        const selTurno = document.getElementById('turnoUsuarioId');
+
+        const optionsHtml = listaUsuarios.map(u => `
+          <option value="${u.usuario_id}">${u.usuario_nombres} ${u.usuario_apellido_paterno} (${u.rol_nombre || 'Colaborador'})</option>
+        `).join('');
+
+        if (selMarcaje) selMarcaje.innerHTML = optionsHtml;
+        if (selTurno) selTurno.innerHTML = optionsHtml;
+
+        verificarTurnoHoyColaborador();
+      } catch (err) {
+        console.warn('Aviso cargando usuarios:', err.message);
+      }
+    }
+
+    async function verificarTurnoHoyColaborador() {
+      const uId = document.getElementById('selectUsuarioMarcaje')?.value;
+      const box = document.getElementById('infoTurnoHoy');
+      if (!uId || !box) return;
+
+      try {
+        const turnos = await api(`/api/rrhh/turnos?usuario_id=${uId}&fecha=${hoy.toISOString().slice(0, 10)}`, { headers: authHeaders });
+        if (Array.isArray(turnos) && turnos.length > 0) {
+          const t = turnos[0];
+          box.innerHTML = `
+            <div class="text-amber-400 font-semibold">Turno Hoy: ${t.hora_inicio_programada} a ${t.hora_fin_programada}</div>
+            <div class="text-gray-400 text-[11px] mt-0.5">Puesto: ${t.puesto_nombre || 'General'} · Tolerancia: ${t.tolerancia_minutos} min · Estado: <span class="uppercase text-emerald-400 font-mono">${t.estado_turno}</span></div>
+          `;
+        } else {
+          box.innerHTML = '<div class="text-gray-400">Sin turno planificado para hoy. El marcaje se registrará como dotación extraordinaria.</div>';
+        }
+      } catch (e) {
+        box.innerHTML = '<div class="text-gray-500">Error al consultar turno de hoy.</div>';
+      }
+    }
+
+    async function ejecutarMarcaje(tipo) {
+      const uId = document.getElementById('selectUsuarioMarcaje')?.value;
+      const resBox = document.getElementById('resultadoMarcaje');
+      resBox.classList.add('hidden');
+
+      if (!uId) {
+        alert('Seleccione un trabajador');
+        return;
+      }
+
+      try {
+        const resp = await api('/api/rrhh/asistencia/marcar', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            usuario_id: Number(uId),
+            tipo_marcaje: tipo
+          })
+        });
+
+        resBox.textContent = ` ${resp.message}`;
+        resBox.className = resp.asistencia?.estado_asistencia === 'atraso'
+          ? 'p-4 rounded-xl text-sm font-semibold bg-amber-950/60 border border-amber-600 text-amber-200'
+          : 'p-4 rounded-xl text-sm font-semibold bg-emerald-950/60 border border-emerald-600 text-emerald-200';
+        resBox.classList.remove('hidden');
+
+        verificarTurnoHoyColaborador();
+      } catch (err) {
+        resBox.textContent = err.message;
+        resBox.className = 'p-4 rounded-xl text-sm font-semibold bg-rose-950/60 border border-rose-600 text-rose-200';
+        resBox.classList.remove('hidden');
+      }
+    }
+
+    // Modal Crear Turno
+    function abrirModalCrearTurno() {
+      document.getElementById('modalTurno').classList.remove('hidden');
+    }
+    function cerrarModalCrearTurno() {
+      document.getElementById('modalTurno').classList.add('hidden');
+    }
+
+    async function guardarTurno(e) {
+      e.preventDefault();
+      const uId = document.getElementById('turnoUsuarioId').value;
+      const pId = document.getElementById('turnoPuestoId').value || null;
+      const fecha = document.getElementById('turnoFecha').value;
+      const hIni = document.getElementById('turnoHoraInicio').value;
+      const hFin = document.getElementById('turnoHoraFin').value;
+      const tol = document.getElementById('turnoTolerancia').value;
+      const obs = document.getElementById('turnoObservaciones').value;
+
+      try {
+        await api('/api/rrhh/turnos', {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            usuario_id: Number(uId),
+            puesto_id: pId ? Number(pId) : null,
+            fecha_turno: fecha,
+            hora_inicio_programada: hIni,
+            hora_fin_programada: hFin,
+            tolerancia_minutos: Number(tol),
+            observaciones: obs
+          })
+        });
+        cerrarModalCrearTurno();
+        setMensaje('mensaje', 'Turno planificado asignado exitosamente (CU 70).');
+        await cargarTurnos();
+      } catch (err) {
+        alert(err.message || 'Error al guardar turno');
+      }
+    }
+
+    async function cargarTurnos() {
+      const tbody = document.getElementById('tbodyTurnos');
+      try {
+        const turnos = await api('/api/rrhh/turnos', { headers: authHeaders });
+        if (!Array.isArray(turnos) || turnos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">No hay turnos planificados registrados.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = turnos.map(t => `
+          <tr class="hover:bg-gray-900/60 transition">
+            <td class="p-3 font-mono">${formatoFecha(t.fecha_turno)}</td>
+            <td class="p-3 font-medium text-white">${t.usuario_nombre}</td>
+            <td class="p-3 text-xs uppercase text-amber-400">${t.rol_nombre}</td>
+            <td class="p-3">${t.puesto_nombre || '<span class="text-gray-500">General</span>'}</td>
+            <td class="p-3 font-mono text-emerald-400">${t.hora_inicio_programada} - ${t.hora_fin_programada}</td>
+            <td class="p-3">${t.tolerancia_minutos} min</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase ${
+              t.estado_turno === 'completado' ? 'bg-emerald-950 text-emerald-400' : 'bg-gray-800 text-gray-300'
+            }">${t.estado_turno}</span></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function cargarHistorialAsistencias() {
+      const tbody = document.getElementById('tbodyHistorial');
+      try {
+        const desde = document.getElementById('filtroFechaDesde').value;
+        const hasta = document.getElementById('filtroFechaHasta').value;
+        const estado = document.getElementById('filtroEstadoAsistencia').value;
+
+        let q = [];
+        if (desde) q.push(`fecha_desde=${desde}`);
+        if (hasta) q.push(`fecha_hasta=${hasta}`);
+        if (estado) q.push(`estado_asistencia=${estado}`);
+
+        const asist = await api(`/api/rrhh/asistencia?${q.join('&')}`, { headers: authHeaders });
+        if (!Array.isArray(asist) || asist.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">No hay registros de asistencia para los filtros seleccionados.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = asist.map(a => `
+          <tr class="hover:bg-gray-900/60 transition text-xs">
+            <td class="p-3 font-mono">${formatoFecha(a.fecha)}</td>
+            <td class="p-3 font-medium text-white text-sm">${a.usuario_nombre}</td>
+            <td class="p-3 uppercase text-amber-400">${a.rol_nombre}</td>
+            <td class="p-3 font-mono text-gray-400">${a.hora_inicio_programada ? `${a.hora_inicio_programada}-${a.hora_fin_programada}` : '-'}</td>
+            <td class="p-3 font-mono text-emerald-400 font-bold">${a.hora_entrada ? new Date(a.hora_entrada).toLocaleTimeString('es-CL') : '-'}</td>
+            <td class="p-3 font-mono text-blue-400">${a.hora_salida ? new Date(a.hora_salida).toLocaleTimeString('es-CL') : '<span class="text-amber-400 italic">Abierto</span>'}</td>
+            <td class="p-3 font-mono ${a.minutos_atraso > 0 ? 'text-rose-400 font-bold' : 'text-gray-500'}">${a.minutos_atraso > 0 ? `+${a.minutos_atraso} min` : '0 min'}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded font-bold uppercase ${
+              a.estado_asistencia === 'presente' ? 'bg-emerald-950 text-emerald-400' :
+              a.estado_asistencia === 'atraso' ? 'bg-amber-950 text-amber-400' : 'bg-rose-950 text-rose-400'
+            }">${a.estado_asistencia}</span></td>
+            <td class="p-3 text-gray-400">${a.observaciones || '-'}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-rose-400">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function cargarCumplimiento() {
+      try {
+        const data = await api('/api/rrhh/cumplimiento', { headers: authHeaders });
+        const k = data.kpi || {};
+        document.getElementById('kpiCumplimiento').textContent = `${k.porcentaje_cumplimiento || 100}%`;
+        document.getElementById('kpiAsistencias').textContent = k.total_asistencias || 0;
+        document.getElementById('kpiTotalTurnos').textContent = k.total_turnos_programados || 0;
+        document.getElementById('kpiPuntualidad').textContent = `${k.porcentaje_puntualidad || 100}%`;
+        document.getElementById('kpiPuntuales').textContent = k.asistencias_puntuales || 0;
+        document.getElementById('kpiTotalAtrasos').textContent = k.total_atrasos || 0;
+        document.getElementById('kpiMinutosAtraso').textContent = k.minutos_atraso_totales || 0;
+
+        const tbody = document.getElementById('tbodyCumplimientoTrabajadores');
+        tbody.innerHTML = (data.trabajadores || []).map(t => `
+          <tr class="hover:bg-gray-900/60 transition text-xs">
+            <td class="p-3 font-medium text-white">${t.usuario_nombre}</td>
+            <td class="p-3 uppercase text-amber-400">${t.rol_nombre}</td>
+            <td class="p-3 text-center font-mono">${t.turnos_asignados}</td>
+            <td class="p-3 text-center font-mono text-emerald-400">${t.asistencias}</td>
+            <td class="p-3 text-center font-mono text-amber-400">${t.atrasos}</td>
+            <td class="p-3 text-center font-mono text-rose-400">${t.minutos_atraso} min</td>
+            <td class="p-3 text-center font-mono text-rose-400 font-bold">${t.ausencias}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.warn('Aviso al cargar cumplimiento:', e.message);
+      }
+    }
+
+    async function cargarInconsistencias() {
+      const box = document.getElementById('listaInconsistencias');
+      try {
+        const inc = await api('/api/rrhh/asistencia/inconsistencias', { headers: authHeaders });
+        document.getElementById('kpiInconsistencias').textContent = inc.total_inconsistencias || 0;
+
+        if (inc.total_inconsistencias === 0) {
+          box.innerHTML = '<div class="text-emerald-400 font-semibold"> No se detectaron inconsistencias de asistencia en la jornada.</div>';
+          return;
+        }
+
+        let items = [];
+        (inc.sin_salida || []).forEach(s => items.push(` ${s.usuario_nombre}: ${s.detalle_inconsistencia} (Entrada ${new Date(s.hora_entrada).toLocaleTimeString('es-CL')})`));
+        (inc.ausencias || []).forEach(a => items.push(` ${a.usuario_nombre}: ${a.detalle_inconsistencia} (Turno programado ${a.hora_inicio_programada}-${a.hora_fin_programada})`));
+        (inc.marcajes_inconsistentes || []).forEach(m => items.push(` ${m.usuario_nombre}: ${m.detalle_inconsistencia}`));
+
+        box.innerHTML = items.map(it => `<div class="p-2 bg-rose-950/40 border border-rose-800/60 rounded-lg text-rose-300">${it}</div>`).join('');
+      } catch (e) {
+        box.innerHTML = '<div class="text-gray-500">Error al evaluar inconsistencias.</div>';
+      }
+    }
+
+    montarLayout('RRHH y Control de Asistencia', 'Módulo de turnos planificados, marcaje de asistencia y métricas de cumplimiento laboral (CU 35)');
+    cargarDatosActuales();
+  </script>
+</body>
+</html>
+

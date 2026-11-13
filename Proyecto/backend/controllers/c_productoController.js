@@ -248,11 +248,11 @@ const obtenerProductos = async (req, res) => {
                 ) AS proveedores_nombres,
                 COUNT(DISTINCT l.lote_id)::int AS lotes_registrados
             FROM public.producto p
-            JOIN public.unidad_medida_personalizada u ON u.unidad_medida_id = p.producto_unidad_medida_id
+            LEFT JOIN public.unidad_medida_personalizada u ON u.unidad_medida_id = p.producto_unidad_medida_id
             LEFT JOIN public.producto_proveedor pp ON pp.producto_id = p.producto_id AND pp.estado = 'activo'
             LEFT JOIN public.proveedor pr ON pr.proveedor_id = pp.proveedor_id AND pr.proveedor_estado = 'activo'
             LEFT JOIN public.lote l ON l.producto_id = p.producto_id
-            GROUP BY p.producto_id, u.unidad_medida_id
+            GROUP BY p.producto_id, u.unidad_medida_id, u.unidad_medida_codigo, u.unidad_medida_nombre, u.unidad_medida_clasificacion
             ORDER BY p.producto_nombre ASC
         `);
         res.json(rows);

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KidZania - Pantalla KDS de Cocina y Comandas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <main id="main" class="lg:ml-72 p-6">
+    <div id="mensaje" class="hidden"></div>
+
+    <!-- Barra de control superior KDS: Reloj, modo touch y botón de refresco -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6 bg-gray-900 border border-gray-800 p-4 rounded-xl">
+      <div class="flex items-center gap-3">
+        <span class="inline-flex h-3 w-3 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        </span>
+        <div>
+          <h1 class="text-xl font-bold text-amber-400">Pantalla KDS · Cocina y Retiro</h1>
+          <p class="text-xs text-gray-400">Enrutamiento inteligente de comandas y control de tiempos operativos (CU 28, CU 29, CU 30)</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Reloj digital en vivo -->
+        <div class="bg-gray-950 border border-gray-800 px-3 py-1.5 rounded-lg text-right">
+          <div id="relojKDS" class="text-lg font-mono font-bold text-amber-400">--:--:--</div>
+          <div class="text-[10px] text-gray-400 uppercase tracking-wider">Hora Estación</div>
+        </div>
+
+        <!-- Filtro Rápido de Puesto -->
+        <select id="filtroPuesto" onchange="cargarComandasYMetricas()"
+                class="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-amber-500">
+          <option value="">Todos los Puestos Gastronómicos</option>
+          <option value="1">Cafetería Vita (COM-01)</option>
+          <option value="2">Restaurante La Plaza (COM-02)</option>
+          <option value="3">Al Paso (COM-03)</option>
+          <option value="4">Dulcería (COM-04)</option>
+        </select>
+
+        <!-- Filtro de Estado -->
+        <div class="flex bg-gray-950 p-1 rounded-lg border border-gray-800 text-xs">
+          <button id="btnFiltroActivos" onclick="cambiarFiltroEstado('activos')"
+                  class="px-3 py-1.5 rounded-md font-semibold bg-amber-500 text-gray-950 transition">
+            Activos
+          </button>
+          <button id="btnFiltroListos" onclick="cambiarFiltroEstado('por_entregar')"
+                  class="px-3 py-1.5 rounded-md font-semibold text-gray-400 hover:text-white transition">
+            Listos Retiro
+          </button>
+          <button id="btnFiltroTodos" onclick="cambiarFiltroEstado('todos')"
+                  class="px-3 py-1.5 rounded-md font-semibold text-gray-400 hover:text-white transition">
+            Historial Turno
+          </button>
+        </div>
+
+        <button onclick="cargarComandasYMetricas()"
+                class="bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+          Actualizar
+        </button>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- SECCIÓN KPIs OPERATIVOS DE TIEMPOS Y SLA (CU 30 / CU orig. 59)      -->
+    <!-- =================================================================== -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+        <div class="text-[11px] text-gray-400 uppercase tracking-wider">En Preparación</div>
+        <div id="kpiEnPrep" class="text-2xl font-bold text-amber-400 mt-1">0</div>
+        <div class="text-[10px] text-gray-400 mt-0.5"><span id="kpiPendientes">0</span> en cola de espera</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+        <div class="text-[11px] text-gray-400 uppercase tracking-wider">Listos para Retiro</div>
+        <div id="kpiListos" class="text-2xl font-bold text-emerald-400 mt-1">0</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">Esperando entrega a cliente</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+        <div class="text-[11px] text-gray-400 uppercase tracking-wider">T. Prom. Cocción</div>
+        <div id="kpiTiempoPrep" class="text-2xl font-bold text-blue-400 mt-1 font-mono">0m 0s</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">Meta SLA: &le; 10 min</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+        <div class="text-[11px] text-gray-400 uppercase tracking-wider">T. Prom. Entrega</div>
+        <div id="kpiTiempoEntrega" class="text-2xl font-bold text-purple-400 mt-1 font-mono">0m 0s</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">Listo &rarr; Retiro cliente</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+        <div class="text-[11px] text-gray-400 uppercase tracking-wider">Cumplimiento SLA</div>
+        <div id="kpiSla" class="text-2xl font-bold text-teal-400 mt-1">100%</div>
+        <div class="text-[10px] text-rose-400 mt-0.5"><span id="kpiFueraSla">0</span> pedidos excedieron</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+        <div class="text-[11px] text-gray-400 uppercase tracking-wider">Incidencias Turno</div>
+        <div id="kpiIncidencias" class="text-2xl font-bold text-rose-400 mt-1">0</div>
+        <div class="text-[10px] text-gray-400 mt-0.5">Eventualidades registradas</div>
+      </div>
+    </section>
+
+    <!-- Semáforo explicativo de urgencia -->
+    <div class="flex items-center gap-4 text-xs text-gray-400 mb-4 px-1">
+      <span class="font-semibold text-gray-300">Semáforo de Espera:</span>
+      <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Normal (&lt; 5 min)</span>
+      <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Atención (5 a 10 min)</span>
+      <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span> Crítico (&gt; 10 min SLA)</span>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TABLERO KDS DE COMANDAS DIGITALES (CU 29 / CU orig. 60 y 61)        -->
+    <!-- =================================================================== -->
+    <div id="tableroComandas" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+      <div class="col-span-full py-16 text-center text-gray-500">
+        Cargando comandas activas de la cocina...
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- MODAL: REGISTRAR INCIDENCIA OPERATIVA EN COCINA (CU 30 / CU orig. 62) -->
+    <!-- =================================================================== -->
+    <div id="modalIncidencia" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-lg p-6 space-y-4">
+        <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+          <div>
+            <h3 class="text-lg font-bold text-rose-400">Registrar Incidencia Operativa (CU 30)</h3>
+            <p id="incidenciaSubtitulo" class="text-xs text-gray-400 mt-0.5">Comanda #...</p>
+          </div>
+          <button onclick="cerrarModalIncidencia()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+        </div>
+
+        <form id="formIncidencia" onsubmit="guardarIncidencia(event)" class="space-y-4">
+          <input type="hidden" id="incidenciaPedidoId">
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Tipo de Eventualidad</label>
+            <select id="incidenciaTipo" required
+                    class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-rose-500">
+              <option value="quiebre_insumo">Quiebre de insumo crítico en cocina</option>
+              <option value="error_preparacion">Error de cocción / preparación (requiere rehacer)</option>
+              <option value="falla_equipamiento">Falla técnica de equipamiento (horno, freidora, etc.)</option>
+              <option value="demora_alta">Demora imprevista por sobrecarga de pedidos</option>
+              <option value="otro">Otra causa operativa documentada</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Tiempo de Retraso Estimado (minutos)</label>
+            <input type="number" id="incidenciaRetrasoMin" min="0" max="120" value="5" required
+                   class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-rose-500">
+            <p class="text-[11px] text-amber-400 mt-1">Si el retraso es mayor a 0, la comanda se marcará automáticamente con prioridad URGENTE.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Descripción del Problema</label>
+            <textarea id="incidenciaDescripcion" rows="3" required placeholder="Ej: Se derramó la salsa, se debe preparar la hamburguesa desde cero..."
+                      class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-rose-500"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Acción Correctiva Adoptada</label>
+            <input type="text" id="incidenciaAccionCorrectiva" placeholder="Ej: Se solicita reposición express a bodega central..."
+                   class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-rose-500">
+          </div>
+
+          <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+            <button type="button" onclick="cerrarModalIncidencia()"
+                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition">
+              Cancelar
+            </button>
+            <button type="submit"
+                    class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-lg text-sm transition">
+              Guardar Incidencia
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- MODAL: HISTORIAL DE INCIDENCIAS DEL PEDIDO                           -->
+    <!-- =================================================================== -->
+    <div id="modalHistorialIncidencias" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-xl p-6 space-y-4">
+        <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+          <div>
+            <h3 class="text-lg font-bold text-amber-400">Historial de Incidencias Operativas</h3>
+            <p id="historialIncidenciasSubtitulo" class="text-xs text-gray-400">Pedido...</p>
+          </div>
+          <button onclick="cerrarModalHistorialIncidencias()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+        </div>
+
+        <div id="listaIncidenciasPedido" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+          <!-- Render dinámico -->
+        </div>
+
+        <div class="flex justify-end pt-3 border-t border-gray-800">
+          <button type="button" onclick="cerrarModalHistorialIncidencias()"
+                  class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- MODAL: CANCELAR PEDIDO (CU 24 / CU orig. 55)                        -->
+    <!-- =================================================================== -->
+    <div id="modalCancelarPedido" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 hidden">
+      <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6 space-y-4">
+        <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+          <div>
+            <h3 class="text-lg font-bold text-rose-400">Cancelar Pedido (CU 24)</h3>
+            <p id="cancelarSubtitulo" class="text-xs text-gray-400 mt-0.5">Comanda #...</p>
+          </div>
+          <button onclick="cerrarModalCancelarPedido()" class="text-gray-400 hover:text-white text-xl">&times;</button>
+        </div>
+
+        <form id="formCancelarPedido" onsubmit="confirmarCancelarPedido(event)" class="space-y-4">
+          <input type="hidden" id="cancelarPedidoId">
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 uppercase mb-1">Motivo de Cancelación (Obligatorio - CU 55)</label>
+            <textarea id="cancelarMotivo" rows="3" required placeholder="Ej: Cliente desistió por tiempo de espera prolongado..."
+                      class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-rose-500"></textarea>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+            <button type="button" onclick="cerrarModalCancelarPedido()"
+                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition">
+              Volver
+            </button>
+            <button type="submit"
+                    class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-lg text-sm transition">
+              Confirmar Cancelación
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="../js/app-common.js"></script>
+  <script>
+    let filtroEstadoActual = 'activos';
+    let temporizadorKDS = null;
+
+    // Reloj digital en vivo
+    function actualizarReloj() {
+      const el = document.getElementById('relojKDS');
+      if (el) {
+        const ahora = new Date();
+        el.textContent = ahora.toLocaleTimeString('es-CL');
+      }
+    }
+    setInterval(actualizarReloj, 1000);
+    actualizarReloj();
+
+    function cambiarFiltroEstado(nuevo) {
+      filtroEstadoActual = nuevo;
+      document.getElementById('btnFiltroActivos').className = nuevo === 'activos'
+        ? 'px-3 py-1.5 rounded-md font-semibold bg-amber-500 text-gray-950 transition'
+        : 'px-3 py-1.5 rounded-md font-semibold text-gray-400 hover:text-white transition';
+
+      document.getElementById('btnFiltroListos').className = nuevo === 'por_entregar'
+        ? 'px-3 py-1.5 rounded-md font-semibold bg-emerald-500 text-gray-950 transition'
+        : 'px-3 py-1.5 rounded-md font-semibold text-gray-400 hover:text-white transition';
+
+      document.getElementById('btnFiltroTodos').className = nuevo === 'todos'
+        ? 'px-3 py-1.5 rounded-md font-semibold bg-blue-500 text-gray-950 transition'
+        : 'px-3 py-1.5 rounded-md font-semibold text-gray-400 hover:text-white transition';
+
+      cargarComandasYMetricas();
+    }
+
+    async function cargarComandasYMetricas() {
+      await Promise.all([cargarComandas(), cargarMetricas()]);
+    }
+
+    async function cargarMetricas() {
+      try {
+        const puestoId = document.getElementById('filtroPuesto')?.value || '';
+        const qs = puestoId ? `?puesto_id=${puestoId}` : '';
+        const data = await api(`/api/cocina/metricas${qs}`, { headers: authHeaders });
+
+        const k = data.kpi || {};
+        document.getElementById('kpiEnPrep').textContent = k.en_preparacion || 0;
+        document.getElementById('kpiPendientes').textContent = k.pendientes || 0;
+        document.getElementById('kpiListos').textContent = k.listos || 0;
+        document.getElementById('kpiTiempoPrep').textContent = k.tiempo_prom_preparacion_formato || '0m 0s';
+        document.getElementById('kpiTiempoEntrega').textContent = k.tiempo_prom_entrega_formato || '0m 0s';
+        document.getElementById('kpiSla').textContent = `${k.sla_cumplimiento_porcentaje || 100}%`;
+        document.getElementById('kpiFueraSla').textContent = k.pedidos_fuera_sla || 0;
+        document.getElementById('kpiIncidencias').textContent = data.incidencias?.total_incidencias || 0;
+      } catch (err) {
+        console.warn('Aviso al cargar métricas de cocina:', err.message);
+      }
+    }
+
+    async function cargarComandas() {
+      const tablero = document.getElementById('tableroComandas');
+      try {
+        const puestoId = document.getElementById('filtroPuesto')?.value || '';
+        let queryParams = [`estado=${filtroEstadoActual}`];
+        if (puestoId) queryParams.push(`puesto_id=${puestoId}`);
+
+        const comandas = await api(`/api/cocina/pedidos?${queryParams.join('&')}`, { headers: authHeaders });
+
+        if (!Array.isArray(comandas) || comandas.length === 0) {
+          tablero.innerHTML = `
+            <div class="col-span-full py-20 text-center">
+              <div class="text-4xl mb-3"></div>
+              <div class="text-lg font-bold text-gray-300">No hay comandas en este estado</div>
+              <div class="text-sm text-gray-500 mt-1">Los pedidos ingresados en los puestos gastronómicos aparecerán automáticamente aquí.</div>
+            </div>
+          `;
+          return;
+        }
+
+        tablero.innerHTML = comandas.map(c => renderComandaCard(c)).join('');
+      } catch (err) {
+        tablero.innerHTML = `
+          <div class="col-span-full p-4 bg-rose-950/40 border border-rose-800 rounded-xl text-center text-rose-300 text-sm">
+            Error al consultar comandas de cocina: ${err.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderComandaCard(c) {
+      // Color según semáforo de urgencia
+      let borderColor = 'border-gray-800';
+      let headerBg = 'bg-gray-900';
+      let semaforoBadge = '';
+
+      if (c.semaforo_urgencia === 'critico') {
+        borderColor = 'border-rose-600 ring-2 ring-rose-500/30';
+        headerBg = 'bg-rose-950/50';
+        semaforoBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-600 text-white animate-pulse">CRÍTICO (${c.minutos_desde_creacion}m)</span>`;
+      } else if (c.semaforo_urgencia === 'alerta') {
+        borderColor = 'border-amber-600 ring-1 ring-amber-500/20';
+        headerBg = 'bg-amber-950/40';
+        semaforoBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-600 text-gray-950">ATENCIÓN (${c.minutos_desde_creacion}m)</span>`;
+      } else if (c.semaforo_urgencia === 'listo_retiro') {
+        borderColor = 'border-emerald-600 ring-1 ring-emerald-500/30';
+        headerBg = 'bg-emerald-950/40';
+        semaforoBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-600 text-white">LISTO RETIRO</span>`;
+      } else if (c.estado_pedido === 'entregado') {
+        borderColor = 'border-gray-800 opacity-70';
+        semaforoBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-800 text-gray-400">ENTREGADO</span>`;
+      } else {
+        semaforoBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-950 border border-emerald-700/60 text-emerald-300">${c.minutos_desde_creacion}m transcurridos</span>`;
+      }
+
+      // Prioridad urgente
+      const esUrgente = c.prioridad === 'urgente';
+      const badgePrioridad = esUrgente 
+        ? '<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-600 text-white tracking-wider animate-bounce">URGENTE</span>' 
+        : '';
+
+      // Botones de acción según estado
+      let accionesHtml = '';
+      if (c.estado_pedido === 'pendiente') {
+        accionesHtml = `
+          <button onclick="cambiarEstadoPedido(${c.pedido_id}, 'en_preparacion')"
+                  class="w-full bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold py-2.5 px-4 rounded-lg text-sm flex items-center justify-center gap-2 shadow-lg transition">
+            Iniciar Preparación
+          </button>
+        `;
+      } else if (c.estado_pedido === 'en_preparacion') {
+        accionesHtml = `
+          <button onclick="cambiarEstadoPedido(${c.pedido_id}, 'listo')"
+                  class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg text-sm flex items-center justify-center gap-2 shadow-lg transition">
+            Marcar Pedido como Listo
+          </button>
+        `;
+      } else if (c.estado_pedido === 'listo') {
+        accionesHtml = `
+          <button onclick="cambiarEstadoPedido(${c.pedido_id}, 'entregado')"
+                  class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded-lg text-sm flex items-center justify-center gap-2 shadow-lg transition">
+             Confirmar Entrega a Cliente
+          </button>
+        `;
+      }
+
+      // Renderizar ítems
+      const itemsHtml = (c.items || []).map(it => `
+        <div class="flex items-start justify-between py-2 border-b border-gray-800/80 last:border-0 text-sm">
+          <div class="flex-1">
+            <span class="inline-block px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold text-xs mr-1.5">
+              ${Number(it.cantidad)}x
+            </span>
+            <span class="font-medium ${it.estado_item === 'listo' ? 'line-through text-gray-500' : 'text-gray-100'}">
+              ${it.producto_nombre}
+            </span>
+            ${it.nota_preparacion ? `<div class="text-xs text-amber-400 italic mt-0.5 pl-6">"${it.nota_preparacion}"</div>` : ''}
+          </div>
+          <span class="text-[11px] font-mono uppercase px-1.5 py-0.5 rounded ${
+            it.estado_item === 'listo' ? 'bg-emerald-950 text-emerald-400' : 'bg-gray-800 text-gray-400'
+          }">
+            ${it.estado_item}
+          </span>
+        </div>
+      `).join('');
+
+      // Indicador de incidencias
+      const btnIncidencias = c.total_incidencias > 0
+        ? `<button onclick="verHistorialIncidencias(${c.pedido_id}, '${c.numero_pedido}')" 
+                   class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold">
+              ${c.total_incidencias} incidencia(s)
+           </button>`
+        : '';
+
+      return `
+        <div class="bg-gray-900 border ${borderColor} rounded-2xl p-4 flex flex-col justify-between shadow-xl">
+          <div>
+            <!-- Cabecera de comanda -->
+            <div class="${headerBg} -mx-4 -mt-4 p-3 rounded-t-2xl border-b border-gray-800 flex justify-between items-center mb-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-base font-extrabold text-amber-400">${c.numero_pedido}</span>
+                  ${badgePrioridad}
+                </div>
+                <div class="text-[11px] text-gray-400 mt-0.5">
+                  ${c.puesto_nombre} · ${c.mesa_numero ? 'Mesa #' + c.mesa_numero : 'Retiro en Barra'}
+                </div>
+              </div>
+              <div class="text-right">
+                ${semaforoBadge}
+              </div>
+            </div>
+
+            <!-- Datos de cajero / tiempo -->
+            <div class="flex justify-between items-center text-xs text-gray-400 mb-3 px-1">
+              <span>Cajero: <strong class="text-gray-300">${c.cajero_nombre || 'POS'}</strong></span>
+              ${c.cocinero_nombre ? `<span>Cocinero: <strong class="text-amber-400">${c.cocinero_nombre}</strong></span>` : ''}
+            </div>
+
+            <!-- Lista de productos -->
+            <div class="bg-gray-950/60 rounded-xl p-3 border border-gray-800 mb-3 max-h-56 overflow-y-auto">
+              ${itemsHtml || '<div class="text-xs text-gray-500">Sin ítems de cocina</div>'}
+            </div>
+
+            ${c.observaciones ? `
+              <div class="text-xs bg-amber-950/30 border border-amber-800/40 text-amber-300 p-2 rounded-lg mb-3">
+                <strong>Obs:</strong> ${c.observaciones}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Pie y Acciones Rápidas -->
+          <div class="pt-2 border-t border-gray-800/80 space-y-2">
+            ${accionesHtml}
+            <div class="flex justify-between items-center pt-1">
+              ${btnIncidencias}
+              <div class="flex items-center gap-2 ml-auto">
+                <button onclick="abrirModalCancelarPedido(${c.pedido_id}, '${c.numero_pedido}')"
+                        class="text-xs text-gray-500 hover:text-red-400 flex items-center gap-1 transition">
+                  Cancelar
+                </button>
+                <button onclick="abrirModalIncidencia(${c.pedido_id}, '${c.numero_pedido}')"
+                        class="text-xs text-gray-400 hover:text-rose-400 flex items-center gap-1 transition">
+                  Incidencia
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function cambiarEstadoPedido(pedidoId, nuevoEstado) {
+      try {
+        await api(`/api/cocina/pedidos/${pedidoId}/estado`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ nuevo_estado: nuevoEstado })
+        });
+        await cargarComandasYMetricas();
+      } catch (err) {
+        alert(err.message || 'Error al actualizar estado del pedido');
+      }
+    }
+
+    // Modal de Incidencias (CU 30)
+    function abrirModalIncidencia(pedidoId, numeroPedido) {
+      document.getElementById('incidenciaPedidoId').value = pedidoId;
+      document.getElementById('incidenciaSubtitulo').textContent = `Comanda ${numeroPedido}`;
+      document.getElementById('incidenciaDescripcion').value = '';
+      document.getElementById('incidenciaRetrasoMin').value = '5';
+      document.getElementById('incidenciaAccionCorrectiva').value = '';
+      document.getElementById('modalIncidencia').classList.remove('hidden');
+    }
+
+    function cerrarModalIncidencia() {
+      document.getElementById('modalIncidencia').classList.add('hidden');
+    }
+
+    async function guardarIncidencia(e) {
+      e.preventDefault();
+      const pedidoId = document.getElementById('incidenciaPedidoId').value;
+      const tipo = document.getElementById('incidenciaTipo').value;
+      const retraso = Number(document.getElementById('incidenciaRetrasoMin').value || 0);
+      const desc = document.getElementById('incidenciaDescripcion').value;
+      const accion = document.getElementById('incidenciaAccionCorrectiva').value;
+
+      try {
+        await api(`/api/cocina/pedidos/${pedidoId}/incidencias`, {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            tipo_incidencia: tipo,
+            tiempo_retraso_min: retraso,
+            descripcion: desc,
+            accion_correctiva: accion
+          })
+        });
+        cerrarModalIncidencia();
+        setMensaje('mensaje', 'Incidencia operativa registrada y asignada a la comanda correctamente.');
+        await cargarComandasYMetricas();
+      } catch (err) {
+        alert(err.message || 'Error al guardar incidencia operativa');
+      }
+    }
+
+    // Modal Historial de Incidencias
+    async function verHistorialIncidencias(pedidoId, numeroPedido) {
+      document.getElementById('historialIncidenciasSubtitulo').textContent = `Comanda ${numeroPedido}`;
+      const lista = document.getElementById('listaIncidenciasPedido');
+      lista.innerHTML = '<div class="text-xs text-gray-500">Cargando incidencias...</div>';
+      document.getElementById('modalHistorialIncidencias').classList.remove('hidden');
+
+      try {
+        const incidencias = await api(`/api/cocina/pedidos/${pedidoId}/incidencias`, { headers: authHeaders });
+        if (!Array.isArray(incidencias) || incidencias.length === 0) {
+          lista.innerHTML = '<div class="text-xs text-gray-500">No hay incidencias registradas en este pedido.</div>';
+          return;
+        }
+
+        lista.innerHTML = incidencias.map(i => `
+          <div class="bg-gray-950 border border-gray-800 rounded-xl p-3">
+            <div class="flex justify-between items-center text-xs mb-1">
+              <span class="font-bold text-rose-400 uppercase tracking-wider">${i.tipo_incidencia.replace('_', ' ')}</span>
+              <span class="text-amber-400 font-mono">+${i.tiempo_retraso_min} min retraso</span>
+            </div>
+            <div class="text-sm text-gray-200 mt-1">${i.descripcion}</div>
+            ${i.accion_correctiva ? `<div class="text-xs text-emerald-400 mt-1.5"><strong>Acción:</strong> ${i.accion_correctiva}</div>` : ''}
+            <div class="text-[10px] text-gray-500 mt-2">Reportado por ${i.usuario_nombre || 'Operador'} · ${new Date(i.creado_en).toLocaleTimeString('es-CL')}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        lista.innerHTML = `<div class="text-xs text-rose-400">Error: ${err.message}</div>`;
+      }
+    }
+
+    function cerrarModalHistorialIncidencias() {
+      document.getElementById('modalHistorialIncidencias').classList.add('hidden');
+    }
+
+    // Modal Cancelación de Pedido (CU 24 / CU orig. 55)
+    function abrirModalCancelarPedido(pedidoId, numeroPedido) {
+      document.getElementById('cancelarPedidoId').value = pedidoId;
+      document.getElementById('cancelarSubtitulo').textContent = `Comanda ${numeroPedido}`;
+      document.getElementById('cancelarMotivo').value = '';
+      document.getElementById('modalCancelarPedido').classList.remove('hidden');
+    }
+
+    function cerrarModalCancelarPedido() {
+      document.getElementById('modalCancelarPedido').classList.add('hidden');
+    }
+
+    async function confirmarCancelarPedido(e) {
+      e.preventDefault();
+      const pedidoId = document.getElementById('cancelarPedidoId').value;
+      const motivo = document.getElementById('cancelarMotivo').value;
+
+      try {
+        await api(`/api/pedidos/${pedidoId}/cancelar`, {
+          method: 'POST',
+          headers: jsonHeaders,
+          body: JSON.stringify({ motivo_cancelacion: motivo })
+        });
+        cerrarModalCancelarPedido();
+        setMensaje('mensaje', 'Pedido cancelado correctamente según motivo documentado (CU 24 / CU 55).');
+        await cargarComandasYMetricas();
+      } catch (err) {
+        alert(err.message || 'Error al cancelar pedido');
+      }
+    }
+
+    // Inicializar layout común y arranque de datos
+    montarLayout('Cocina KDS', 'Pantalla operativa de comandas y retiro de pedidos gastronómicos');
+    cargarComandasYMetricas();
+
+    // Actualización automática periódica cada 10 segundos
+    temporizadorKDS = setInterval(cargarComandasYMetricas, 10000);
+  </script>
+</body>
+</html>
+

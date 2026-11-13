@@ -1,0 +1,17 @@
+# Documentación
+Documentos/
+
+# Dependencias y entorno
+Proyecto/node_modules/
+Proyecto/package-lock.json
+Proyecto/.env
+Proyecto/.env.local
+Proyecto/logs/
+Proyecto/*.log
+
+# Editor y Sistema Operativo
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

@@ -2,6 +2,10 @@
 node_modules/
 package-lock.json
 
+# Documentación
+../Documentos/
+Documentos/
+
 # Variables de entorno
 .env
 .env.local

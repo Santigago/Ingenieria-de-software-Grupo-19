@@ -26,7 +26,7 @@
 - **Autenticación y Seguridad:**
   - JWT (JSON Web Tokens) con expiración de 8 horas.
   - Hashing seguro de contraseñas y PINs con `bcryptjs` (salt rounds = 10).
-  - Control de Acceso Basado en Roles (RBAC) con bloqueo automático tras 3 intentos fallidos de PIN.
+  - Control de Acceso Basado en Roles (RBAC) con bloqueo automático tras 5 intentos fallidos de PIN.
 - **Frontend:** Single Page / Multi-View Vanilla JavaScript moderno, HTML5 responsivo y Tailwind CSS (estilo corporativo KidZania Slate/Amber/Rose).
 - **Mecanismo de Migración:** Esquema centralizado sincronizado entre `Proyecto/database/01_esquema_inicial.sql` y auto-migración idempotente en `Proyecto/backend/config/initDb.js` (`initDatabase()`).
 
@@ -78,7 +78,7 @@ La siguiente tabla detalla la correspondencia exacta entre los **23 Casos de Uso
 | **CU 1** | Autenticar administrador en el sistema | Módulo A · Autenticación | **CU 1** (Autenticando Usuario), **CU 2** (Validando Dominio Correo) | Login con correo institucional obligatorio (`@kidzania.cl`), contraseña encriptada, validación de estado activo y token JWT. |
 | **CU 2** | Validar permisos según el rol del usuario | Módulo A · Autenticación | **CU 3** (Validando Permisos según Rol) | Middleware RBAC granular (`requerirPermiso`), restricción de rutas backend y renderizado condicional de vistas según rol. |
 | **CU 3** | Administrar cuentas y credenciales de trabajadores | Módulo A · Autenticación | **CU 85** (Asignando PIN), **CU 86** (Desbloqueando Cuenta) | Gestión de personal, reseteo de contraseñas, asignación de PIN de 4 dígitos y desbloqueo administrativo de cuentas con auditoría. |
-| **CU 4** | Autenticar trabajador mediante PIN | Módulo A · Autenticación | **CU 77** (Autenticando Trabajador con PIN) | Acceso táctil kiosco POS mediante PIN de 4 dígitos con teclado numérico en pantalla, contador de 3 intentos y bloqueo. |
+| **CU 4** | Autenticar trabajador mediante PIN | Módulo A · Autenticación | **CU 77** (Autenticando Trabajador con PIN) | Acceso táctil kiosco POS mediante PIN de 4 dígitos con teclado numérico en pantalla, contador de 5 intentos y bloqueo. |
 | **CU 5** | Mantener unidades de medida | Módulo B · Base | **CU 4** (Registrar Unidad de Medida) | CRUD de unidades operativas (UN, KG, L, etc.), validación de código único, control de uso en recetas y catálogo. |
 | **CU 6** | Mantener proveedores | Módulo B · Base | **CU 5** (Registrar Proveedor) | Catálogo oficial de proveedores de KidZania con validación de RUT chileno, plazos de pago y modalidades de entrega. |
 | **CU 7** | Mantener ubicaciones de almacenamiento | Módulo B · Base | **CU 6** (Registrar Ubicación de Almacenamiento) | Mantenimiento de bodegas y sectores de almacenamiento físico (Bodega Central, Cámara Fría, Puestos). |
