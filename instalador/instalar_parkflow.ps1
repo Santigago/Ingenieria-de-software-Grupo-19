@@ -22,7 +22,7 @@ function Instalar($id, $override) {
     $ErrorActionPreference = 'Stop'
     if ($lista -match [regex]::Escape($id)) { Ok "$id ya estaba instalado"; return }
     Write-Host "    Instalando $id (puede pedir permiso de administrador)..."
-    $a = @('install','--id',$id,'-e','--accept-package-agreements','--accept-source-agreements')
+    $a = @('install','--id',$id,'-e','--source','winget','--accept-package-agreements','--accept-source-agreements')
     if ($override) { $a += @('--override', $override) } else { $a += '--silent' }
     winget @a
     if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne -1978335189) { throw "No se pudo instalar $id (codigo $LASTEXITCODE)" }
@@ -47,7 +47,8 @@ try {
     if ($servicio) {
         # Ya hay un PostgreSQL 18 instalado: leer su puerto desde postgresql.conf
         $PgPort = 5432
-        $conf = Get-ChildItem $pgDir -Recurse -Filter postgresql.conf -ErrorAction SilentlyContinue | Select-Object -First 1
+        $conf = @(Get-ChildItem 'C:\ParkFlowPG' -Recurse -Filter postgresql.conf -ErrorAction SilentlyContinue) +
+                @(Get-ChildItem $pgDir -Recurse -Filter postgresql.conf -ErrorAction SilentlyContinue) | Select-Object -First 1
         if ($conf) {
             $linea = Select-String -Path $conf.FullName -Pattern '^\s*port\s*=\s*(\d+)' | Select-Object -First 1
             if ($linea) { $PgPort = [int]$linea.Matches[0].Groups[1].Value }
@@ -61,10 +62,12 @@ try {
             if (-not (Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue)) { $PgPort = $p; break }
         }
         if (-not $PgPort) { throw 'No encontre un puerto libre entre 5432 y 5450 para PostgreSQL.' }
-        $datos = Join-Path $pgDir 'data'
-        if (Test-Path $datos) { $datos = Join-Path $pgDir 'data_parkflow' }   # restos de un intento anterior
-        Write-Host "    Se usara el puerto $PgPort"
-        Instalar 'PostgreSQL.PostgreSQL.18' "--mode unattended --unattendedmodeui minimal --superpassword $PgPass --serverport $PgPort --datadir `"$datos`""
+        # Carpeta de datos SIN espacios (PowerShell 5.1 rompe las comillas internas al llamar a winget)
+        $datos = 'C:\ParkFlowPG\data'
+        $n = 2
+        while ((Test-Path $datos) -and (Get-ChildItem $datos -Force -ErrorAction SilentlyContinue)) { $datos = "C:\ParkFlowPG\data$n"; $n++ }
+        Write-Host "    Se usara el puerto $PgPort y la carpeta de datos $datos"
+        Instalar 'PostgreSQL.PostgreSQL.18' "--mode unattended --unattendedmodeui minimal --superpassword $PgPass --serverport $PgPort --datadir $datos"
         Ok "PostgreSQL 18 en el puerto $PgPort"
     }
 
