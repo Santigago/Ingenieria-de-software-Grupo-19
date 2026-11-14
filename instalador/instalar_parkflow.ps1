@@ -39,12 +39,13 @@ try {
     Paso 'Instalando programas'
     Instalar 'Git.Git'
     Instalar 'OpenJS.NodeJS.LTS'
-    Instalar 'PostgreSQL.PostgreSQL.16' "--mode unattended --unattendedmodeui minimal --superpassword $PgPass --serverport 5432"
+    Instalar 'PostgreSQL.PostgreSQL.18' "--mode unattended --unattendedmodeui minimal --superpassword $PgPass --serverport 5432"
     Refrescar-Path
 
     Paso 'Preparando PostgreSQL'
     $psql = Get-ChildItem 'C:\Program Files\PostgreSQL\*\bin\psql.exe' -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending | Select-Object -First 1
+            Sort-Object { [int]($_.Directory.Parent.Name -replace '\D','') } -Descending | Select-Object -First 1
+    $baseNueva = $false
     if (-not $psql) { throw 'No encontre psql.exe en C:\Program Files\PostgreSQL. Reinicia el PC y vuelve a ejecutar.' }
     Get-Service 'postgresql*' -ErrorAction SilentlyContinue | Where-Object Status -ne 'Running' | Start-Service -ErrorAction SilentlyContinue
     $env:PGPASSWORD = $PgPass
@@ -61,8 +62,13 @@ try {
     }
     if ("$existe".Trim() -ne '1') {
         & $psql.FullName -U postgres -h localhost -c "CREATE DATABASE $DbName" | Out-Null
+        $baseNueva = $true
         Ok "base $DbName creada"
-    } else { Ok "base $DbName ya existia" }
+    } else {
+        $tablas = & $psql.FullName -U postgres -h localhost -d $DbName -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"
+        if ("$tablas".Trim() -eq '0') { $baseNueva = $true; Ok "base $DbName existia vacia; se cargaran los datos" }
+        else { Ok "base $DbName ya existia" }
+    }
 
     Paso 'Descargando el codigo (si pide iniciar sesion en GitHub, entra con tu cuenta)'
     if (Test-Path (Join-Path $Destino '.git')) {
@@ -72,6 +78,21 @@ try {
     }
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo descargar el repo. Revisa que tu cuenta de GitHub tenga acceso.' }
     Ok "codigo en $Destino"
+
+    Paso 'Cargando la base de datos con los datos del proyecto'
+    $dump = Join-Path $Destino 'instalador\kidzania_db.sql'
+    if ($baseNueva -and (Test-Path $dump)) {
+        $ErrorActionPreference = 'Continue'
+        & $psql.FullName -U postgres -h localhost -d $DbName -q -v ON_ERROR_STOP=1 -f $dump | Out-Null
+        $codigo = $LASTEXITCODE
+        $ErrorActionPreference = 'Stop'
+        if ($codigo -ne 0) { throw 'No se pudo cargar kidzania_db.sql en la base.' }
+        Ok 'datos cargados (productos, ventas, boletas, comandas, usuarios)'
+    } elseif (-not $baseNueva) {
+        Ok "la base $DbName ya existia; no se reemplazaron sus datos"
+    } else {
+        Ok 'no hay respaldo; el sistema creara datos de ejemplo al arrancar'
+    }
 
     Paso 'Configurando .env'
     $proy = Join-Path $Destino 'Proyecto'
