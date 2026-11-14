@@ -36,6 +36,12 @@ Este directorio contiene la documentación técnica, arquitectónica y de trazab
 
 ---
 
+### 3. Material de apoyo
+- **[Diagramas y evidencias del Incremento 2](./Incremento_2/):** navegación, componentes, despliegue, MER, modelo físico, BurnDown/BurnUp, secuencias, capturas de pruebas P01–P18 y script `pruebas_inc2.js`.
+- **[Maquetas de interfaz](./Maquetas/index.html):** POS de venta, login del cajero con apertura de caja e inventario de oficina (stock por ubicación y reposición a puestos). Se abren directo en el navegador; PIN de prueba 1234.
+
+---
+
 ## 📊 Resumen de Trazabilidad Total del Proyecto
 
 | Entregable | Casos Consolidados | Casos Originales Doc 0 | Porcentaje de Cobertura | Estado en la Aplicación |
