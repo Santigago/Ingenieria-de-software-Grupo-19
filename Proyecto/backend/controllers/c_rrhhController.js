@@ -30,7 +30,7 @@ const crearTurnoPlanificado = async (req, res) => {
             observaciones = null
         } = req.body;
 
-        const actorId = req.user?.usuario_id || req.body.actor_id;
+        const actorId = (req.user?.id || req.user?.usuario_id) || req.body.actor_id;
 
         // Validaciones básicas
         if (!usuario_id || !fecha_turno || !hora_inicio_programada || !hora_fin_programada) {
@@ -188,7 +188,7 @@ const registrarMarcajeAsistencia = async (req, res) => {
             observaciones = null
         } = req.body;
 
-        const targetUserId = usuario_id || req.user?.usuario_id;
+        const targetUserId = usuario_id || (req.user?.id || req.user?.usuario_id);
         if (!targetUserId) {
             return res.status(400).json({ message: 'El usuario trabajador es obligatorio para registrar asistencia' });
         }
@@ -291,7 +291,7 @@ const registrarMarcajeAsistencia = async (req, res) => {
 
             await registrarAuditoria({
                 usuario_id: targetUserId,
-                actor_usuario_id: req.user?.usuario_id || targetUserId,
+                actor_usuario_id: (req.user?.id || req.user?.usuario_id) || targetUserId,
                 evento_tipo: 'ASISTENCIA_ENTRADA',
                 modulo: 'rrhh',
                 accion: 'MARCAJE_ENTRADA',
@@ -353,7 +353,7 @@ const registrarMarcajeAsistencia = async (req, res) => {
 
             await registrarAuditoria({
                 usuario_id: targetUserId,
-                actor_usuario_id: req.user?.usuario_id || targetUserId,
+                actor_usuario_id: (req.user?.id || req.user?.usuario_id) || targetUserId,
                 evento_tipo: 'ASISTENCIA_SALIDA',
                 modulo: 'rrhh',
                 accion: 'MARCAJE_SALIDA',

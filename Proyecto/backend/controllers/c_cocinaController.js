@@ -178,7 +178,8 @@ const enrutarPedidoExpress = async (req, res) => {
             items = []
         } = req.body;
 
-        const cajero_id = req.user?.usuario_id || req.body.cajero_id;
+        // El token JWT guarda el usuario en "id" (ver c_authController)
+        const cajero_id = req.user?.id || req.user?.usuario_id || req.body.cajero_id;
 
         const resultado = await enrutarYGenerarComanda({
             venta_id,
@@ -345,7 +346,7 @@ const cambiarEstadoPedido = async (req, res) => {
     try {
         const { id } = req.params;
         const { nuevo_estado, cocinero_id = null, observaciones = null } = req.body;
-        const actorId = req.user?.usuario_id || cocinero_id;
+        const actorId = req.user?.id || req.user?.usuario_id || cocinero_id;
 
         const ESTADOS_VALIDOS = ['pendiente', 'en_preparacion', 'listo', 'entregado', 'cancelado'];
         if (!ESTADOS_VALIDOS.includes(nuevo_estado)) {
@@ -513,7 +514,7 @@ const registrarIncidenciaPedido = async (req, res) => {
             accion_correctiva = null
         } = req.body;
 
-        const usuario_id = req.user?.usuario_id || req.body.usuario_id;
+        const usuario_id = req.user?.id || req.user?.usuario_id || req.body.usuario_id;
         if (!usuario_id) {
             return res.status(400).json({ message: 'Usuario operador es obligatorio para registrar incidencia' });
         }

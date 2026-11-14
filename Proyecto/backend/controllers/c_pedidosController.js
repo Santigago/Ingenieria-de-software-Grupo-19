@@ -18,7 +18,7 @@ const cancelarPedido = async (req, res) => {
     try {
         const { id } = req.params;
         const { motivo_cancelacion } = req.body;
-        const usuarioId = req.user?.usuario_id || req.body.usuario_id;
+        const usuarioId = req.user?.id || req.user?.usuario_id || req.body.usuario_id;
 
         // Validación: Motivo de cancelación obligatorio (CU 55 Paso 3 y 4)
         if (!motivo_cancelacion || String(motivo_cancelacion).trim().length < 3) {
@@ -105,7 +105,7 @@ const cancelarItemPedido = async (req, res) => {
     try {
         const { id, detalleId } = req.params;
         const { motivo_cancelacion } = req.body;
-        const usuarioId = req.user?.usuario_id || req.body.usuario_id;
+        const usuarioId = req.user?.id || req.user?.usuario_id || req.body.usuario_id;
 
         if (!motivo_cancelacion || String(motivo_cancelacion).trim().length < 3) {
             return res.status(400).json({
