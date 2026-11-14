@@ -315,7 +315,13 @@ async function cargarEstadoInicialPos() {
 
     estadoPos.caja = data.caja_abierta;
     estadoPos.puesto = data.caja_abierta;
-    estadoPos.catalogo = data.catalogo_puesto || [];
+    // El backend entrega producto_stock_actual / producto_precio / producto_categoria
+    estadoPos.catalogo = (data.catalogo_puesto || []).map(p => ({
+      ...p,
+      stock_disponible: p.stock_disponible ?? p.producto_stock_actual ?? 0,
+      producto_precio_venta: p.producto_precio_venta ?? p.producto_precio ?? 0,
+      categoria_nombre: p.categoria_nombre ?? p.producto_categoria ?? p.producto_tipo_negocio
+    }));
     estadoPos.ventasTurno = data.ventas_turno || [];
 
     document.getElementById('cabPuestoNombre').textContent = data.caja_abierta.puesto_nombre;

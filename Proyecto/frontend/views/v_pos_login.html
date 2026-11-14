@@ -280,6 +280,17 @@ async function ingresar() {
       body: JSON.stringify({ usuario_id: p.usuario_id, pin })
     });
 
+    // /api/auth/pos-login devuelve usuario {id, nombres, apellido_paterno} y el rol fuera de "usuario"
+    const u = resp.usuario || {};
+    resp.usuario = {
+      ...u,
+      usuario_id: u.usuario_id ?? u.id ?? p.usuario_id,
+      usuario_nombres: u.usuario_nombres ?? u.nombres ?? p.usuario_nombres,
+      usuario_apellido_paterno: u.usuario_apellido_paterno ?? u.apellido_paterno ?? p.usuario_apellido_paterno,
+      rol_id: u.rol_id ?? resp.rol,
+      rol_nombre: u.rol_nombre ?? resp.rol_nombre
+    };
+
     tokenSesion = resp.token;
     usuarioAutenticado = resp.usuario;
 
