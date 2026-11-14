@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ParkFlow - Inventario</title>
+<style>
+:root{
+  --fondo:#e9ebee; --panel:#ffffff; --borde:#c9ced4; --borde2:#e3e6e9; --texto:#1d2329; --suave:#5f6b76;
+  --barra:#24292f; --lateral:#f6f7f8; --sel:#fff4c2; --azul:#2b6cb0; --verde:#2f855a; --rojo:#c53030; --ambar:#b7791f; --gris:#eef0f2;
+  --comida:#d4692a; --bebida:#2b6cb0; --dulce:#b83f78; --combo:#2f855a; --merch:#6b46c1;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Segoe UI",Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:14px;overflow:hidden}
+button,select,input{font:inherit;color:inherit}
+button{border:1px solid var(--borde);background:var(--panel);border-radius:4px;cursor:pointer;height:34px;padding:0 12px}
+button:active{filter:brightness(.93)}
+button.prim{background:var(--azul);border-color:var(--azul);color:#fff;font-weight:600}
+button.verde{background:var(--verde);border-color:var(--verde);color:#fff;font-weight:600}
+select,input{height:34px;border:1px solid var(--borde);border-radius:4px;background:var(--panel);padding:0 10px}
+.num{font-variant-numeric:tabular-nums}
+
+header{height:44px;background:var(--barra);color:#fff;display:flex;align-items:center;padding:0 14px;gap:16px;font-size:13px}
+header .marca{font-weight:700;font-size:15px}
+header .sep{width:1px;height:22px;background:#4a525b}
+header .esp{flex:1}
+header .sap{display:flex;align-items:center;gap:6px;color:#cfd6dc}
+header .sap i{width:8px;height:8px;border-radius:50%;background:#48bb78;display:inline-block}
+
+.app{display:grid;grid-template-columns:200px 1fr;height:calc(100% - 44px)}
+nav{background:var(--lateral);border-right:1px solid var(--borde);padding:10px 0;overflow:auto}
+nav h4{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--suave);padding:10px 16px 4px}
+nav a{display:block;padding:7px 16px;color:var(--texto);text-decoration:none;border-left:3px solid transparent;cursor:pointer}
+nav a.on{background:#e2e8f0;border-left-color:var(--azul);font-weight:600}
+nav a.off{color:#9aa4ad;cursor:default}
+nav a .cont{float:right;background:var(--rojo);color:#fff;border-radius:9px;font-size:11px;padding:0 6px;font-weight:700}
+
+main{padding:14px 16px;overflow:hidden;display:flex;flex-direction:column;gap:10px;min-height:0}
+.titulo{display:flex;align-items:center;gap:10px}
+.titulo h1{font-size:20px;margin-right:auto}
+.barra{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.barra input{width:280px}
+.chips{display:flex;gap:6px}
+.chip{height:30px;padding:0 10px;border-radius:15px;font-size:13px;display:flex;align-items:center;gap:6px}
+.chip.on{background:var(--texto);color:#fff;border-color:var(--texto)}
+.chip b{font-size:12px}
+
+.tabla{background:var(--panel);border:1px solid var(--borde);overflow:auto;flex:1;min-height:0}
+table{width:100%;border-collapse:collapse}
+th{position:sticky;top:0;background:var(--gris);text-align:left;font-size:12px;color:var(--suave);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--borde);white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--borde2);white-space:nowrap}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#f7f9fb}
+tbody tr.sel{background:var(--sel)}
+td.r,th.r{text-align:right}
+.cod{color:var(--suave);font-size:12px}
+.cat{display:inline-flex;align-items:center;gap:6px}
+.cat i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.estado{font-size:12px;font-weight:600;padding:2px 8px;border-radius:3px;display:inline-block}
+.e-ok{background:#e6f4ea;color:#276749}
+.e-bajo{background:#fef3c7;color:#92400e}
+.e-agot{background:#fde2e2;color:#9b2c2c}
+.e-venc{background:#fde8d7;color:#9c4221}
+.barrita{display:inline-block;width:70px;height:6px;background:var(--borde2);border-radius:3px;vertical-align:middle;margin-left:8px;overflow:hidden}
+.barrita span{display:block;height:100%}
+.pie{font-size:12px;color:var(--suave);display:flex;justify-content:space-between}
+
+/* Panel lateral de detalle */
+.detalle{position:fixed;top:44px;right:0;bottom:0;width:440px;background:var(--panel);border-left:1px solid var(--borde);box-shadow:-4px 0 12px rgba(0,0,0,.06);display:none;flex-direction:column;z-index:4}
+.detalle.on{display:flex}
+.det-cab{padding:12px 16px;border-bottom:1px solid var(--borde);background:var(--gris);display:flex;align-items:flex-start;gap:10px}
+.det-cab div{flex:1}
+.det-cab h2{font-size:17px}
+.det-cab small{color:var(--suave)}
+.det-cuerpo{padding:12px 16px;overflow:auto;flex:1}
+.det-cuerpo h3{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--suave);margin:12px 0 6px}
+.det-cuerpo h3:first-child{margin-top:0}
+.cajas{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.caja{border:1px solid var(--borde);padding:6px 8px}
+.caja small{display:block;color:var(--suave);font-size:11px}
+.caja b{font-size:20px}
+.det-cuerpo table td,.det-cuerpo table th{padding:5px 6px;font-size:13px}
+.det-acc{padding:10px 16px;border-top:1px solid var(--borde);display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.det-acc button{height:38px}
+
+/* Reposición */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1;min-height:0}
+.col{background:var(--gris);border:1px solid var(--borde);display:flex;flex-direction:column;min-height:0}
+.col h3{font-size:13px;padding:8px 10px;border-bottom:1px solid var(--borde);display:flex;justify-content:space-between}
+.col .lista{padding:6px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.sol{background:var(--panel);border:1px solid var(--borde);border-left:5px solid var(--azul);padding:8px 10px}
+.sol .f1{display:flex;justify-content:space-between;font-weight:600}
+.sol .f2{color:var(--suave);font-size:12px;margin:2px 0 6px}
+.sol ul{list-style:none;font-size:13px;margin-bottom:6px}
+.sol ul li{display:flex;justify-content:space-between;border-top:1px dashed var(--borde2);padding:2px 0}
+.sol button{width:100%;height:32px;font-size:13px}
+.sol .sap{font-size:11px;color:var(--suave);margin-top:4px}
+.oculto{display:none!important}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="marca">ParkFlow</span><span class="sep"></span>
+  <span>Oficina · Inventario</span>
+  <span class="esp"></span>
+  <span class="sap" title="Conexión con el ERP de bodega"><i></i> SAP Business One: sincronizado hace 3 min</span><span class="sep"></span>
+  <span>Encargado de inventario</span><span class="sep"></span>
+  <a href="Maqueta Login POS ParkFlow.html" style="color:#fff;text-decoration:none;border:1px solid #4a525b;padding:4px 10px;border-radius:4px">Cerrar sesión</a>
+</header>
+
+<div class="app">
+  <nav>
+    <h4>Inventario</h4>
+    <a class="on" data-v="stock" onclick="vista('stock')">Stock</a>
+    <a data-v="repo" onclick="vista('repo')">Reposición a puestos <span class="cont" id="contRepo">2</span></a>
+    <a data-v="mov" onclick="vista('mov')">Movimientos</a>
+    <a class="off">Lotes y vencimientos</a>
+    <a class="off">Ingresos de mercadería</a>
+    <a class="off">Mermas</a>
+    <h4>Catálogo</h4>
+    <a class="off">Productos</a><a class="off">Proveedores</a><a class="off">Categorías y unidades</a>
+    <h4>Operación</h4>
+    <a class="off">Ventas y cajas</a><a class="off">Puestos de venta</a><a class="off">Dashboard</a>
+  </nav>
+
+  <main>
+    <!-- STOCK -->
+    <section id="vStock" style="display:contents">
+      <div class="titulo"><h1>Stock</h1>
+        <button onclick="alert('Registrar ingreso de mercadería')">+ Ingreso de mercadería</button>
+        <button onclick="alert('Exportar a Excel')">Exportar</button>
+      </div>
+      <div class="barra">
+        <input id="buscar" placeholder="Buscar por nombre o código…" oninput="pintarStock()">
+        <select id="fUbic" onchange="pintarStock()"></select>
+        <select id="fCat" onchange="pintarStock()"></select>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="tabla"><table>
+        <thead><tr><th>Producto</th><th>Categoría</th><th class="r">Bodega</th><th class="r">En puestos</th><th class="r">Total</th><th class="r">Mínimo</th><th>Estado</th><th>Próx. vencimiento</th></tr></thead>
+        <tbody id="tStock"></tbody></table></div>
+      <div class="pie"><span id="pieStock"></span><span>Toque una fila para ver el detalle por ubicación, lotes y movimientos.</span></div>
+    </section>
+
+    <!-- REPOSICIÓN -->
+    <section id="vRepo" style="display:none">
+      <div class="titulo"><h1>Reposición a puestos</h1>
+        <button class="prim" onclick="sugerir()">Generar sugerencia por stock mínimo</button>
+      </div>
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <!-- MOVIMIENTOS -->
+    <section id="vMov" style="display:none">
+      <div class="titulo"><h1>Movimientos</h1><button>Exportar</button></div>
+      <div class="barra">
+        <select><option>Todos los tipos</option><option>Ingreso</option><option>Venta</option><option>Transferencia</option><option>Ajuste</option><option>Merma</option></select>
+        <select><option>Todas las ubicaciones</option></select>
+        <input type="date"> <input type="date">
+      </div>
+      <div class="tabla"><table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th class="r">Cantidad</th><th>Desde → Hacia</th><th>Documento</th><th>Responsable</th></tr></thead>
+        <tbody id="tMov"></tbody></table></div>
+    </section>
+  </main>
+</div>
+
+<aside class="detalle" id="detalle">
+  <div class="det-cab"><div><h2 id="dNombre"></h2><small id="dSub"></small></div><button onclick="cerrarDet()">✕</button></div>
+  <div class="det-cuerpo" id="dCuerpo"></div>
+  <div class="det-acc">
+    <button onclick="alert('Editar ficha del producto')">Editar</button>
+    <button onclick="alert('Registrar ajuste con motivo')">Ajustar stock</button>
+    <button onclick="alert('Transferir entre ubicaciones')">Transferir</button>
+  </div>
+</aside>
+
+<script>
+const PUESTOS = ["Cafetería Vita","La Plaza","Al Paso","Dulcería","Candy Corner","BKidZanian","National Store"];
+const CAT = {comida:["Comida","--comida"],bebida:["Bebidas","--bebida"],dulce:["Dulces","--dulce"],merch:["Merchandising","--merch"]};
+// stock: [bodega, {puesto: cantidad}], min por puesto, venc en días
+const P = [
+  {c:"COM-HOTDOG-01",n:"Pan de hot dog",cat:"comida",b:180,p:{"Cafetería Vita":24,"Al Paso":30},min:40,v:4},
+  {c:"COM-SALCH-01",n:"Salchicha vienesa",cat:"comida",b:220,p:{"Cafetería Vita":36,"Al Paso":12},min:40,v:9},
+  {c:"COM-PIZZA-IND",n:"Pizza individual mozzarella",cat:"comida",b:60,p:{"Cafetería Vita":14,"La Plaza":22},min:20,v:12},
+  {c:"COM-MUFFIN-VAN",n:"Muffin de vainilla",cat:"dulce",b:0,p:{"Cafetería Vita":8,"Dulcería":5},min:15,v:2},
+  {c:"COM-CAFE-EXP",n:"Café grano premium 1 kg",cat:"bebida",b:12,p:{"Cafetería Vita":2},min:3,v:120},
+  {c:"COM-BEB-500",n:"Néctar frutal 500 ml",cat:"bebida",b:340,p:{"Cafetería Vita":48,"La Plaza":36,"Al Paso":40},min:30,v:60},
+  {c:"COM-AGUA-500",n:"Agua mineral 500 ml",cat:"bebida",b:500,p:{"Cafetería Vita":60,"La Plaza":0,"Al Paso":55},min:30,v:200},
+  {c:"DUL-GOMITAS",n:"Gomitas surtidas 100 g",cat:"dulce",b:150,p:{"Dulcería":40,"Candy Corner":12},min:25,v:90},
+  {c:"DUL-CHOCO",n:"Barra de chocolate",cat:"dulce",b:90,p:{"Dulcería":30,"Candy Corner":28},min:20,v:150},
+  {c:"MER-PELUCHE",n:"Peluche mascota del parque",cat:"merch",b:40,p:{"BKidZanian":6,"National Store":18},min:8,v:null},
+  {c:"MER-POLERA-S",n:"Polera infantil talla S",cat:"merch",b:25,p:{"National Store":4},min:6,v:null},
+  {c:"MER-LLAVERO",n:"Llavero metálico",cat:"merch",b:0,p:{"BKidZanian":0,"National Store":0},min:10,v:null},
+];
+let filtroEstado = "todos", selC = null;
+
+const enPuestos = x => Object.values(x.p).reduce((a,b)=>a+b,0);
+function estado(x){
+  const tot = x.b + enPuestos(x);
+  if(tot===0) return ["agot","Agotado"];
+  const bajo = Object.values(x.p).some(q=>q<x.min) || x.b < x.min;
+  if(x.v!==null && x.v<=3) return ["venc","Por vencer"];
+  return bajo ? ["bajo","Bajo mínimo"] : ["ok","Normal"];
+}
+function init(){
+  document.getElementById("fUbic").innerHTML = `<option value="">Todas las ubicaciones</option><option value="Bodega">Bodega central</option>` + PUESTOS.map(p=>`<option>${p}</option>`).join("");
+  document.getElementById("fCat").innerHTML = `<option value="">Todas las categorías</option>` + Object.entries(CAT).map(([k,[n]])=>`<option value="${k}">${n}</option>`).join("");
+  pintarStock(); pintarRepo(); pintarMov();
+}
+function pintarStock(){
+  const q = document.getElementById("buscar").value.toLowerCase(), u = document.getElementById("fUbic").value, c = document.getElementById("fCat").value;
+  const base = P.filter(x=>(!q || (x.n+x.c).toLowerCase().includes(q)) && (!c || x.cat===c) && (!u || u==="Bodega" || u in x.p));
+  const cuenta = {todos:base.length}; base.forEach(x=>{ const e=estado(x)[0]; cuenta[e]=(cuenta[e]||0)+1; });
+  document.getElementById("chips").innerHTML = [["todos","Todos"],["bajo","Bajo mínimo"],["agot","Agotados"],["venc","Por vencer"]]
+    .map(([k,t])=>`<button class="chip ${filtroEstado===k?"on":""}" onclick="filtroEstado='${k}';pintarStock()">${t} <b>${cuenta[k]||0}</b></button>`).join("");
+  const filas = base.filter(x=>filtroEstado==="todos" || estado(x)[0]===filtroEstado);
+  document.getElementById("tStock").innerHTML = filas.map(x=>{
+    const [e,t] = estado(x), ep = u && u!=="Bodega" ? (x.p[u]||0) : enPuestos(x), bod = u && u!=="Bodega" ? "—" : x.b, tot = x.b + enPuestos(x);
+    const pct = Math.min(100, Math.round(tot / (x.min*4) * 100)), col = e==="ok"?"var(--verde)":e==="bajo"?"var(--ambar)":"var(--rojo)";
+    return `<tr class="${selC===x.c?"sel":""}" onclick="detalle('${x.c}')">
+      <td><b>${x.n}</b><br><span class="cod">${x.c}</span></td>
+      <td><span class="cat"><i style="background:var(${CAT[x.cat][1]})"></i>${CAT[x.cat][0]}</span></td>
+      <td class="r num">${bod}</td><td class="r num">${ep}</td>
+      <td class="r num"><b>${tot}</b><span class="barrita"><span style="width:${pct}%;background:${col}"></span></span></td>
+      <td class="r num">${x.min}</td><td><span class="estado e-${e}">${t}</span></td>
+      <td>${x.v===null?'<span class="cod">No aplica</span>':x.v<=3?`<b style="color:var(--rojo)">En ${x.v} días</b>`:`En ${x.v} días`}</td></tr>`;
+  }).join("") || `<tr><td colspan="8" style="text-align:center;color:var(--suave);padding:30px">Sin productos para este filtro.</td></tr>`;
+  document.getElementById("pieStock").textContent = `${filas.length} productos · ${filas.reduce((a,x)=>a+x.b+enPuestos(x),0).toLocaleString("es-CL")} unidades`;
+}
+function detalle(c){
+  selC = c; pintarStock();
+  const x = P.find(y=>y.c===c), [e,t] = estado(x);
+  document.getElementById("dNombre").textContent = x.n;
+  document.getElementById("dSub").innerHTML = `${x.c} · ${CAT[x.cat][0]} · <span class="estado e-${e}">${t}</span>`;
+  const ubic = [["Bodega central",x.b]].concat(Object.entries(x.p));
+  document.getElementById("dCuerpo").innerHTML = `
+    <h3>Resumen</h3>
+    <div class="cajas"><div class="caja"><small>Total</small><b class="num">${x.b+enPuestos(x)}</b></div>
+      <div class="caja"><small>Bodega</small><b class="num">${x.b}</b></div><div class="caja"><small>Mínimo por puesto</small><b class="num">${x.min}</b></div></div>
+    <h3>Stock por ubicación</h3>
+    <table><tr><th>Ubicación</th><th class="r">Stock</th><th></th></tr>
+      ${ubic.map(([u,q])=>`<tr><td>${u}</td><td class="r num"><b>${q}</b></td><td>${u!=="Bodega central" && q<x.min?'<span class="estado e-bajo">Reponer</span>':""}</td></tr>`).join("")}</table>
+    ${x.v===null?"":`<h3>Lotes (primero en vencer, primero en salir)</h3>
+    <table><tr><th>Lote</th><th>Vence</th><th class="r">Cantidad</th></tr>
+      <tr><td>L-2611-0${x.c.length%9}</td><td>${x.v<=3?`<b style="color:var(--rojo)">en ${x.v} días</b>`:`en ${x.v} días`}</td><td class="r num">${Math.round(x.b*.4)}</td></tr>
+      <tr><td>L-2611-1${x.c.length%7}</td><td>en ${x.v+14} días</td><td class="r num">${x.b-Math.round(x.b*.4)}</td></tr></table>`}
+    <h3>Últimos movimientos</h3>
+    <table><tr><th>Fecha</th><th>Tipo</th><th class="r">Cant.</th><th>Detalle</th></tr>
+      <tr><td>13-11 17:46</td><td>Venta</td><td class="r num" style="color:var(--rojo)">−2</td><td>Cafetería Vita · BOL-6-791063</td></tr>
+      <tr><td>13-11 10:05</td><td>Transferencia</td><td class="r num">24</td><td>Bodega → Cafetería Vita</td></tr>
+      <tr><td>12-11 16:30</td><td>Ingreso</td><td class="r num" style="color:var(--verde)">+120</td><td>Guía 45890 · proveedor</td></tr></table>`;
+  document.getElementById("detalle").classList.add("on");
+}
+function cerrarDet(){ selC = null; document.getElementById("detalle").classList.remove("on"); pintarStock(); }
+
+// ---------- Reposición ----------
+let SOL = [
+  {id:118,puesto:"Cafetería Vita",por:"Sofía Rojas (caja)",hora:"13-11 15:20",items:[["Muffin de vainilla",24],["Pan de hot dog",40]],est:0},
+  {id:117,puesto:"La Plaza",por:"Sugerencia automática",hora:"13-11 14:02",items:[["Agua mineral 500 ml",48]],est:0},
+  {id:116,puesto:"Al Paso",por:"Diego Muñoz (caja)",hora:"13-11 12:40",items:[["Salchicha vienesa",36],["Néctar frutal 500 ml",24]],est:1},
+  {id:115,puesto:"National Store",por:"Encargado de tienda",hora:"13-11 11:15",items:[["Polera infantil talla S",10]],est:2},
+  {id:114,puesto:"Dulcería",por:"Sugerencia automática",hora:"13-11 09:30",items:[["Gomitas surtidas 100 g",30]],est:3},
+];
+const ESTADOS = [["Solicitadas","Preparar","var(--ambar)"],["En preparación","Despachar","var(--azul)"],["Despachadas","Confirmar recepción","var(--merch)"],["Recibidas","","var(--verde)"]];
+function pintarRepo(){
+  document.getElementById("kanban").innerHTML = ESTADOS.map(([t,acc,col],i)=>{
+    const s = SOL.filter(x=>x.est===i);
+    return `<div class="col"><h3>${t}<span>${s.length}</span></h3><div class="lista">${s.map(x=>`
+      <div class="sol" style="border-left-color:${col}">
+        <div class="f1"><span>${x.puesto}</span><span class="cod">N° ${x.id}</span></div>
+        <div class="f2">${x.por} · ${x.hora}</div>
+        <ul>${x.items.map(([n,q])=>`<li><span>${n}</span><b class="num">${q}</b></li>`).join("")}</ul>
+        ${acc?`<button class="${i===1?"prim":""}" onclick="avanzar(${x.id})">${acc}</button>`:'<div class="sap">Transferencia registrada · enviada a SAP B1</div>'}
+      </div>`).join("")}</div></div>`;
+  }).join("");
+  document.getElementById("contRepo").textContent = SOL.filter(x=>x.est===0).length;
+}
+function avanzar(id){ const s = SOL.find(x=>x.id===id); s.est++; pintarRepo(); }
+function sugerir(){
+  const nuevas = [];
+  P.forEach(x=>Object.entries(x.p).forEach(([u,q])=>{ if(q<x.min && x.b>0) nuevas.push([u,x.n,x.min*2-q]); }));
+  const porPuesto = {}; nuevas.forEach(([u,n,q])=>{ (porPuesto[u]=porPuesto[u]||[]).push([n,q]); });
+  let id = Math.max(...SOL.map(s=>s.id));
+  Object.entries(porPuesto).forEach(([u,items])=>{ if(!SOL.some(s=>s.puesto===u && s.est===0)) SOL.unshift({id:++id,puesto:u,por:"Sugerencia automática",hora:"ahora",items,est:0}); });
+  pintarRepo();
+}
+
+// ---------- Movimientos ----------
+function pintarMov(){
+  const M = [["13-11 17:46","Venta","Néctar frutal 500 ml",-1,"Cafetería Vita → visitante","BOL-6-791063","Sofía Rojas"],
+    ["13-11 17:46","Venta","Pan de hot dog",-2,"Cafetería Vita → visitante","BOL-6-791063","Sofía Rojas"],
+    ["13-11 16:10","Merma","Muffin de vainilla",-3,"Dulcería","Vencido","Encargado de inventario"],
+    ["13-11 10:05","Transferencia","Pan de hot dog",24,"Bodega → Cafetería Vita","Reposición N° 112","Encargado de inventario"],
+    ["13-11 09:40","Ajuste","Agua mineral 500 ml",-2,"La Plaza","Conteo físico","Supervisor"],
+    ["12-11 16:30","Ingreso","Pan de hot dog",120,"Proveedor → Bodega","Guía 45890","Encargado de inventario"]];
+  const col = {Venta:"var(--azul)",Merma:"var(--rojo)",Transferencia:"var(--merch)",Ajuste:"var(--ambar)",Ingreso:"var(--verde)"};
+  document.getElementById("tMov").innerHTML = M.map(m=>`<tr><td>${m[0]}</td><td><span class="cat"><i style="background:${col[m[1]]}"></i>${m[1]}</span></td>
+    <td>${m[2]}</td><td class="r num" style="color:${m[3]<0?"var(--rojo)":"var(--verde)"}">${m[3]>0?"+":""}${m[3]}</td><td>${m[4]}</td><td>${m[5]}</td><td>${m[6]}</td></tr>`).join("");
+}
+
+function vista(v){
+  document.querySelectorAll("nav a[data-v]").forEach(a=>a.classList.toggle("on", a.dataset.v===v));
+  document.getElementById("vStock").style.display = v==="stock" ? "contents" : "none";
+  document.getElementById("vRepo").style.display = v==="repo" ? "contents" : "none";
+  document.getElementById("vMov").style.display = v==="mov" ? "contents" : "none";
+  if(v!=="stock") cerrarDet();
+}
+init();
+</script>
+</body>
+</html>

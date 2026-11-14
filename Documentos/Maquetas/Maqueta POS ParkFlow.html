@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ParkFlow POS - Maqueta</title>
+<style>
+:root{
+  --fondo:#e9ebee; --panel:#ffffff; --borde:#c9ced4; --borde2:#dde1e5; --texto:#1d2329; --suave:#5f6b76;
+  --barra:#24292f; --sel:#fff4c2;
+  --comida:#d4692a; --bebida:#2b6cb0; --dulce:#b83f78; --combo:#2f855a;
+  --efectivo:#2f855a; --tarjeta:#2b6cb0; --peligro:#c53030; --gris:#eef0f2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:"Segoe UI",Arial,sans-serif;background:var(--fondo);color:var(--texto);font-size:15px;overflow:hidden;user-select:none}
+button{font:inherit;color:inherit;border:1px solid var(--borde);background:var(--panel);border-radius:4px;cursor:pointer}
+button:active{filter:brightness(.92)}
+button:disabled{opacity:.4;cursor:default}
+.num{font-variant-numeric:tabular-nums}
+
+/* Barra superior */
+header{height:48px;background:var(--barra);color:#fff;display:flex;align-items:center;padding:0 12px;gap:18px;font-size:14px}
+header .marca{font-weight:700;font-size:16px;letter-spacing:.3px}
+header .sep{width:1px;height:24px;background:#4a525b}
+header .dato b{font-weight:600}
+header .dato span{color:#aab3bc}
+header .esp{flex:1}
+header .reloj{font-size:16px;font-weight:600}
+header button{background:#3a424b;border-color:#4f5963;color:#fff;height:34px;padding:0 14px}
+
+main{display:grid;grid-template-columns:390px 1fr;gap:8px;padding:8px;height:calc(100% - 48px)}
+
+/* Ticket */
+.ticket{background:var(--panel);border:1px solid var(--borde);display:flex;flex-direction:column;min-height:0}
+.ticket-cab{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--borde);background:var(--gris);font-size:13px;color:var(--suave)}
+.ticket-cab b{color:var(--texto);font-size:15px}
+.lineas{flex:1;overflow:auto;min-height:0}
+.linea{display:grid;grid-template-columns:44px 1fr 86px;padding:9px 12px;border-bottom:1px solid var(--borde2);align-items:center;cursor:pointer}
+.linea.sel{background:var(--sel)}
+.linea .cant{font-weight:700;font-size:17px}
+.linea .nom{line-height:1.2}
+.linea .nom small{display:block;color:var(--suave);font-size:12px}
+.linea .tot{text-align:right;font-weight:600}
+.linea.desc{color:var(--peligro);cursor:default}
+.vacio{padding:40px 20px;text-align:center;color:var(--suave)}
+.acciones-linea{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:6px 8px;border-top:1px solid var(--borde)}
+.acciones-linea button{height:42px;font-size:14px}
+.acciones-linea .grande{font-size:22px;font-weight:700}
+.totales{border-top:1px solid var(--borde);padding:8px 12px;font-size:14px}
+.totales div{display:flex;justify-content:space-between;padding:1px 0;color:var(--suave)}
+.totales .total{color:var(--texto);font-size:30px;font-weight:700;padding-top:4px;align-items:baseline}
+.totales .total span:first-child{font-size:18px}
+.descuentos{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:6px 8px;border-top:1px solid var(--borde);background:var(--gris)}
+.descuentos button{height:46px;font-size:12px;line-height:1.15}
+.descuentos button b{display:block;font-size:14px}
+.descuentos button.activo{background:#fde68a;border-color:#b7791f}
+.pagos{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px}
+.pagos button{height:62px;color:#fff;font-size:19px;font-weight:700;border:none}
+.pagos .ef{background:var(--efectivo)} .pagos .tj{background:var(--tarjeta)}
+.pagos .cb{grid-column:1/3;height:36px;background:var(--panel);color:var(--texto);border:1px solid var(--borde);font-size:14px;font-weight:600}
+
+/* Catálogo */
+.catalogo{display:flex;flex-direction:column;min-height:0;gap:8px}
+.cats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cats button{height:52px;font-size:16px;font-weight:600;border-width:0 0 4px 0;border-style:solid;background:var(--panel)}
+.cats button.on{color:#fff}
+.grilla{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));grid-auto-rows:100px;gap:6px;overflow:auto;align-content:start}
+.prod{display:flex;flex-direction:column;justify-content:space-between;text-align:left;padding:10px 12px;border-left-width:7px;font-size:15px;font-weight:600;line-height:1.2}
+.prod .precio{font-size:18px;font-weight:700}
+.prod .pie{display:flex;justify-content:space-between;align-items:flex-end}
+.prod .badge{font-size:12px;font-weight:700;background:var(--texto);color:#fff;border-radius:10px;padding:1px 8px}
+.prod.agotado{opacity:.4}
+.inferior{display:flex;gap:6px}
+.inferior button{height:44px;padding:0 16px;font-size:14px}
+.inferior .buscar{flex:1;text-align:left;color:var(--suave)}
+
+/* Modales */
+.velo{position:fixed;inset:0;background:rgba(20,24,28,.55);display:none;align-items:center;justify-content:center;z-index:5}
+.velo.on{display:flex}
+.modal{background:var(--panel);border:1px solid var(--borde);width:560px;max-height:94vh;display:flex;flex-direction:column}
+.modal h2{font-size:18px;padding:12px 16px;border-bottom:1px solid var(--borde);background:var(--gris);display:flex;justify-content:space-between;align-items:center}
+.modal h2 button{height:32px;padding:0 12px;font-size:14px;font-weight:400}
+.cuerpo{padding:14px 16px;overflow:auto}
+.resumen{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.caja{border:1px solid var(--borde);padding:8px 10px}
+.caja small{display:block;color:var(--suave);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+.caja b{font-size:26px}
+.caja.vuelto b{color:var(--efectivo)}
+.caja.falta b{color:var(--peligro)}
+.rapidos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.rapidos button{height:46px;font-weight:600}
+.teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.teclado button{height:54px;font-size:22px;font-weight:600}
+.ok{width:100%;height:58px;margin-top:10px;border:none;color:#fff;font-size:19px;font-weight:700;background:var(--efectivo)}
+.ok.azul{background:var(--tarjeta)}
+.opciones{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.opciones button{height:50px;font-weight:600}
+.opciones button.on{background:#dbe8f6;border-color:var(--tarjeta)}
+.campo{border:1px solid var(--borde);height:46px;display:flex;align-items:center;padding:0 12px;font-size:22px;margin-bottom:10px;letter-spacing:2px}
+.aviso{font-size:13px;color:var(--suave);margin-bottom:10px}
+.error{color:var(--peligro);font-size:14px;min-height:20px;margin-bottom:6px}
+.menu-lista button{display:block;width:100%;height:56px;text-align:left;padding:0 16px;margin-bottom:6px;font-size:16px}
+.menu-lista button.rojo{color:var(--peligro)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid var(--borde2);padding:7px 6px;text-align:left}
+th{color:var(--suave);font-weight:600;font-size:12px;text-transform:uppercase}
+td.r,th.r{text-align:right}
+
+/* Venta lista */
+.listo{position:fixed;inset:0;background:var(--fondo);display:none;align-items:center;justify-content:center;z-index:6}
+.listo.on{display:flex}
+.listo .tarjeta{background:var(--panel);border:1px solid var(--borde);width:640px;text-align:center;padding:26px}
+.listo .eti{color:var(--suave);font-size:15px;text-transform:uppercase;letter-spacing:.6px}
+.listo .pedido{font-size:120px;font-weight:800;line-height:1;margin:6px 0 4px}
+.listo .sub{font-size:16px;color:var(--suave);margin-bottom:18px}
+.listo .fila{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.listo .botones{display:grid;grid-template-columns:1fr 2fr;gap:8px}
+.listo .botones button{height:58px;font-size:17px;font-weight:600}
+.listo .botones .ok{margin:0}
+
+/* Pantalla bloqueada */
+.bloqueo{position:fixed;inset:0;background:var(--fondo);display:none;z-index:7;flex-direction:column}
+.bloqueo.on{display:flex}
+.bloqueo .centro{flex:1;display:flex;align-items:center;justify-content:center}
+.bloqueo .tarjeta{background:var(--panel);border:1px solid var(--borde);width:420px;padding:16px}
+.bloqueo .titulo{font-size:13px;color:var(--suave);text-transform:uppercase;letter-spacing:.5px}
+.bloqueo .nombre{font-size:24px;font-weight:700;margin:2px 0 4px}
+.bloqueo .nota{font-size:13px;color:var(--suave);margin-bottom:12px}
+.puntos{display:flex;justify-content:center;gap:18px;margin:4px 0 8px}
+.puntos span{width:22px;height:22px;border-radius:50%;border:2px solid var(--borde)}
+.puntos span.lleno{background:var(--texto);border-color:var(--texto)}
+.msgb{min-height:20px;text-align:center;font-size:14px;color:var(--peligro);margin-bottom:6px}
+.bloqueo .otro{width:100%;height:42px;margin-top:6px;font-size:14px}
+.comprobante td{padding:6px 4px}
+.comprobante tr:last-child td{font-weight:700;border-bottom:none}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="marca">ParkFlow POS</span><span class="sep"></span>
+  <span class="dato"><b>Cafetería Vita</b> <span>· Caja 6</span></span><span class="sep"></span>
+  <span class="dato"><span>Cajero</span> <b id="cajeroCab">Sofía R.</b></span>
+  <span class="esp"></span>
+  <span class="reloj num" id="reloj"></span>
+  <button onclick="bloquear()">🔒 Bloquear</button>
+  <button onclick="abrir('menu')">☰ Turno</button>
+</header>
+
+<main>
+  <section class="ticket">
+    <div class="ticket-cab"><span>Venta en curso</span><b id="nItems">0 ítems</b></div>
+    <div class="lineas" id="lineas"></div>
+    <div class="acciones-linea">
+      <button class="grande" onclick="cambiarCant(-1)">−</button>
+      <button class="grande" onclick="cambiarCant(1)">+</button>
+      <button onclick="quitarLinea()">Quitar ítem</button>
+      <button onclick="anularVenta()" style="color:var(--peligro)">Anular venta</button>
+    </div>
+    <div class="totales">
+      <div><span>Subtotal</span><span class="num" id="tSub">$0</span></div>
+      <div id="filaDesc" style="display:none"><span id="tDescNom">Descuento</span><span class="num" id="tDesc">$0</span></div>
+      <div><span>Neto / IVA 19 % incluido</span><span class="num" id="tIva">$0 / $0</span></div>
+      <div class="total"><span>TOTAL</span><span class="num" id="tTotal">$0</span></div>
+    </div>
+    <div class="descuentos" id="descuentos"></div>
+    <div class="pagos">
+      <button class="ef" onclick="pagar('efectivo')">EFECTIVO</button>
+      <button class="tj" onclick="pagar('tarjeta')">TARJETA</button>
+      <button class="cb" onclick="pagar('combinado')">Pago combinado (efectivo + tarjeta)</button>
+    </div>
+  </section>
+
+  <section class="catalogo">
+    <div class="cats" id="cats"></div>
+    <div class="grilla" id="grilla"></div>
+    <div class="inferior">
+      <button class="buscar">🔍 Buscar producto o escanear código…</button>
+      <button onclick="reimprimir()">Reimprimir última boleta</button>
+    </div>
+  </section>
+</main>
+
+<div class="velo" id="velo"><div class="modal" id="modal"></div></div>
+
+<div class="listo" id="listo"><div class="tarjeta" id="listoCont"></div></div>
+
+<div class="bloqueo" id="bloqueo">
+  <header>
+    <span class="marca">ParkFlow POS</span><span class="sep"></span>
+    <span class="dato"><b>Cafetería Vita</b> <span>· Caja 6 · en pausa</span></span>
+  </header>
+  <div class="centro"><div class="tarjeta">
+    <div class="titulo">Caja 6 abierta a nombre de</div>
+    <div class="nombre" id="bNombre">Sofía Rojas</div>
+    <div class="nota">La pantalla está bloqueada y la venta en curso se conserva. Ingrese su PIN para continuar.</div>
+    <div class="puntos" id="bPuntos"><span></span><span></span><span></span><span></span></div>
+    <div class="msgb" id="bMsg"></div>
+    <div class="teclado" id="bTeclado"></div>
+    <button class="otro" onclick="cambiarUsuario()">Cambiar de usuario (la caja sigue abierta a su nombre)</button>
+  </div></div>
+</div>
+
+<script>
+const fmt = n => "$" + Math.round(n).toLocaleString("es-CL");
+const CATS = {comida:["Comida","--comida"], bebida:["Bebidas","--bebida"], dulce:["Dulces","--dulce"], combo:["Combos","--combo"]};
+const PRODUCTOS = [
+  {id:1,n:"Hot Dog Tradicional",p:2500,c:"comida",k:true,s:78},
+  {id:2,n:"Pizza Individual Mozzarella",p:3500,c:"comida",k:true,s:49},
+  {id:3,n:"Sándwich Jamón Queso",p:2800,c:"comida",k:true,s:30},
+  {id:4,n:"Papas Fritas",p:2000,c:"comida",k:true,s:60},
+  {id:5,n:"Empanada de Queso",p:1800,c:"comida",k:true,s:0},
+  {id:6,n:"Café Expreso",p:1800,c:"bebida",k:false,s:89},
+  {id:7,n:"Néctar Frutal 500 ml",p:1500,c:"bebida",k:false,s:118},
+  {id:8,n:"Agua Mineral 500 ml",p:1000,c:"bebida",k:false,s:140},
+  {id:9,n:"Jugo Natural",p:2200,c:"bebida",k:false,s:25},
+  {id:10,n:"Chocolate Caliente",p:2000,c:"bebida",k:false,s:40},
+  {id:11,n:"Muffin de Vainilla",p:1200,c:"dulce",k:false,s:62},
+  {id:12,n:"Galletas con Chips",p:1000,c:"dulce",k:false,s:80},
+  {id:13,n:"Brownie",p:1500,c:"dulce",k:false,s:34},
+  {id:14,n:"Combo Al Paso (Hot Dog + Bebida)",p:4500,c:"combo",k:true,s:40},
+  {id:15,n:"Combo Pizza + Jugo",p:5200,c:"combo",k:true,s:20},
+];
+// Porcentajes de ejemplo: se definen en la configuración del sistema.
+const DESCUENTOS = [
+  {id:"ciu",n:"Ciudadano",pct:10}, {id:"dis",n:"Distinguido",pct:12}, {id:"hon",n:"Honorable",pct:15},
+  {id:"fun",n:"Funcionario",pct:20}, {id:"cup",n:"Cupón",pct:null},
+];
+let cat = "todos", lineas = [], sel = null, desc = null, nPedido = 46, folio = 791063, ventas = [], ultima = null;
+
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v); }
+function totales(){
+  const sub = lineas.reduce((a,l)=>a+l.p*l.q,0);
+  const d = desc ? Math.round(sub*desc.pct/100) : 0;
+  const total = sub - d, neto = Math.round(total/1.19);
+  return {sub,d,total,neto,iva:total-neto};
+}
+function pintarCats(){
+  const el = document.getElementById("cats");
+  const lista = [["todos","Todos","--texto"], ...Object.entries(CATS).map(([k,[n,v]])=>[k,n,v])];
+  el.innerHTML = lista.map(([k,n,v]) =>
+    `<button class="${cat===k?"on":""}" style="border-color:var(${v});${cat===k?`background:var(${v})`:""}" onclick="cat='${k}';pintar()">${n}</button>`).join("");
+}
+function pintarGrilla(){
+  const el = document.getElementById("grilla");
+  el.innerHTML = PRODUCTOS.filter(p=>cat==="todos"||p.c===cat).map(p=>{
+    const enCarro = lineas.find(l=>l.id===p.id);
+    return `<button class="prod ${p.s?"":"agotado"}" style="border-left-color:var(${CATS[p.c][1]})" ${p.s?"":"disabled"} onclick="agregar(${p.id})">
+      <span>${p.n}</span>
+      <span class="pie"><span class="precio num">${p.s?fmt(p.p):"Agotado"}</span>${enCarro?`<span class="badge">${enCarro.q}</span>`:""}</span></button>`;
+  }).join("");
+}
+function pintarTicket(){
+  const el = document.getElementById("lineas");
+  if(!lineas.length){ el.innerHTML = `<div class="vacio">Toque un producto para agregarlo a la venta.</div>`; }
+  else {
+    el.innerHTML = lineas.map(l=>`<div class="linea ${sel===l.id?"sel":""}" onclick="sel=${l.id};pintar()">
+      <span class="cant num">${l.q}</span><span class="nom">${l.n}<small>${fmt(l.p)} c/u${l.k?" · cocina":""}</small></span>
+      <span class="tot num">${fmt(l.p*l.q)}</span></div>`).join("");
+  }
+  const t = totales();
+  document.getElementById("nItems").textContent = lineas.reduce((a,l)=>a+l.q,0) + " ítems";
+  document.getElementById("tSub").textContent = fmt(t.sub);
+  document.getElementById("filaDesc").style.display = desc ? "flex" : "none";
+  if(desc){ document.getElementById("tDescNom").textContent = `Descuento ${desc.n} ${desc.pct} %`; document.getElementById("tDesc").textContent = "−" + fmt(t.d); }
+  document.getElementById("tIva").textContent = fmt(t.neto) + " / " + fmt(t.iva);
+  document.getElementById("tTotal").textContent = fmt(t.total);
+  document.getElementById("descuentos").innerHTML = DESCUENTOS.map(d=>{
+    const on = desc && (desc.id===d.id || (d.id==="cup" && desc.cupon));
+    return `<button class="${on?"activo":""}" onclick="aplicarDesc('${d.id}')">${d.n}<b>${d.pct?d.pct+" %":"Código"}</b></button>`;
+  }).join("");
+  document.querySelectorAll(".pagos button").forEach(b=>b.disabled = !lineas.length);
+}
+function pintar(){ pintarCats(); pintarGrilla(); pintarTicket(); }
+
+function agregar(id){
+  const p = PRODUCTOS.find(x=>x.id===id), l = lineas.find(x=>x.id===id);
+  if(l){ if(l.q < p.s) l.q++; } else lineas.push({...p,q:1});
+  sel = id; pintar();
+}
+function cambiarCant(d){
+  const l = lineas.find(x=>x.id===sel); if(!l) return;
+  const p = PRODUCTOS.find(x=>x.id===sel);
+  l.q = Math.min(p.s, l.q + d); if(l.q<=0) quitarLinea(); else pintar();
+}
+function quitarLinea(){ lineas = lineas.filter(x=>x.id!==sel); sel = lineas.length ? lineas[lineas.length-1].id : null; if(!lineas.length) desc=null; pintar(); }
+function anularVenta(){ if(!lineas.length) return; if(confirm("¿Anular la venta en curso?")){ lineas=[]; sel=null; desc=null; pintar(); } }
+
+// Un solo descuento por venta: elegir otro reemplaza al anterior.
+function aplicarDesc(id){
+  if(!lineas.length) return;
+  if(id==="cup"){ return abrir("cupon"); }
+  const d = DESCUENTOS.find(x=>x.id===id);
+  desc = (desc && desc.id===id) ? null : {...d};
+  pintar();
+}
+
+// ---------- Modales ----------
+let entrada = "", modo = null, medio = "Débito";
+function abrir(m){ modo = m; entrada = ""; dibujarModal(); document.getElementById("velo").classList.add("on"); }
+function cerrar(){ document.getElementById("velo").classList.remove("on"); modo = null; }
+function teclado(extra){
+  const t = ["1","2","3","4","5","6","7","8","9",extra||"00","0","⌫"];
+  return `<div class="teclado">${t.map(k=>`<button onclick="tecla('${k}')">${k}</button>`).join("")}</div>`;
+}
+function tecla(k){
+  if(k==="⌫") entrada = entrada.slice(0,-1);
+  else if(entrada.length < 9) entrada += k;
+  dibujarModal();
+}
+function pagar(m){ if(lineas.length) abrir(m); }
+
+function dibujarModal(){
+  const t = totales(), el = document.getElementById("modal");
+  const cab = (titulo) => `<h2>${titulo}<button onclick="cerrar()">Cancelar</button></h2>`;
+  if(modo==="efectivo"){
+    const rec = Number(entrada||0), falta = t.total - rec;
+    el.innerHTML = cab("Pago en efectivo") + `<div class="cuerpo">
+      <div class="resumen"><div class="caja"><small>Total a pagar</small><b class="num">${fmt(t.total)}</b></div>
+      <div class="caja ${falta>0?"falta":"vuelto"}"><small>${falta>0?"Falta":"Vuelto"}</small><b class="num">${fmt(Math.abs(falta))}</b></div></div>
+      <div class="campo num">${entrada?fmt(rec):'<span style="color:#9aa4ad;font-size:16px;letter-spacing:0">Monto recibido</span>'}</div>
+      <div class="rapidos">${[["Exacto",t.total],["$5.000",5000],["$10.000",10000],["$20.000",20000]].map(([n,v])=>`<button onclick="entrada='${v}';dibujarModal()">${n}</button>`).join("")}</div>
+      ${teclado()}
+      <button class="ok" ${falta>0?"disabled":""} onclick="confirmar('Efectivo',${rec})">Confirmar y emitir boleta</button></div>`;
+  } else if(modo==="tarjeta"){
+    el.innerHTML = cab("Pago con tarjeta") + `<div class="cuerpo">
+      <div class="resumen"><div class="caja"><small>Monto a cobrar en la máquina</small><b class="num">${fmt(t.total)}</b></div>
+      <div class="caja"><small>Medio</small><b style="font-size:22px">${medio}</b></div></div>
+      <div class="opciones">${["Débito","Crédito"].map(m=>`<button class="${medio===m?"on":""}" onclick="medio='${m}';dibujarModal()">${m}</button>`).join("")}</div>
+      <div class="aviso">Cobre el monto en la máquina de pago. Cuando el pago salga aprobado, confirme la venta.</div>
+      <button class="ok azul" onclick="confirmar('${medio}',${t.total})">Pago aprobado: emitir boleta</button></div>`;
+  } else if(modo==="combinado"){
+    const ef = Math.min(Number(entrada||0), t.total), resto = t.total - ef;
+    el.innerHTML = cab("Pago combinado") + `<div class="cuerpo">
+      <div class="resumen"><div class="caja"><small>Parte en efectivo</small><b class="num">${fmt(ef)}</b></div>
+      <div class="caja"><small>Resto con tarjeta</small><b class="num" style="color:var(--tarjeta)">${fmt(resto)}</b></div></div>
+      <div class="aviso">Ingrese cuánto paga en efectivo; el resto se cobra en la máquina de pago.</div>
+      ${teclado()}
+      <button class="ok" ${ef<=0||resto<=0?"disabled":""} onclick="confirmar('Efectivo + Débito',${t.total})">Confirmar y emitir boleta</button></div>`;
+  } else if(modo==="cupon"){
+    el.innerHTML = cab("Código de promoción") + `<div class="cuerpo">
+      <div class="aviso">Escanee o digite el código. Solo se aplica un descuento por venta: el cupón reemplaza al pasaporte o al de funcionario.</div>
+      <div class="campo">PROMO-KIDZ<b>${entrada}</b></div>
+      <div class="error" id="err"></div>
+      ${teclado("")}
+      <button class="ok" onclick="validarCupon()">Aplicar</button></div>`;
+  } else if(modo==="menu"){
+    el.innerHTML = cab("Turno · Caja 6") + `<div class="cuerpo menu-lista">
+      <button onclick="abrir('ventas')">Ventas del turno</button>
+      <button onclick="cerrar();reimprimir()">Reimprimir última boleta</button>
+      <button onclick="alert('Abre la pantalla de cocina de este puesto')">Pantalla de cocina</button>
+      <button onclick="cerrar();bloquear()">🔒 Pausa: bloquear pantalla</button>
+      <button class="rojo" onclick="terminarTurno()">Terminar turno: cerrar caja y cerrar sesión</button></div>`;
+  } else if(modo==="aviso"){
+    el.innerHTML = cab("Terminar turno") + `<div class="cuerpo">
+      <div class="aviso" style="font-size:15px;color:var(--texto)">Hay una venta en curso. Cóbrela o anúlela antes de cerrar la caja.</div>
+      <button class="ok" onclick="cerrar()">Volver a la venta</button></div>`;
+  } else if(modo==="comprobante"){
+    el.innerHTML = `<h2>Caja 6 cerrada</h2><div class="cuerpo">
+      <table class="comprobante">
+        <tr><td>Cajero</td><td class="r">${usuario}</td></tr>
+        <tr><td>Ventas del turno</td><td class="r num">${ventas.length}</td></tr>
+        <tr><td>Total vendido</td><td class="r num">${fmt(ventas.reduce((a,v)=>a+v.total,0))}</td></tr>
+        <tr><td>Efectivo contado</td><td class="r num">${fmt(contado)}</td></tr></table>
+      <div class="aviso" style="margin-top:10px">Se imprimió el comprobante de cierre. El supervisor revisa la diferencia del arqueo en la oficina.</div>
+      <button class="ok" onclick="salir(true)">Cerrar sesión</button></div>`;
+  } else if(modo==="ventas"){
+    el.innerHTML = cab("Ventas del turno") + `<div class="cuerpo">${ventas.length?`<table><tr><th>Boleta</th><th>Hora</th><th>Medio</th><th class="r">Total</th></tr>
+      ${ventas.map(v=>`<tr><td>${v.folio}</td><td>${v.hora}</td><td>${v.medio}</td><td class="r num">${fmt(v.total)}</td></tr>`).join("")}</table>`
+      : '<div class="vacio">Aún no hay ventas en este turno.</div>'}</div>`;
+  } else if(modo==="cierre"){
+    el.innerHTML = cab("Cierre de caja") + `<div class="cuerpo">
+      <div class="aviso">Cuente el efectivo del cajón e ingrese el total (incluye el fondo inicial). El sistema compara con lo esperado y el supervisor ve la diferencia.</div>
+      <div class="campo num">${entrada?fmt(Number(entrada)):'<span style="color:#9aa4ad;font-size:16px;letter-spacing:0">Efectivo contado</span>'}</div>
+      ${teclado()}
+      <button class="ok" ${entrada?"":"disabled"} onclick="contado=Number(entrada);abrir('comprobante')">Cerrar caja</button></div>`;
+  }
+}
+function validarCupon(){
+  const t = totales();
+  if(entrada !== "10"){ document.getElementById("err").textContent = "Código no válido o vencido."; return; }
+  if(t.sub < 3000){ document.getElementById("err").textContent = "Este cupón requiere una compra mínima de $3.000."; return; }
+  desc = {id:"cup",n:"Cupón PROMO-KIDZ10",pct:10,cupon:true}; cerrar(); pintar();
+}
+
+function confirmar(medioPago, recibido){
+  const t = totales(), conCocina = lineas.some(l=>l.k);
+  folio++; if(conCocina) nPedido++;
+  const hora = new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"});
+  ultima = {folio:"BOL-6-"+folio, hora, medio:medioPago, total:t.total};
+  ventas.unshift(ultima);
+  lineas.forEach(l=>{ PRODUCTOS.find(p=>p.id===l.id).s -= l.q; });
+  const vuelto = medioPago==="Efectivo" ? recibido - t.total : 0;
+  cerrar();
+  document.getElementById("listoCont").innerHTML = `
+    <div class="eti">${conCocina?"Número de pedido para el visitante":"Venta registrada"}</div>
+    <div class="pedido num">${conCocina?String(nPedido).padStart(3,"0"):"✓"}</div>
+    <div class="sub">${conCocina?"La comanda se envió a la cocina. Entregue la boleta con este número.":"Productos de entrega inmediata."}</div>
+    <div class="fila"><div class="caja vuelto"><small>Vuelto</small><b class="num">${fmt(vuelto)}</b></div>
+    <div class="caja"><small>${medioPago} · Boleta</small><b style="font-size:20px">${ultima.folio}</b></div></div>
+    <div class="botones"><button onclick="reimprimir()">Reimprimir boleta</button><button class="ok" onclick="nuevaVenta()">Nueva venta</button></div>`;
+  document.getElementById("listo").classList.add("on");
+  lineas = []; sel = null; desc = null;
+}
+function nuevaVenta(){ document.getElementById("listo").classList.remove("on"); pintar(); }
+function reimprimir(){ alert(ultima ? `Reimprimiendo ${ultima.folio} (copia)` : "No hay boletas en este turno."); }
+document.addEventListener("keydown", e=>{ if(e.key==="Enter" && document.getElementById("listo").classList.contains("on")) nuevaVenta(); });
+
+// ---------- Sesión: pausa, cambio de usuario y fin de turno ----------
+const LOGIN = "Maqueta Login POS ParkFlow.html";
+const ss = {get:k=>{try{return sessionStorage.getItem(k)}catch(e){return null}}, set:(k,v)=>{try{sessionStorage.setItem(k,v)}catch(e){}}, del:k=>{try{sessionStorage.removeItem(k)}catch(e){}}};
+let usuario = ss.get("pf_usuario") || "Sofía Rojas", contado = 0, pinB = "", inactivo;
+document.getElementById("cajeroCab").textContent = usuario.split(" ")[0] + " " + (usuario.split(" ")[1]||"")[0] + ".";
+document.getElementById("bNombre").textContent = usuario;
+
+function bloquear(){
+  cerrar(); pinB = ""; document.getElementById("bMsg").textContent = ""; pintarPuntos();
+  document.getElementById("bloqueo").classList.add("on");
+}
+function pintarPuntos(){ document.querySelectorAll("#bPuntos span").forEach((s,k)=>s.classList.toggle("lleno", k<pinB.length)); }
+function teclaB(k){
+  if(k==="⌫") pinB = pinB.slice(0,-1); else if(k==="C") pinB = ""; else if(pinB.length<4) pinB += k;
+  document.getElementById("bMsg").textContent = ""; pintarPuntos();
+  if(pinB.length===4){
+    if(pinB==="1234"){ document.getElementById("bloqueo").classList.remove("on"); reiniciarInactividad(); }
+    else { pinB = ""; pintarPuntos(); document.getElementById("bMsg").textContent = "PIN incorrecto."; }
+  }
+}
+document.getElementById("bTeclado").innerHTML = ["1","2","3","4","5","6","7","8","9","C","0","⌫"]
+  .map(k=>`<button onclick="teclaB('${k}')">${k}</button>`).join("");
+function cambiarUsuario(){ salir(false); }
+function terminarTurno(){ if(lineas.length) return abrir("aviso"); abrir("cierre"); }
+function salir(cerroCaja){
+  if(cerroCaja) ss.del("pf_caja");
+  ss.del("pf_usuario");
+  location.href = LOGIN;
+}
+// Bloqueo automático tras 2 minutos sin uso.
+function reiniciarInactividad(){
+  clearTimeout(inactivo);
+  inactivo = setTimeout(()=>{ if(!document.getElementById("bloqueo").classList.contains("on")) bloquear(); }, 120000);
+}
+["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev, reiniciarInactividad));
+reiniciarInactividad();
+if(!ss.get("pf_caja")) ss.set("pf_caja", usuario);
+
+setInterval(()=>{ document.getElementById("reloj").textContent = new Date().toLocaleTimeString("es-CL"); }, 1000);
+document.getElementById("reloj").textContent = new Date().toLocaleTimeString("es-CL");
+pintar();
+</script>
+</body>
+</html>
