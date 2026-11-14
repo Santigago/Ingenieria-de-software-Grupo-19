@@ -1,6 +1,6 @@
 # ============================================================
 #  Instalador ParkFlow (Grupo 19) para un PC Windows sin nada
-#  Instala Git, Node.js LTS y PostgreSQL 16 con winget,
+#  Instala Git, Node.js LTS y PostgreSQL 18 con winget,
 #  clona el repo, crea la base, configura .env y arranca.
 # ============================================================
 $ErrorActionPreference = 'Stop'
@@ -39,33 +39,57 @@ try {
     Paso 'Instalando programas'
     Instalar 'Git.Git'
     Instalar 'OpenJS.NodeJS.LTS'
-    Instalar 'PostgreSQL.PostgreSQL.18' "--mode unattended --unattendedmodeui minimal --superpassword $PgPass --serverport 5432"
     Refrescar-Path
 
-    Paso 'Preparando PostgreSQL'
-    $psql = Get-ChildItem 'C:\Program Files\PostgreSQL\*\bin\psql.exe' -ErrorAction SilentlyContinue |
-            Sort-Object { [int]($_.Directory.Parent.Name -replace '\D','') } -Descending | Select-Object -First 1
+    Paso 'Preparando PostgreSQL 18 (propio de ParkFlow)'
+    $pgDir = 'C:\Program Files\PostgreSQL\18'
+    $servicio = Get-Service 'postgresql-x64-18' -ErrorAction SilentlyContinue
+    if ($servicio) {
+        # Ya hay un PostgreSQL 18 instalado: leer su puerto desde postgresql.conf
+        $PgPort = 5432
+        $conf = Get-ChildItem $pgDir -Recurse -Filter postgresql.conf -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($conf) {
+            $linea = Select-String -Path $conf.FullName -Pattern '^\s*port\s*=\s*(\d+)' | Select-Object -First 1
+            if ($linea) { $PgPort = [int]$linea.Matches[0].Groups[1].Value }
+        }
+        if ($servicio.Status -ne 'Running') { Start-Service $servicio.Name -ErrorAction SilentlyContinue }
+        Ok "PostgreSQL 18 ya estaba instalado (puerto $PgPort)"
+    } else {
+        # Buscar un puerto libre: en algunos PC el 5432 ya lo usa otro PostgreSQL o Docker
+        $PgPort = $null
+        foreach ($p in 5432..5450) {
+            if (-not (Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue)) { $PgPort = $p; break }
+        }
+        if (-not $PgPort) { throw 'No encontre un puerto libre entre 5432 y 5450 para PostgreSQL.' }
+        $datos = Join-Path $pgDir 'data'
+        if (Test-Path $datos) { $datos = Join-Path $pgDir 'data_parkflow' }   # restos de un intento anterior
+        Write-Host "    Se usara el puerto $PgPort"
+        Instalar 'PostgreSQL.PostgreSQL.18' "--mode unattended --unattendedmodeui minimal --superpassword $PgPass --serverport $PgPort --datadir `"$datos`""
+        Ok "PostgreSQL 18 en el puerto $PgPort"
+    }
+
+    $psqlExe = Join-Path $pgDir 'bin\psql.exe'
+    if (-not (Test-Path $psqlExe)) { throw "No encontre $psqlExe. Reinicia el PC y vuelve a ejecutar." }
+    function Psql { & $psqlExe -U postgres -h localhost -p $PgPort @args }
     $baseNueva = $false
-    if (-not $psql) { throw 'No encontre psql.exe en C:\Program Files\PostgreSQL. Reinicia el PC y vuelve a ejecutar.' }
-    Get-Service 'postgresql*' -ErrorAction SilentlyContinue | Where-Object Status -ne 'Running' | Start-Service -ErrorAction SilentlyContinue
     $env:PGPASSWORD = $PgPass
     $existe = $null
     $ErrorActionPreference = 'Continue'
     for ($i = 0; $i -lt 10; $i++) {
-        $existe = & $psql.FullName -U postgres -h localhost -tAc "SELECT 1 FROM pg_database WHERE datname='$DbName'" 2>$null
+        $existe = Psql -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DbName'" 2>$null
         if ($LASTEXITCODE -eq 0) { break }
         Start-Sleep -Seconds 3
     }
     $ErrorActionPreference = 'Stop'
     if ($LASTEXITCODE -ne 0) {
-        throw "No pude entrar a PostgreSQL con el usuario postgres. Si PostgreSQL ya estaba instalado con otra clave, cambia `$PgPass al inicio de este script."
+        throw "No pude entrar a PostgreSQL 18 (puerto $PgPort) con el usuario postgres. Si ya estaba instalado con otra clave, cambia `$PgPass al inicio de este script."
     }
     if ("$existe".Trim() -ne '1') {
-        & $psql.FullName -U postgres -h localhost -c "CREATE DATABASE $DbName" | Out-Null
+        Psql -d postgres -c "CREATE DATABASE $DbName" | Out-Null
         $baseNueva = $true
         Ok "base $DbName creada"
     } else {
-        $tablas = & $psql.FullName -U postgres -h localhost -d $DbName -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"
+        $tablas = Psql -d $DbName -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'"
         if ("$tablas".Trim() -eq '0') { $baseNueva = $true; Ok "base $DbName existia vacia; se cargaran los datos" }
         else { Ok "base $DbName ya existia" }
     }
@@ -83,7 +107,7 @@ try {
     $dump = Join-Path $Destino 'instalador\kidzania_db.sql'
     if ($baseNueva -and (Test-Path $dump)) {
         $ErrorActionPreference = 'Continue'
-        & $psql.FullName -U postgres -h localhost -d $DbName -q -v ON_ERROR_STOP=1 -f $dump | Out-Null
+        Psql -d $DbName -q -v ON_ERROR_STOP=1 -f $dump | Out-Null
         $codigo = $LASTEXITCODE
         $ErrorActionPreference = 'Stop'
         if ($codigo -ne 0) { throw 'No se pudo cargar kidzania_db.sql en la base.' }
@@ -97,18 +121,25 @@ try {
     Paso 'Configurando .env'
     $proy = Join-Path $Destino 'Proyecto'
     $envFile = Join-Path $proy '.env'
-    if (-not (Test-Path $envFile)) {
+    # Puerto web: 8080 si esta libre, si no el siguiente libre
+    foreach ($p in 8080..8099) {
+        if (-not (Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue)) { $Puerto = $p; break }
+    }
+    if (Test-Path $envFile) {
+        $txt = Get-Content $envFile -Raw
+    } else {
         $txt = Get-Content (Join-Path $proy '.env.example') -Raw
         $secreto = -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 48 | ForEach-Object { [char]$_ })
-        $txt = $txt -replace '(?m)^PORT=.*$', "PORT=$Puerto"
-        $txt = $txt -replace '(?m)^DB_HOST=.*$', 'DB_HOST=localhost'
-        $txt = $txt -replace '(?m)^DB_USER=.*$', 'DB_USER=postgres'
-        $txt = $txt -replace '(?m)^DB_PASSWORD=.*$', "DB_PASSWORD=$PgPass"
-        $txt = $txt -replace '(?m)^DB_NAME=.*$', "DB_NAME=$DbName"
         $txt = $txt -replace '(?m)^JWT_SECRET=.*$', "JWT_SECRET=$secreto"
-        [IO.File]::WriteAllText($envFile, $txt)
-        Ok '.env creado'
-    } else { Ok '.env ya existia (no se toco)' }
+    }
+    $txt = $txt -replace '(?m)^PORT=.*$', "PORT=$Puerto"
+    $txt = $txt -replace '(?m)^DB_HOST=.*$', 'DB_HOST=localhost'
+    $txt = $txt -replace '(?m)^DB_PORT=.*$', "DB_PORT=$PgPort"
+    $txt = $txt -replace '(?m)^DB_USER=.*$', 'DB_USER=postgres'
+    $txt = $txt -replace '(?m)^DB_PASSWORD=.*$', "DB_PASSWORD=$PgPass"
+    $txt = $txt -replace '(?m)^DB_NAME=.*$', "DB_NAME=$DbName"
+    [IO.File]::WriteAllText($envFile, $txt)
+    Ok ".env listo (web en puerto $Puerto, base en puerto $PgPort)"
 
     Paso 'Instalando dependencias de Node'
     Push-Location $proy
