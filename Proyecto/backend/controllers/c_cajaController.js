@@ -1550,6 +1550,7 @@ const registrarVentaTurnoCaja = async (req, res) => {
                 venta_id: ventaCreada.venta_id,
                 puesto_id: caja.puesto_id,
                 cajero_id: caja.cajero_id,
+                observaciones: observacion || req.body.observaciones || req.body.nota_pedido || null,
                 items: lineasPreparadas.map(l => ({
                     producto_id: l.producto.producto_id,
                     producto_codigo: l.producto.producto_codigo,

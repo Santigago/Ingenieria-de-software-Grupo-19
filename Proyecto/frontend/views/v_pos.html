@@ -324,6 +324,15 @@
                                 <div id="mensajePromoPos" class="text-[10px] mt-1 hidden font-mono"></div>
                             </div>
 
+                            <!-- Nota de Preparación para Cocina (KDS) -->
+                            <div class="pt-1.5 pb-1 border-t border-slate-900">
+                                <label class="block text-[11px] text-slate-400 mb-1">
+                                    <span>Nota para Cocina / Pedido (opcional):</span>
+                                </label>
+                                <input id="inputObsPedidoCocina" type="text" placeholder="Ej: Sin hielo, sin cebolla, para llevar..."
+                                       class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-xs text-slate-200 focus:border-amber-500 focus:outline-none">
+                            </div>
+
                             <div class="flex justify-between text-slate-400">
                                 <span>Monto Neto / IVA (19% incl.):</span>
                                 <span class="font-mono text-slate-300">Neto <span id="carritoNetoTxt">$0</span> · IVA <span id="carritoIvaTxt">$0</span></span>
@@ -927,6 +936,8 @@
 
         function vaciarCarritoPos() {
             estadoPos.carrito = [];
+            const inpObs = document.getElementById('inputObsPedidoCocina');
+            if (inpObs) inpObs.value = '';
             renderizarCatalogoPuesto();
             renderizarCarritoPos();
         }
@@ -1196,7 +1207,8 @@
                     descuento_linea: it.descuento_linea || 0
                 })),
                 descuento_total: descGlobal,
-                codigo_promocion: estadoPos.promocionActiva?.promocion_codigo || null
+                codigo_promocion: estadoPos.promocionActiva?.promocion_codigo || null,
+                observacion: document.getElementById('inputObsPedidoCocina')?.value.trim() || null
             };
 
             if (estadoPos.modoPago === 'combinado') {

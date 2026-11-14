@@ -253,7 +253,7 @@ const registrarMarcajeAsistencia = async (req, res) => {
                 const ahora = new Date();
                 const [hProg, mProg] = turnoAsignado.hora_inicio_programada.split(':').map(Number);
                 const fechaProg = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), hProg, mProg, 0);
-                const toleranciaMs = (turnoAsignado.tolerancia_minutos || 15) * 60 * 1000;
+                const toleranciaMs = (turnoAsignado.tolerancia_minutos !== undefined && turnoAsignado.tolerancia_minutos !== null ? turnoAsignado.tolerancia_minutos : 15) * 60 * 1000;
                 const limiteTolerancia = new Date(fechaProg.getTime() + toleranciaMs);
 
                 if (ahora > limiteTolerancia) {
