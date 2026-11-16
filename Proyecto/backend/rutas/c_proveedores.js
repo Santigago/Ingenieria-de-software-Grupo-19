@@ -6,7 +6,7 @@ const {
     actualizarProveedor,
     cambiarEstadoProveedor,
     eliminarProveedor
-} = require('../controllers/c_proveedorController');
+} = require('../controladores/c_proveedorController');
 const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
 router.get('/', verificarToken, requerirPermiso('proveedores', 'ver'), obtenerProveedores);

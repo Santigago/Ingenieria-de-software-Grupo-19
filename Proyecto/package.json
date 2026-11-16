@@ -5,7 +5,9 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "dev": "node backend/server.js"
+    "dev": "node backend/server.js",
+    "migrar": "node migrar_y_sembrar.js",
+    "test": "node backend/tests/round8_cu27_cu31_cu22.test.js && node backend/tests/round9_cu28_cu29_cu30.test.js && node backend/tests/round10_cu24_cu35.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

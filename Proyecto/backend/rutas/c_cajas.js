@@ -13,7 +13,7 @@ const {
     obtenerArqueosCaja,
     obtenerDetalleArqueoCaja,
     obtenerHistorialCajas
-} = require('../controllers/c_cajaController');
+} = require('../controladores/c_cajaController');
 const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
 // CU 25 (Subflujo CU 78): Consultar estado actual de caja y abrir caja en puesto de venta

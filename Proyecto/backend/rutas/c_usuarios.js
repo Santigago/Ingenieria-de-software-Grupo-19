@@ -7,7 +7,7 @@ const {
     asignarPinTrabajador,
     desbloquearUsuario,
     obtenerBitacoraAuditoria
-} = require('../controllers/c_userController');
+} = require('../controladores/c_userController');
 const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
 router.get('/roles', verificarToken, requerirPermiso('usuarios', 'ver'), obtenerRoles);

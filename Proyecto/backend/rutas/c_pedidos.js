@@ -5,7 +5,7 @@ const {
     cancelarPedido,
     cancelarItemPedido,
     consultarPedidoPorId
-} = require('../controllers/c_pedidosController');
+} = require('../controladores/c_pedidosController');
 
 router.use(verificarToken);
 

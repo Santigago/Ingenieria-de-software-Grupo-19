@@ -6,7 +6,7 @@ const {
     actualizarPuestoVenta,
     cambiarEstadoPuestoVenta,
     eliminarPuestoVenta
-} = require('../controllers/c_cajaController');
+} = require('../controladores/c_cajaController');
 const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
 // CU 32 (Subflujo CU 82): Administrar puestos de venta de comida y de merch

@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { login, logout, obtenerCajerosPos, loginPos, obtenerSesionPermisos } = require('../controllers/c_authController');
+const { login, logout, obtenerCajerosPos, loginPos, obtenerSesionPermisos } = require('../controladores/c_authController');
 const { verificarToken } = require('../middleware/authMiddleware');
 
 router.post('/login', login);

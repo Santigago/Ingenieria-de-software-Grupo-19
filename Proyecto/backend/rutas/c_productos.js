@@ -24,7 +24,7 @@ const {
     obtenerRecetaProducto,
     guardarRecetaProducto,
     ejecutarDescuentoRecetaEndpoint
-} = require('../controllers/c_productoController');
+} = require('../controladores/c_productoController');
 const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
 // Subflujo CU 34: Categorías de productos

@@ -6,7 +6,7 @@ const {
     obtenerEstadoIntegracionSAP,
     reintentarSincronizacionVentaSAP,
     sincronizarVentasPendientesSAP
-} = require('../controllers/c_sapController');
+} = require('../controladores/c_sapController');
 
 // CU 31 (Subflujo CU 81): Listar historial de sincronizaciones con SAP B1
 router.get('/logs', verificarToken, requerirPermiso('sap', 'ver'), obtenerLogsSincronizacionSAP);

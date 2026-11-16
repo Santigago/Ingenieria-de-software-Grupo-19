@@ -8,7 +8,7 @@ const {
     actualizarPromocion,
     cambiarEstadoPromocion,
     validarYAplicarPromocion
-} = require('../controllers/c_promocionController');
+} = require('../controladores/c_promocionController');
 
 // CU 22 (Subflujo CU 31): Listar promociones y descuentos comerciales
 router.get('/', verificarToken, requerirPermiso('promociones', 'ver'), obtenerPromociones);

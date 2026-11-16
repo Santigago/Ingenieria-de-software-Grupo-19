@@ -13,12 +13,13 @@ initDatabase();
 
 // Directorios de frontend
 const frontendDir = path.join(__dirname, '../frontend');
-const viewsDir = path.join(frontendDir, 'views');
+const vistasDir = path.join(frontendDir, 'vistas');
 const jsDir = path.join(frontendDir, 'js');
 
-// Servir vistas estáticas (accesibles en /views/... y en la raíz /...)
-app.use(express.static(viewsDir));
-app.use('/views', express.static(viewsDir));
+// Servir vistas estáticas (accesibles en /vistas/..., /views/... y en la raíz /...)
+app.use(express.static(vistasDir));
+app.use('/vistas', express.static(vistasDir));
+app.use('/views', express.static(vistasDir));
 
 // Servir scripts estáticos (accesibles en /js/... y en la raíz)
 app.use('/js', express.static(jsDir));
@@ -31,27 +32,27 @@ app.get('/', (req, res) => {
 });
 
 // Rutas funcionales de la API
-app.use('/api/auth', require('./routes/c_auth'));
-app.use('/api/dashboard', require('./routes/c_dashboard'));
-app.use('/api/admin/usuarios', require('./routes/c_usuarios'));
-app.use('/api/mesas', require('./routes/c_mesas'));
-app.use('/api/puestos', require('./routes/c_puestos'));
-app.use('/api/cajas', require('./routes/c_cajas'));
-app.use('/api/productos', require('./routes/c_productos'));
-app.use('/api/lotes', require('./routes/c_lotes'));
-app.use('/api/proveedores', require('./routes/c_proveedores'));
-app.use('/api/movimientos', require('./routes/c_movimientos'));
-app.use('/api/unidades', require('./routes/c_unidades'));
-app.use('/api/ubicaciones', require('./routes/c_ubicaciones'));
-app.use('/api/boletas', require('./routes/c_boletas'));
-app.use('/api/sap', require('./routes/c_sap'));
-app.use('/api/promociones', require('./routes/c_promociones'));
-app.use('/api/cocina', require('./routes/c_cocina'));
-app.use('/api/pedidos', require('./routes/c_pedidos'));
-app.use('/api/rrhh', require('./routes/c_rrhh'));
+app.use('/api/auth', require('./rutas/c_auth'));
+app.use('/api/dashboard', require('./rutas/c_dashboard'));
+app.use('/api/admin/usuarios', require('./rutas/c_usuarios'));
+app.use('/api/mesas', require('./rutas/c_mesas'));
+app.use('/api/puestos', require('./rutas/c_puestos'));
+app.use('/api/cajas', require('./rutas/c_cajas'));
+app.use('/api/productos', require('./rutas/c_productos'));
+app.use('/api/lotes', require('./rutas/c_lotes'));
+app.use('/api/proveedores', require('./rutas/c_proveedores'));
+app.use('/api/movimientos', require('./rutas/c_movimientos'));
+app.use('/api/unidades', require('./rutas/c_unidades'));
+app.use('/api/ubicaciones', require('./rutas/c_ubicaciones'));
+app.use('/api/boletas', require('./rutas/c_boletas'));
+app.use('/api/sap', require('./rutas/c_sap'));
+app.use('/api/promociones', require('./rutas/c_promociones'));
+app.use('/api/cocina', require('./rutas/c_cocina'));
+app.use('/api/pedidos', require('./rutas/c_pedidos'));
+app.use('/api/rrhh', require('./rutas/c_rrhh'));
 
 app.get('/api/health', (req, res) => {
-    res.json({ ok: true, message: 'API operativa - Grupo 19 Demo' });
+    res.json({ ok: true, message: 'API operativa' });
 });
 
 const PORT = process.env.PORT || 8080;

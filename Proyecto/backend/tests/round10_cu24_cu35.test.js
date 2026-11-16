@@ -29,8 +29,8 @@ async function runTests() {
     const origQuery = db.query;
 
     try {
-        const pedidosController = require('../controllers/c_pedidosController');
-        const rrhhController = require('../controllers/c_rrhhController');
+        const pedidosController = require('../controladores/c_pedidosController');
+        const rrhhController = require('../controladores/c_rrhhController');
 
         // =========================================================================
         // Test Suite 1: CU 24 — Cancelar pedidos o ítems (CU original 55)

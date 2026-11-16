@@ -44,9 +44,12 @@ async function ejecutarBloqueSeguro(nombre, fn) {
 async function initDatabase() {
     console.log('Iniciando verificación y migración de esquema de base de datos...');
 
-    // 1. Ejecutar el esquema DDL maestro desde 01_esquema_inicial.sql si existe
-    await ejecutarBloqueSeguro('Esquema Maestro 01_esquema_inicial.sql', async () => {
-        const sqlPath = path.join(__dirname, '../../database/01_esquema_inicial.sql');
+    // 1. Ejecutar el esquema DDL maestro desde 01_ddl_esquema.sql si existe
+    await ejecutarBloqueSeguro('Esquema Maestro 01_ddl_esquema.sql', async () => {
+        let sqlPath = path.join(__dirname, '../../base_de_datos/01_ddl_esquema.sql');
+        if (!fs.existsSync(sqlPath)) {
+            sqlPath = path.join(__dirname, '../../database/01_esquema_inicial.sql');
+        }
         if (fs.existsSync(sqlPath)) {
             const sqlContent = fs.readFileSync(sqlPath, 'utf8');
             await db.query(sqlContent);

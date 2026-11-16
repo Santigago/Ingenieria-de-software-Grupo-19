@@ -5,7 +5,7 @@ const {
     obtenerBoletas,
     obtenerBoletaPorFolio,
     reimprimirBoleta
-} = require('../controllers/c_boletaController');
+} = require('../controladores/c_boletaController');
 
 // CU 27 (Subflujo CU 80): Listar boletas electrónicas emitidas
 router.get('/', verificarToken, requerirPermiso('boletas', 'ver'), obtenerBoletas);

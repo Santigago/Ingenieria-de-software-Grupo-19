@@ -9,7 +9,7 @@ const {
     registrarIncidenciaPedido,
     obtenerIncidenciasPedido,
     obtenerMetricasCocina
-} = require('../controllers/c_cocinaController');
+} = require('../controladores/c_cocinaController');
 
 // Todas las rutas requieren sesión autenticada
 router.use(verificarToken);

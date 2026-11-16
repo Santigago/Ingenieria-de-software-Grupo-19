@@ -18,7 +18,7 @@ const {
     registrarAjusteInventario,
     obtenerTransferenciasInternas,
     registrarTransferenciaInterna
-} = require('../controllers/c_movimientoController');
+} = require('../controladores/c_movimientoController');
 const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
 // CU 18: Administrar catálogos operativos de motivos (Subflujos CU 45, 46, 47, 54)

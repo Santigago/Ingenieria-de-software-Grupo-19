@@ -6,7 +6,7 @@ const {
     registrarLote,
     consultarVencimientosYAlertas,
     actualizarUmbralVencimiento
-} = require('../controllers/c_loteController');
+} = require('../controladores/c_loteController');
 const { verificarToken, requerirPermiso } = require('../middleware/authMiddleware');
 
 router.get('/responsables', verificarToken, requerirPermiso('lotes', 'ver'), obtenerResponsablesRecepcion);

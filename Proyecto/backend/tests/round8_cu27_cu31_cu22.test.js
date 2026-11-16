@@ -35,7 +35,7 @@ async function runTests() {
         // Test Suite 1: CU 27 — Emisión y Reimpresión de Boletas Electrónicas (CU 80, 87)
         // =========================================================================
         console.log('\n--- 1. Pruebas CU 27: Boletas Electrónicas ---');
-        const boletaController = require('../controllers/c_boletaController');
+        const boletaController = require('../controladores/c_boletaController');
 
         // Test 1.1: Emitir boleta electrónica
         {
@@ -185,7 +185,7 @@ async function runTests() {
         // Test Suite 2: CU 31 — Sincronización de Ventas con ERP SAP B1 (CU 81)
         // =========================================================================
         console.log('\n--- 2. Pruebas CU 31: Sincronización ERP SAP Business One ---');
-        const sapController = require('../controllers/c_sapController');
+        const sapController = require('../controladores/c_sapController');
 
         // Test 2.1: Sincronizar venta individual con SAP B1
         {
@@ -315,7 +315,7 @@ async function runTests() {
         // Test Suite 3: CU 22 — Gestión de Promociones y Descuentos (CU 31, 65, 66)
         // =========================================================================
         console.log('\n--- 3. Pruebas CU 22: Promociones y Descuentos Comerciales ---');
-        const promoController = require('../controllers/c_promocionController');
+        const promoController = require('../controladores/c_promocionController');
 
         // Test 3.1: Crear promoción comercial
         {
@@ -454,7 +454,7 @@ async function runTests() {
         // Test Suite 4: Integración en POS (Calcular total con promoción y venta)
         // =========================================================================
         console.log('\n--- 4. Pruebas Integración POS: Descuento de Promoción ---');
-        const cajaController = require('../controllers/c_cajaController');
+        const cajaController = require('../controladores/c_cajaController');
 
         // Test 4.1: Calcular total con promoción activa en POS (CU 21 + CU 22)
         {

@@ -8,7 +8,7 @@ const {
     obtenerHistorialAsistencia,
     validarInconsistenciasAsistencia,
     obtenerCumplimientoLaboral
-} = require('../controllers/c_rrhhController');
+} = require('../controladores/c_rrhhController');
 
 router.use(verificarToken);
 

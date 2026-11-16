@@ -29,7 +29,7 @@ async function runTests() {
     const origQuery = db.query;
 
     try {
-        const cocinaController = require('../controllers/c_cocinaController');
+        const cocinaController = require('../controladores/c_cocinaController');
 
         // =========================================================================
         // Test Suite 1: CU 28 — Enrutamiento y Comandas Digitales (CU orig. 56 y 57)

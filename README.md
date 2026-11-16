@@ -20,7 +20,7 @@ El repositorio mantiene una estricta separación de responsabilidades en su raí
 ├── Proyecto/                 # Todos los archivos de código del proyecto de software
 │   ├── backend/              # Lógica de servidor (Node.js, Express, controladores, rutas)
 │   ├── frontend/             # Interfaz web (vistas HTML, estilos CSS, scripts JS, assets)
-│   ├── database/             # Scripts SQL y esquemas relacionales
+│   ├── base_de_datos/        # Scripts SQL estructurados (DDL y DML)
 │   ├── .env.example          # Plantilla de variables de entorno
 │   ├── .gitignore            # Exclusiones de Git para el código fuente
 │   ├── Dockerfile            # Configuración para despliegue
@@ -42,9 +42,9 @@ Documentos y diagramas del proyecto:
 
 ### 2. [`Proyecto/`](./Proyecto/)
 Módulo ejecutable del software:
-- **`backend/`**: API REST construida sobre Express, con autenticación, middlewares de seguridad y controladores modulares.
-- **`frontend/`**: Vistas web y cliente estático estructurado por módulos.
-- **`database/`**: Scripts estructurados para base de datos PostgreSQL.
+- **`backend/`**: API REST construida sobre Express, con autenticación, middlewares de seguridad, controladores y rutas modulares.
+- **`frontend/`**: Vistas web y cliente estático estructurado en HTML5/CSS/JS.
+- **`base_de_datos/`**: Scripts estructurados DDL y DML para base de datos PostgreSQL.
 
 ---
 
@@ -78,3 +78,7 @@ Para ejecutar la aplicación localmente:
 ## 👥 Equipo - Grupo 19
 - **Asignatura:** Ingeniería de Software (IDS)
 - **Caso de Negocio:** KidZania Santiago
+
+## Corte de la aplicación
+
+El código revisado al 14-11-2026 es el commit `c0b13eb`. La aplicación contiene 17 vistas HTML con API REST en Express y controladores separados por módulo. Los informes de Incremento 1 e Incremento 2 incluyen un inventario actualizado de controladores y renders de las vistas. Las capturas recientes usan fixtures de demostración para documentar la presentación; no son evidencia de persistencia ni aceptación funcional. Consulta [Documentación del proyecto](./Documentos/README.md) y [Renders de vistas](./Documentos/Evidencias_Vistas/).
