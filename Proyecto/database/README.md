@@ -1,6 +1,28 @@
 # Base de Datos - Grupo 19 (PostgreSQL)
 
-Directorio reservado para los esquemas SQL definitivos (DDL, DML y migraciones) del proyecto para KidZania Santiago, una vez definidos en el Documento 0 e Incremento 1.
+Scripts SQL de ParkFlow para KidZania Santiago.
+
+## Scripts
+
+| Archivo | Tipo | Contenido |
+|---|---|---|
+| [`DDL_esquema_completo.sql`](./DDL_esquema_completo.sql) | **DDL** | Esquema completo: tipos ENUM, 35 tablas, claves primarias y foráneas, restricciones CHECK, índices y secuencias. |
+| [`DML_datos_iniciales.sql`](./DML_datos_iniciales.sql) | **DML** | Datos iniciales: roles, usuarios de prueba, los 7 puestos de venta oficiales, unidades de medida, ubicaciones, proveedores, 11 productos con sus lotes, promociones, catálogo de motivos y turnos. |
+| [`01_esquema_inicial.sql`](./01_esquema_inicial.sql) | DDL (migración) | Script idempotente (`IF NOT EXISTS`) que el servidor ejecuta automáticamente al arrancar (`backend/config/initDb.js`). No es necesario correrlo a mano. |
+
+### Crear la base a mano (DDL + DML)
+
+```bash
+createdb -U postgres kidzania_db
+psql -U postgres -d kidzania_db -f DDL_esquema_completo.sql
+psql -U postgres -d kidzania_db -f DML_datos_iniciales.sql
+```
+
+> El DML se ejecuta **después** del DDL y sobre una base vacía.
+
+### Crear la base automáticamente
+
+Con la base vacía creada, basta con arrancar el servidor (`npm start`) o ejecutar `node migrar_y_sembrar.js`: el sistema aplica `01_esquema_inicial.sql` y siembra los mismos datos iniciales.
 
 ---
 
